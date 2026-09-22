@@ -1,0 +1,220 @@
+{
+  "versao": 1,
+  "descricao": "Três políticas de Windows Update, mutuamente exclusivas (grupo windows-update). O serviço do Windows Update nunca é desativado por nenhuma delas: 'Padrão' e 'Só segurança' deixam BITS/wuauserv em Manual e UsoSvc em Automático; 'Adiar' só grava datas de pausa temporária, sem tocar em serviço nenhum.",
+  "tweaks": [
+    {
+      "id": "UPD-001",
+      "origem": {
+        "winutil": "WPFUpdatesdefault",
+        "link": "https://github.com/ChrisTitusTech/winutil/blob/main/functions/public/Invoke-WPFUpdatesdefault.ps1"
+      },
+      "nome": "Padrão (recomendado pela Microsoft)",
+      "descricao": "Remove as políticas de adiamento/pausa de atualização e devolve os serviços do Windows Update ao comportamento padrão de fábrica.",
+      "categoria": "Atualizações",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "radio",
+      "opcoes": [],
+      "grupo": "windows-update",
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Remove as políticas de adiamento de recursos, adiamento de correções e pausa que o TweakMaxing (ou outra ferramenta) possa ter deixado em HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate, devolvendo os serviços BITS e wuauserv a Manual e o UsoSvc a Automático — o mesmo estado de um Windows recém-instalado.",
+      "evidencia": "O efeito é lido de volta nas próprias chaves: quando nenhuma política de adiamento/pausa existe mais em HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate e em HKLM\\SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings, a política 'Padrão' está aplicada. Não há promessa de velocidade nem de menos incômodo — é a configuração de fábrica da Microsoft.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxUpdatePolicyDefault",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "UPD-002",
+      "origem": {
+        "winutil": "WPFUpdatessecurity",
+        "link": "https://github.com/ChrisTitusTech/winutil/blob/main/functions/public/Invoke-WPFUpdatessecurity.ps1"
+      },
+      "nome": "Só segurança (adia recursos, mantém correções)",
+      "descricao": "Adia atualizações de recursos por 365 dias e de correções (inclusive de segurança) por só 4 dias, evita drivers ofertados pelo Windows Update e prompts de metadados de dispositivo. Os serviços continuam ligados: BITS e wuauserv em Manual, UsoSvc em Automático.",
+      "categoria": "Atualizações",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "radio",
+      "opcoes": [],
+      "grupo": "windows-update",
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava as políticas de grupo documentadas pela Microsoft que adiam atualização de recursos (DeferFeatureUpdates=1, 365 dias) mantendo as de correção com um adiamento curto (DeferQualityUpdates=1, 4 dias), exclui drivers das atualizações de qualidade, desliga a busca automática de drivers do Windows Update e impede reinício automático com usuário logado. Os serviços BITS e wuauserv ficam em Manual e o UsoSvc em Automático: nenhum serviço de atualização é desativado.",
+      "evidencia": "São as mesmas políticas que o Windows expõe em Configurações > Windows Update > Opções avançadas > Pausar atualizações/Adiar atualizações; o efeito é conferido lendo essas chaves de volta do registro e o estado dos três serviços com Get-Service.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+          "name": "ExcludeWUDriversInQualityUpdate",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+          "name": "DeferFeatureUpdates",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+          "name": "DeferFeatureUpdatesPeriodInDays",
+          "value": 365,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+          "name": "DeferQualityUpdates",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate",
+          "name": "DeferQualityUpdatesPeriodInDays",
+          "value": 4,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU",
+          "name": "AUOptions",
+          "value": 4,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU",
+          "name": "NoAutoRebootWithLoggedOnUsers",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate\\AU",
+          "name": "AUPowerManagement",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
+          "name": "DontSearchWindowsUpdate",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
+          "name": "DontPromptForWindowsUpdate",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DriverSearching",
+          "name": "DriverUpdateWizardWuSearchEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Device Metadata",
+          "name": "PreventDeviceMetadataFromNetwork",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "service",
+          "nome": "BITS",
+          "tipoInicio": "Manual"
+        },
+        {
+          "tipo": "service",
+          "nome": "wuauserv",
+          "tipoInicio": "Manual"
+        },
+        {
+          "tipo": "service",
+          "nome": "UsoSvc",
+          "tipoInicio": "Automatic"
+        }
+      ]
+    },
+    {
+      "id": "UPD-003",
+      "origem": {
+        "winutil": "WPFUpdatesdisable(adaptado)",
+        "link": "https://github.com/ChrisTitusTech/winutil/blob/main/functions/public/Invoke-WPFUpdatesdisable.ps1"
+      },
+      "nome": "Adiar por 35 dias (pausa temporária)",
+      "descricao": "Pausa toda atualização (recursos e correções) por 35 dias a partir de agora, o mesmo botão 'Pausar atualizações' de Configurações do Windows. Não mexe em serviço nenhum: passados os 35 dias o Windows Update volta a funcionar sozinho.",
+      "categoria": "Atualizações",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "radio",
+      "opcoes": [],
+      "grupo": "windows-update",
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava as datas de pausa (PauseUpdatesExpiryTime e as correlatas de recursos/qualidade) em HKLM\\SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings com validade de 35 dias a partir de agora — o mesmo mecanismo que o botão 'Pausar atualizações' de Configurações usa. Nenhum serviço do Windows Update é tocado: adaptação do WPFUpdatesdisable do WinUtil que evita desativar serviço, só pausa por prazo.",
+      "evidencia": "PauseUpdatesExpiryTime é a mesma chave que Configurações > Windows Update mostra como 'Atualizações pausadas até'; a data aparece na própria tela do Windows depois de aplicado, e o Windows volta a atualizar sozinho quando ela vence.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxUpdatePause",
+          "parametros": { "dias": 35 }
+        }
+      ]
+    }
+  ]
+}

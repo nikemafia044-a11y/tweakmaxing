@@ -7,6 +7,7 @@
 <link rel="stylesheet" href="app.css">
 <link rel="stylesheet" href="tweaks.css">
 <link rel="stylesheet" href="configure.css">
+<link rel="stylesheet" href="updates.css">
 </head>
 <body>
 
@@ -67,9 +68,12 @@
     </div>
   </section>
 
-  <section id="tab-atualizacoes" class="tab" hidden>
+  <section id="tab-atualizacoes" class="tab" hidden aria-busy="true">
     <h2>Atualizações</h2>
-    <p class="vazio">Em construção</p>
+    <p class="upd-banner" role="note">O serviço do Windows Update nunca é desativado por esta ferramenta.</p>
+    <div id="upd-cartoes" class="upd-cartoes" role="radiogroup" aria-label="Política de Windows Update">
+      <p class="vazio" id="upd-carregando">Lendo as políticas de atualização…</p>
+    </div>
   </section>
 
   <section id="tab-microwin" class="tab" hidden>

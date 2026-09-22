@@ -1,0 +1,105 @@
+/* updates.css - aba "Atualizações".
+   Só tokens de app.css: nenhuma cor literal nasce aqui, para o tema claro
+   (prefers-color-scheme) continuar valendo sem uma segunda folha. */
+
+.upd-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--linha);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--raio);
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 13px;
+}
+
+.upd-cartoes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  .upd-cartoes { grid-template-columns: minmax(0, 1fr); }
+}
+
+.upd-card {
+  min-width: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel);
+}
+
+.upd-card-ativa,
+.upd-card-selecionada {
+  border-color: var(--accent);
+}
+
+.upd-card-topo {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+}
+
+.upd-card-topo input[type="radio"] {
+  margin-top: 3px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+
+.upd-nome {
+  flex: 1 1 auto;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.upd-selo-ativa {
+  flex: 0 0 auto;
+  color: var(--ok);
+}
+
+.upd-desc {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.upd-detalhes {
+  margin: 0 0 10px;
+  font-size: 12px;
+}
+
+.upd-detalhes summary {
+  cursor: pointer;
+  color: var(--fg);
+  font-weight: 600;
+}
+
+.upd-detalhes summary:hover { color: var(--accent); }
+
+.upd-chaves {
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: var(--muted);
+}
+
+.upd-chaves li { overflow-wrap: anywhere; }
+
+.upd-porque {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.upd-rodape {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
