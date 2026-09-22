@@ -1,0 +1,11 @@
+reference/
+packages/
+tools/gh/
+tools/gh.zip
+TweakMaxing.ps1
+SHA256SUMS.txt
+runs/
+*.log
+TestResults*.xml
+tests/gui/out/
+.claude/settings.local.json
