@@ -223,7 +223,7 @@ Wait-TmxGuiLivre -Porta $Port | Out-Null
 # preso na sessao CDP de uma GUI que ja morreu - nesse estado o 'connect'
 # devolve sucesso mas todo seletor 'some'. Fechar tudo antes de subir a janela
 # nova e o que garante uma sessao limpa.
-try { Invoke-AB 'close' '--all' | Out-Null } catch { }
+try { Invoke-AB 'close' | Out-Null } catch { }
 
 $gui = $null
 try {
