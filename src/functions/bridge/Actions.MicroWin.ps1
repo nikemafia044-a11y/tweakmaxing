@@ -132,7 +132,9 @@ function Assert-TmxMicroWinBuildPayload {
     $iso = "$($Payload.iso)"
     if (-not $iso) { throw 'escolha a ISO de origem' }
     if ($iso -notmatch '\.iso$') { throw 'o arquivo de origem precisa terminar em .iso' }
-    if (-not (Test-Path -LiteralPath $iso)) { throw "ISO nao encontrada: $iso" }
+    # -PathType Leaf: uma PASTA chamada 'algo.iso' passaria no Test-Path solto
+    # e o erro so apareceria la na frente, no Mount-DiskImage.
+    if (-not (Test-Path -LiteralPath $iso -PathType Leaf)) { throw "ISO nao encontrada: $iso" }
 
     $edicao = 0
     if (-not [int]::TryParse("$($Payload.edicao)", [ref]$edicao) -or $edicao -lt 1) {
@@ -231,7 +233,7 @@ function Register-TmxMicroWinActions {
     <#
     .SYNOPSIS
         Registra microwin.check, microwin.pickIso, microwin.info,
-        microwin.apps e microwin.build.
+        microwin.apps, microwin.cleanupWorkDirs e microwin.build.
     #>
     [CmdletBinding()]
     param()
@@ -280,6 +282,29 @@ function Register-TmxMicroWinActions {
     Register-TmxBridgeAction -Name 'microwin.apps' -Handler {
         param($payload)
         @{ apps = @(Get-TmxMicroWinAppCatalog) }
+    }
+
+    # Sincrona: e so apagar pasta, nao vale ocupar a fila de jobs. Mas nao pode
+    # rodar POR CIMA de um build - a pasta de trabalho dele sumiria no meio.
+    Register-TmxBridgeAction -Name 'microwin.cleanupWorkDirs' -Handler {
+        param($payload)
+
+        if ($null -ne $sync -and $null -ne $sync.activeJob) {
+            throw 'espere o trabalho atual terminar antes de limpar as pastas de trabalho'
+        }
+
+        $manter = 0
+        if ($payload -and $null -ne $payload.manterUltimas) { $manter = [int]$payload.manterUltimas }
+        if ($manter -lt 0) { $manter = 0 }
+
+        $r = Clear-TmxMicroWinWorkDirs -ManterUltimas $manter
+        @{
+            ok        = [bool]$r.ok
+            pasta     = "$($r.pasta)"
+            removidas = [int]$r.removidas
+            mantidas  = [int]$r.mantidas
+            erros     = @(@($r.erros) | ForEach-Object { "$_" })
+        }
     }
 
     # Sincrona de proposito: iso, edicao, usuario, senha e destino tem que ser

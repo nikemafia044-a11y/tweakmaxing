@@ -65,7 +65,7 @@ function Get-TmxIsoInfo {
     $vazio = @()
     $tamanho = Get-TmxFileSizeGB -Path $IsoPath
 
-    if (-not (Test-Path -LiteralPath $IsoPath)) {
+    if (-not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) {
         return @{ ok = $false; mensagem = "ISO nao encontrada: $IsoPath"; edicoes = $vazio; tamanhoGB = 0.0 }
     }
     if ("$IsoPath" -notmatch '\.iso$') {

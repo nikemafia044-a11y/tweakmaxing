@@ -48,6 +48,47 @@ function Get-TmxMicroWinTemplatePath {
     $null
 }
 
+function Remove-TmxUnattendFile {
+    <#
+    .SYNOPSIS
+        Sobrescreve o autounattend.xml com zeros e apaga. Nunca lanca.
+    .DESCRIPTION
+        O arquivo carrega a senha da conta local em TEXTO PURO (e assim que o
+        Windows Setup a le). Ele so precisa existir entre o passo que o grava e
+        o oscdimg: depois disso nao pode sobrar na pasta de trabalho, nem
+        quando o build falha no meio.
+
+        Sobrescrever antes de apagar e reducao de risco, nao garantia: em SSD
+        com TRIM, ou num sistema de arquivos copy-on-write, o bloco original
+        pode continuar no disco. O que garante alguma coisa e o arquivo nao
+        ficar la.
+    .OUTPUTS
+        $true quando o arquivo nao existe mais no fim.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [string] $Path)
+
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return $true }
+
+    try {
+        $item = Get-Item -LiteralPath $Path -ErrorAction Stop
+        if ($item.IsReadOnly) { $item.IsReadOnly = $false }
+
+        $tamanho = [int]$item.Length
+        if ($tamanho -gt 0) {
+            $zeros = New-Object byte[] $tamanho
+            [System.IO.File]::WriteAllBytes($item.FullName, $zeros)
+        }
+        Remove-Item -LiteralPath $item.FullName -Force -ErrorAction Stop
+        $true
+    } catch {
+        Write-TmxLog -Level WARN -Message 'MicroWin: autounattend.xml nao pode ser apagado' -Data @{
+            caminho = "$Path"; erro = "$($_.Exception.Message)"
+        }
+        -not (Test-Path -LiteralPath $Path)
+    }
+}
+
 function Get-TmxKeyboardLayout {
     <#
     .SYNOPSIS

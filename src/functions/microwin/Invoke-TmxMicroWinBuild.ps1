@@ -63,6 +63,67 @@ function New-TmxMicroWinWorkDir {
     $pastas
 }
 
+function Clear-TmxMicroWinWorkDirs {
+    <#
+    .SYNOPSIS
+        Apaga pastas de trabalho antigas do MicroWin.
+    .PARAMETER ManterUltimas
+        Quantas pastas mais recentes preservar (0 = nenhuma).
+    .OUTPUTS
+        @{ ok; pasta; removidas; mantidas; erros[] }
+    .NOTES
+        Cada build deixa para tras uma copia da ISO inteira (varios GB) quando
+        falha. Antes de apagar, qualquer autounattend.xml que tenha escapado e
+        zerado por Remove-TmxUnattendFile - um Remove-Item recursivo sozinho
+        deixaria a senha no disco.
+
+        Os nomes das pastas sao yyyyMMdd-HHmmss, entao ordenar por nome
+        decrescente ja e ordenar da mais nova para a mais velha.
+    #>
+    [CmdletBinding()]
+    param([int] $ManterUltimas = 0)
+
+    $raiz = Get-TmxMicroWinWorkRoot
+    $erros = New-Object 'System.Collections.Generic.List[string]'
+
+    if (-not (Test-Path -LiteralPath $raiz -PathType Container)) {
+        return @{ ok = $true; pasta = "$raiz"; removidas = 0; mantidas = 0; erros = @() }
+    }
+
+    $pastas = @(Get-ChildItem -LiteralPath $raiz -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending)
+    $manter = @()
+    if ($ManterUltimas -gt 0) {
+        $manter = @(@($pastas | Select-Object -First $ManterUltimas) | ForEach-Object { "$($_.Name)" })
+    }
+
+    $removidas = 0
+    foreach ($p in $pastas) {
+        if ($manter -contains "$($p.Name)") { continue }
+
+        foreach ($xml in @(Get-ChildItem -LiteralPath $p.FullName -Recurse -Force -Filter 'autounattend.xml' -File -ErrorAction SilentlyContinue)) {
+            Remove-TmxUnattendFile -Path $xml.FullName | Out-Null
+        }
+        try {
+            Remove-Item -LiteralPath $p.FullName -Recurse -Force -ErrorAction Stop
+            $removidas++
+        } catch {
+            $erros.Add("$($p.Name): $($_.Exception.Message)")
+        }
+    }
+
+    Write-TmxLog -Level INFO -Message 'MicroWin: pastas de trabalho limpas' -Data @{
+        raiz = "$raiz"; removidas = $removidas; mantidas = @($manter).Count; erros = $erros.Count
+    }
+
+    @{
+        ok        = [bool]($erros.Count -eq 0)
+        pasta     = "$raiz"
+        removidas = $removidas
+        mantidas  = @($manter).Count
+        erros     = $erros.ToArray()
+    }
+}
+
 function Send-TmxMicroWinProgress {
     <#
     .SYNOPSIS
@@ -146,10 +207,12 @@ function Invoke-TmxMicroWinBuild {
         return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem 'o MicroWin precisa de privilegios de administrador (montar imagem e usar o DISM)')
     }
 
-    if (-not (Test-Path -LiteralPath $IsoPath)) {
+    # -PathType Leaf: uma PASTA chamada 'algo.iso' passaria no Test-Path solto e
+    # so quebraria la na frente, no Mount-DiskImage.
+    if (-not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) {
         return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem "ISO nao encontrada: $IsoPath")
     }
-    if (-not (Test-Path -LiteralPath $Destino)) {
+    if (-not (Test-Path -LiteralPath $Destino -PathType Container)) {
         return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem "pasta de destino nao encontrada: $Destino")
     }
 
@@ -164,6 +227,12 @@ function Invoke-TmxMicroWinBuild {
     $isoMontada    = $false
     $imagemMontada = $false
 
+    # O resultado e montado DEPOIS do try/catch/finally, e nao com um 'return'
+    # la dentro: o finally ainda acrescenta passos (desmontar-emergencia) e um
+    # 'return (ConvertTo-...)' congelaria a lista antes deles.
+    $estado = @{ ok = $false; mensagem = ''; arquivo = $null; tamanho = 0.0 }
+    $arquivoXml = Join-Path "$($pastas.contents)" 'autounattend.xml'
+
     try {
         # --- 1. montar a ISO de origem -------------------------------------
         Send-TmxMicroWinProgress -Pct 5 -Status 'Montando a ISO de origem...' -Progress $Progress
@@ -174,10 +243,19 @@ function Invoke-TmxMicroWinBuild {
 
         # --- 2. copiar a arvore --------------------------------------------
         Send-TmxMicroWinProgress -Pct 15 -Status 'Copiando os arquivos da ISO (pode levar varios minutos)...' -Progress $Progress
-        $codigo = Copy-TmxIsoTree -Source "$($montagem.raiz)" -Destination "$($pastas.contents)"
-        if ([int]$codigo -ge 8) { throw "copiar-arquivos: robocopy terminou com codigo $codigo" }
-        Set-TmxPathWritable -Path "$($pastas.contents)" | Out-Null
-        $passos.Add((New-TmxMicroWinStep -Nome 'copiar-arquivos' -Ok $true -Detalhe "robocopy codigo $codigo"))
+        $copia = $null
+        try {
+            $copia = Copy-TmxIsoTree -Source "$($montagem.raiz)" -Destination "$($pastas.contents)"
+        } catch {
+            throw "copiar-arquivos: $($_.Exception.Message)"
+        }
+        # O somente-leitura do volume UDF acompanha a copia; se nao sair, o
+        # install.wim nao pode ser regravado e a falha apareceria varios passos
+        # adiante com "acesso negado". Melhor parar aqui.
+        if (-not (Set-TmxPathWritable -Path "$($pastas.contents)")) {
+            throw "copiar-arquivos: nao foi possivel remover o somente-leitura da copia em $($pastas.contents)"
+        }
+        $passos.Add((New-TmxMicroWinStep -Nome 'copiar-arquivos' -Ok $true -Detalhe "robocopy codigo $($copia.codigo)"))
 
         # --- 3. desmontar a ISO (nada mais e lido dela) --------------------
         Send-TmxMicroWinProgress -Pct 35 -Status 'Desmontando a ISO de origem...' -Progress $Progress
@@ -243,7 +321,6 @@ function Invoke-TmxMicroWinBuild {
         Send-TmxMicroWinProgress -Pct 75 -Status 'Gravando o autounattend.xml...' -Progress $Progress
         try {
             $xml = New-TmxUnattend -Usuario $Usuario -Senha $Senha -Idioma 'pt-BR'
-            $arquivoXml = Join-Path "$($pastas.contents)" 'autounattend.xml'
             Set-Content -LiteralPath $arquivoXml -Value $xml -Encoding UTF8 -Force
         } catch {
             throw "autounattend: $($_.Exception.Message)"
@@ -271,10 +348,12 @@ function Invoke-TmxMicroWinBuild {
         $tamanho = Get-TmxFileSizeGB -Path $arquivoFinal
         $passos.Add((New-TmxMicroWinStep -Nome 'verificar' -Ok $true -Detalhe ("{0} GB" -f $tamanho)))
 
-        Send-TmxMicroWinProgress -Pct 100 -Status 'Concluido' -Progress $Progress
         Write-TmxLog -Level INFO -Message 'MicroWin: build concluido' -Data @{ arquivo = "$arquivoFinal"; tamanhoGB = $tamanho }
 
-        return (ConvertTo-TmxMicroWinResult -Ok $true -Mensagem 'ISO gerada com sucesso' -Arquivo $arquivoFinal -TamanhoGB $tamanho -PastaTrabalho "$($pastas.raiz)")
+        $estado.ok       = $true
+        $estado.mensagem = 'ISO gerada com sucesso'
+        $estado.arquivo  = $arquivoFinal
+        $estado.tamanho  = $tamanho
 
     } catch {
         $mensagem = "$($_.Exception.Message)"
@@ -288,20 +367,78 @@ function Invoke-TmxMicroWinBuild {
         }
         $passos.Add((New-TmxMicroWinStep -Nome $nomePasso -Ok $false -Detalhe $mensagem))
         Write-TmxLog -Level ERROR -Message 'MicroWin: build falhou' -Data @{ passo = $nomePasso; erro = $mensagem; pasta = "$($pastas.raiz)" }
-        return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem $mensagem -PastaTrabalho "$($pastas.raiz)")
+
+        $estado.ok       = $false
+        $estado.mensagem = $mensagem
 
     } finally {
-        # Limpeza de emergencia: descartar a imagem montada e soltar a ISO.
-        # A pasta de trabalho fica de proposito (diagnostico).
+        # Limpeza de emergencia, na ordem: descartar a imagem montada (com
+        # /Cleanup-Mountpoints como segunda tentativa), soltar a ISO e apagar o
+        # autounattend.xml - que carrega a SENHA em texto puro e nao pode
+        # sobreviver ao build nem quando ele falha.
         if ($imagemMontada) {
+            $descartou = $false
             try {
                 Dismount-TmxWindowsImageWrapper -Path "$($pastas.mount)" -Discard | Out-Null
+                $descartou = $true
             } catch {
                 Write-TmxLog -Level WARN -Message 'MicroWin: nao foi possivel descartar a imagem montada' -Data @{ erro = "$($_.Exception.Message)" }
             }
+
+            if (-not $descartou) {
+                # Uma montagem orfa trava TODA tentativa seguinte ("a imagem ja
+                # esta montada em outro diretorio"), entao vale insistir com o
+                # proprio DISM antes de desistir.
+                try {
+                    $limpeza = Invoke-TmxDismCleanupMountpoints
+                    if ([int]$limpeza.codigo -eq 0) { $descartou = $true }
+                } catch {
+                    Write-TmxLog -Level WARN -Message 'MicroWin: /Cleanup-Mountpoints falhou' -Data @{ erro = "$($_.Exception.Message)" }
+                }
+            }
+
+            if ($descartou) {
+                $imagemMontada = $false
+            } else {
+                $passos.Add((New-TmxMicroWinStep -Nome 'desmontar-emergencia' -Ok $false -Detalhe (
+                    "A imagem continua montada em $($pastas.mount). Feche programas e janelas que estejam usando essa pasta e rode, " +
+                    "como administrador: dism.exe /Cleanup-Mountpoints")))
+                Write-TmxLog -Level ERROR -Message 'MicroWin: imagem continua montada' -Data @{ pasta = "$($pastas.mount)" }
+            }
         }
+
         if ($isoMontada) {
             Dismount-TmxIso -IsoPath $IsoPath | Out-Null
+            $isoMontada = $false
         }
+
+        Remove-TmxUnattendFile -Path $arquivoXml | Out-Null
     }
+
+    # Sucesso: a pasta 'contents' e uma copia inteira do Windows (varios GB) e
+    # ja nao serve para nada - some com ela e deixa so a raiz do trabalho, que
+    # e o que a interface mostra. Na falha ela FICA, para diagnostico (sem o
+    # autounattend.xml, ja apagado acima).
+    if ($estado.ok) {
+        Send-TmxMicroWinProgress -Pct 98 -Status 'Limpando a pasta de trabalho...' -Progress $Progress
+        $limpou = $true
+        try {
+            if (Test-Path -LiteralPath "$($pastas.contents)") {
+                Remove-Item -LiteralPath "$($pastas.contents)" -Recurse -Force -ErrorAction Stop
+            }
+            Remove-Item -LiteralPath "$($pastas.mount)" -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath "$($pastas.scratch)" -Recurse -Force -ErrorAction SilentlyContinue
+        } catch {
+            $limpou = $false
+            Write-TmxLog -Level WARN -Message 'MicroWin: pasta de trabalho nao pode ser apagada' -Data @{ erro = "$($_.Exception.Message)" }
+        }
+        $passos.Add((New-TmxMicroWinStep -Nome 'limpar-trabalho' -Ok $limpou -Detalhe $(
+            if ($limpou) { 'copia temporaria e autounattend.xml removidos' }
+            else { "apague a mao: $($pastas.raiz)" })))
+    }
+
+    Send-TmxMicroWinProgress -Pct 100 -Status $(if ($estado.ok) { 'Concluido' } else { 'Interrompido' }) -Progress $Progress
+
+    ConvertTo-TmxMicroWinResult -Ok $estado.ok -Mensagem "$($estado.mensagem)" `
+        -Arquivo $estado.arquivo -TamanhoGB $estado.tamanho -PastaTrabalho "$($pastas.raiz)"
 }

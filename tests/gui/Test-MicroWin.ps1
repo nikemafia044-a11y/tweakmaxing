@@ -168,6 +168,51 @@ try {
     Assert-Tmx -Nome '"Limpar" desmarca tudo' `
         -Condicao ((ConvertTo-TmxInt $limpos) -eq 0) -Detalhe "obtido: '$limpos'"
 
+    # --- limpeza das pastas de trabalho -------------------------------------
+    # No modo de teste a raiz de trabalho fica dentro do TWEAKMAXING_HOME da
+    # suite, entao apagar tudo ali nao toca em nada do usuario.
+    #
+    # Esperar a ponte ficar ociosa NAO e frescura: a acao recusa enquanto ha
+    # job ativo (a pasta de trabalho de um build sumiria no meio), e as outras
+    # abas ainda estao carregando os catalogos delas quando esta roda. Sem a
+    # espera o teste media a mensagem de recusa em vez da limpeza.
+    $limite = (Get-Date).AddSeconds(90)
+    $trabalho = ''
+    while ((Get-Date) -lt $limite) {
+        $trabalho = "$(Invoke-AB 'get' 'text' '#st-job')".Trim()
+        if ($trabalho -match '(?i)ocioso') { break }
+        Start-Sleep -Milliseconds 500
+    }
+    Assert-Tmx -Nome 'a ponte fica ociosa antes da limpeza' `
+        -Condicao ($trabalho -match '(?i)ocioso') -Detalhe "obtido: '$trabalho'"
+
+    Invoke-AB 'eval' "document.getElementById('toasts').innerHTML = ''; 'limpo'" | Out-Null
+
+    Invoke-AB 'click' '#mw-limpar-trabalho' | Out-Null
+    Invoke-AB 'wait' '#modal-buttons .btn-danger' | Out-Null
+
+    $tituloModal = "$(Invoke-AB 'get' 'text' '#modal-title')".Trim()
+    Assert-Tmx -Nome 'o botao de limpeza abre o modal de confirmacao' `
+        -Condicao ($tituloModal -match '(?i)limpar pastas') -Detalhe "obtido: '$tituloModal'"
+
+    Invoke-AB 'click' '#modal-buttons .btn-danger' | Out-Null
+
+    $limite = (Get-Date).AddSeconds(15)
+    $toast = ''
+    while ((Get-Date) -lt $limite) {
+        $toast = "$(Invoke-AB 'get' 'text' '#toasts')".Trim()
+        if ($toast) { break }
+        Start-Sleep -Milliseconds 400
+    }
+    # A mensagem tem que ser a da LIMPEZA ('Nada a limpar' quando nao havia
+    # pasta, ou 'N pasta(s) ... apagada(s)') - nunca a recusa por job ativo.
+    Assert-Tmx -Nome 'microwin.cleanupWorkDirs limpa de verdade pela ponte' `
+        -Condicao ($toast -match '(?i)nada a limpar|apagada') -Detalhe "toast: '$toast'"
+
+    $modalAberto = "$(Invoke-AB 'is' 'visible' '#modal')".Trim()
+    Assert-Tmx -Nome 'o modal de limpeza fecha sozinho' `
+        -Condicao ($modalAberto -notmatch '(?i)true') -Detalhe "obtido: '$modalAberto'"
+
     # --- validacao do nome de usuario ---------------------------------------
     Invoke-AB 'wait' '#mw-usuario' | Out-Null
     Invoke-AB 'scrollintoview' '#mw-usuario' | Out-Null

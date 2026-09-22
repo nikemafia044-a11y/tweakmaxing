@@ -19,7 +19,8 @@ function Mount-TmxIso {
     [CmdletBinding()]
     param([Parameter(Mandatory)] [string] $IsoPath)
 
-    if (-not (Test-Path -LiteralPath $IsoPath)) {
+    # -PathType Leaf: uma pasta chamada .iso passaria no Test-Path solto.
+    if (-not (Test-Path -LiteralPath $IsoPath -PathType Leaf)) {
         return [pscustomobject]@{ ok = $false; mensagem = "ISO nao encontrada: $IsoPath"; letra = $null; raiz = $null }
     }
 

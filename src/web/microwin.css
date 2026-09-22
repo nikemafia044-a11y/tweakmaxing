@@ -48,6 +48,11 @@
   line-height: 1.5;
 }
 
+/* Caminho da pasta de trabalho: longo e sem espaços, precisa poder quebrar em
+   qualquer ponto ou vaza para fora da coluna. */
+#mw-trabalho { word-break: break-all; }
+#mw-trabalho:empty { margin: 0; }
+
 .mw-rotulo {
   display: block;
   margin: 10px 0 4px;

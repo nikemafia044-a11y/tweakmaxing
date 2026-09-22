@@ -166,6 +166,26 @@ function Dismount-TmxWindowsImageWrapper {
     Dismount-WindowsImage -Path $Path -Discard -ErrorAction Stop
 }
 
+function Invoke-TmxDismCleanupMountpoints {
+    <#
+    .SYNOPSIS
+        dism.exe /Cleanup-Mountpoints - solta montagens orfas do DISM.
+    .OUTPUTS
+        [pscustomobject] @{ codigo; saida }
+    .NOTES
+        Ultimo recurso quando Dismount-WindowsImage -Discard falha: uma
+        montagem presa impede QUALQUER build seguinte ("a imagem ja esta
+        montada em outro diretorio"), e este e o unico jeito suportado de
+        limpar isso sem reiniciar a maquina.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $argumentos = @('/Cleanup-Mountpoints')
+    $out = & dism.exe @argumentos 2>&1
+    [pscustomobject]@{ codigo = [int]$LASTEXITCODE; saida = (@($out) -join "`n") }
+}
+
 function Export-TmxWindowsImageWrapper {
     <#
     .SYNOPSIS
@@ -225,12 +245,17 @@ function Copy-TmxIsoTree {
     .SYNOPSIS
         Copia a arvore da ISO montada para a pasta de trabalho (robocopy).
     .OUTPUTS
-        O codigo de saida do robocopy. 0..7 e sucesso; 8 ou mais e falha.
+        [pscustomobject] @{ codigo; saida }. Codigo 0..7 e sucesso do robocopy;
+        8 ou mais LANCA, com as ultimas linhas da saida na mensagem.
     .NOTES
         robocopy e nao Copy-Item: sao milhares de arquivos e um install.wim de
         varios GB. /NFL /NDL /NJH /NJS silenciam a listagem (a saida inteira
         viraria log inutil) e /R:2 /W:2 evitam a espera padrao de 30 s por
         arquivo travado.
+
+        A saida e capturada (e nao jogada no Out-Null) exatamente para o caso
+        de falha: "robocopy terminou com codigo 8" sozinho nao diz se faltou
+        espaco, se um arquivo estava travado ou se o caminho e longo demais.
     #>
     [CmdletBinding()]
     param(
@@ -239,27 +264,48 @@ function Copy-TmxIsoTree {
     )
 
     $argumentos = @($Source, $Destination, '/E', '/R:2', '/W:2', '/NFL', '/NDL', '/NJH', '/NJS', '/NP')
-    & robocopy.exe @argumentos | Out-Null
-    [int]$LASTEXITCODE
+    $saida  = & robocopy.exe @argumentos 2>&1
+    $codigo = [int]$LASTEXITCODE
+    $texto  = (@($saida) | ForEach-Object { "$_" }) -join "`n"
+
+    if ($codigo -ge 8) {
+        $ultimas = @(@($texto -split "`r?`n") | Where-Object { "$_".Trim() } | Select-Object -Last 5)
+        $detalhe = ($ultimas -join ' | ')
+        if ($detalhe) { throw "robocopy terminou com codigo ${codigo}: $detalhe" }
+        throw "robocopy terminou com codigo $codigo"
+    }
+
+    [pscustomobject]@{ codigo = $codigo; saida = $texto }
 }
 
 function Set-TmxPathWritable {
     <#
     .SYNOPSIS
         Tira o somente-leitura de uma arvore recem-copiada da ISO. Nunca lanca.
+    .OUTPUTS
+        $true so quando TODO arquivo ficou gravavel; $false se algum resistiu.
     .DESCRIPTION
         Tudo que sai de um volume UDF montado chega com ReadOnly ligado; sem
         isso a regravacao do install.wim falha com "acesso negado" varios
-        passos depois, longe da causa.
+        passos depois, longe da causa. Por isso o retorno conta as falhas em
+        vez de devolver $true de qualquer jeito: o build para no passo de
+        copia, que e onde da para entender o problema.
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)] [string] $Path)
 
     try {
+        $falhas = 0
         foreach ($item in @(Get-ChildItem -LiteralPath $Path -Recurse -Force -File -ErrorAction SilentlyContinue)) {
-            if ($item.IsReadOnly) { $item.IsReadOnly = $false }
+            if (-not $item.IsReadOnly) { continue }
+            try {
+                $item.IsReadOnly = $false
+            } catch {
+                $falhas++
+                Write-Verbose "'$($item.FullName)' continua somente-leitura: $($_.Exception.Message)"
+            }
         }
-        $true
+        ($falhas -eq 0)
     } catch {
         Write-Verbose "Nao foi possivel limpar o somente-leitura de '$Path': $($_.Exception.Message)"
         $false

@@ -282,7 +282,7 @@ Describe 'MicroWin' -Tag 'MicroWin' {
 
             Mock -CommandName Mount-TmxDiskImageWrapper    -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('mount-iso'); 'Z' }
             Mock -CommandName Dismount-TmxDiskImageWrapper -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('dismount-iso'); $true }
-            Mock -CommandName Copy-TmxIsoTree              -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('copy'); 1 }
+            Mock -CommandName Copy-TmxIsoTree              -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('copy'); [pscustomobject]@{ codigo = 1; saida = '' } }
             Mock -CommandName Get-TmxInstallImagePath      -ModuleName TweakMaxing -MockWith {
                 [pscustomobject]@{ caminho = (Join-Path $Raiz 'sources\install.wim'); formato = 'wim' }
             }
@@ -303,8 +303,19 @@ Describe 'MicroWin' -Tag 'MicroWin' {
             Mock -CommandName Remove-TmxWindowsPackageWrapper -ModuleName TweakMaxing -MockWith {
                 [void]$global:TmxOrdem.Add("pkg:$PackageName")
             }
+            # O autounattend.xml e apagado no fim do build (leva a senha em
+            # texto puro), entao o unico momento em que da para conferir o
+            # conteudo e o -Save, logo depois da gravacao.
             Mock -CommandName Dismount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
-                [void]$global:TmxOrdem.Add($(if ($Save) { 'dismount-save' } else { 'dismount-discard' }))
+                if ($Save) {
+                    [void]$global:TmxOrdem.Add('dismount-save')
+                    $xml = Join-Path (Split-Path -Parent "$Path") 'contents\autounattend.xml'
+                    if (Test-Path -LiteralPath $xml) {
+                        $global:TmxUnattend = [string](Get-Content -LiteralPath $xml -Raw -Encoding UTF8)
+                    }
+                } else {
+                    [void]$global:TmxOrdem.Add('dismount-discard')
+                }
             }
             # Cada argumento entra na lista separado: se o array voltar a ser
             # achatado num item so (foi um bug real de New-TmxIsoArgumentList),
@@ -320,7 +331,7 @@ Describe 'MicroWin' -Tag 'MicroWin' {
 
         AfterEach {
             Remove-Item -LiteralPath $script:Falsa.pasta -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Variable -Name TmxOrdem, TmxArgs -Scope Global -ErrorAction SilentlyContinue
+            Remove-Variable -Name TmxOrdem, TmxArgs, TmxUnattend -Scope Global -ErrorAction SilentlyContinue
         }
 
         It 'roda os passos na ordem combinada e gera a ISO' {
@@ -383,11 +394,10 @@ Describe 'MicroWin' -Tag 'MicroWin' {
             $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 `
                 -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino
 
-            $xmlPath = Join-Path $r.pastaTrabalho 'contents\autounattend.xml'
-            Test-Path -LiteralPath $xmlPath | Should -BeTrue
-            $texto = [string](Get-Content -LiteralPath $xmlPath -Raw -Encoding UTF8)
-            $texto | Should -Match '<Name>fantasy</Name>'
-            $texto | Should -Match 'pt-BR'
+            $r.ok | Should -BeTrue
+            "$($global:TmxUnattend)" | Should -Match '<Name>fantasy</Name>'
+            "$($global:TmxUnattend)" | Should -Match 'pt-BR'
+            "$($global:TmxUnattend)" | Should -Match '0416:00000416'
             @($r.passos | Where-Object { "$($_.nome)" -eq 'autounattend' }).Count | Should -Be 1
         }
 
@@ -457,6 +467,250 @@ Describe 'MicroWin' -Tag 'MicroWin' {
             (@($global:TmxLogs.ToArray()) -join ' ') | Should -Not -Match 'SenhaSuperSecreta777'
             (@($global:TmxLogs.ToArray()) -join ' ') | Should -Match 'fantasy'
             Remove-Variable -Name TmxLogs -Scope Global -ErrorAction SilentlyContinue
+        }
+        It 'nao deixa o autounattend.xml na pasta de trabalho depois do sucesso' {
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 `
+                -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeTrue
+            @(Get-ChildItem -LiteralPath $r.pastaTrabalho -Recurse -Force -Filter 'autounattend.xml' -File -ErrorAction SilentlyContinue).Count |
+                Should -Be 0
+            # a copia inteira da ISO tambem sai: sao varios GB sem serventia
+            Test-Path -LiteralPath (Join-Path $r.pastaTrabalho 'contents') | Should -BeFalse
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'limpar-trabalho' -and $_.ok }).Count | Should -Be 1
+        }
+
+        It 'nao deixa o autounattend.xml na pasta de trabalho depois de uma falha' {
+            Mock -CommandName Dismount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
+                if ($Save) { throw 'o DISM nao conseguiu gravar' }
+                [void]$global:TmxOrdem.Add('dismount-discard')
+            }
+
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 `
+                -Usuario 'fantasy' -Senha 'SenhaSuperSecreta777' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeFalse
+            # a falha e DEPOIS da gravacao do xml: e o caso que mais importa
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'autounattend' -and $_.ok }).Count | Should -Be 1
+            Test-Path -LiteralPath $r.pastaTrabalho | Should -BeTrue
+            @(Get-ChildItem -LiteralPath $r.pastaTrabalho -Recurse -Force -Filter 'autounattend.xml' -File -ErrorAction SilentlyContinue).Count |
+                Should -Be 0
+            # a pasta de diagnostico continua la, so sem o arquivo da senha
+            Test-Path -LiteralPath (Join-Path $r.pastaTrabalho 'contents') | Should -BeTrue
+        }
+
+        It 'quando o descarte falha tenta o Cleanup-Mountpoints e segue em frente' {
+            Mock -CommandName Remove-TmxProvisionedAppxWrapper -ModuleName TweakMaxing -MockWith { throw 'o DISM recusou o pacote' }
+            Mock -CommandName Dismount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('dismount-falhou')
+                throw 'a pasta de montagem esta em uso'
+            }
+            Mock -CommandName Invoke-TmxDismCleanupMountpoints -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('cleanup-mountpoints')
+                [pscustomobject]@{ codigo = 0; saida = 'A operacao foi concluida com exito.' }
+            }
+
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 `
+                -AppxRemover @('Microsoft.BingWeather') `
+                -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeFalse
+            Should -Invoke -CommandName Invoke-TmxDismCleanupMountpoints -ModuleName TweakMaxing -Times 1 -Exactly
+            @($global:TmxOrdem.ToArray()) -contains 'cleanup-mountpoints' | Should -BeTrue
+            # o Cleanup-Mountpoints resolveu: nada de passo de emergencia
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'desmontar-emergencia' }).Count | Should -Be 0
+        }
+
+        It 'quando o descarte e o Cleanup-Mountpoints falham registra desmontar-emergencia' {
+            Mock -CommandName Remove-TmxProvisionedAppxWrapper -ModuleName TweakMaxing -MockWith { throw 'o DISM recusou o pacote' }
+            Mock -CommandName Dismount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith { throw 'a pasta de montagem esta em uso' }
+            Mock -CommandName Invoke-TmxDismCleanupMountpoints -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ codigo = 50; saida = 'Erro: 50' }
+            }
+
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 `
+                -AppxRemover @('Microsoft.BingWeather') `
+                -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeFalse
+            $emergencia = @($r.passos | Where-Object { "$($_.nome)" -eq 'desmontar-emergencia' })
+            $emergencia.Count | Should -Be 1
+            $emergencia[0].ok | Should -BeFalse
+            "$($emergencia[0].detalhe)" | Should -Match 'Cleanup-Mountpoints'
+            "$($emergencia[0].detalhe)" | Should -Match 'continua montada'
+        }
+
+        It 'para no passo de copia quando o somente-leitura nao sai da arvore' {
+            Mock -CommandName Set-TmxPathWritable -ModuleName TweakMaxing -MockWith { $false }
+
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 `
+                -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeFalse
+            "$($r.mensagem)" | Should -Match 'somente-leitura'
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'copiar-arquivos' -and -not $_.ok }).Count | Should -Be 1
+            @($global:TmxOrdem.ToArray()) -contains 'mount-image' | Should -BeFalse
+        }
+
+        It 'converte install.esd em install.wim e monta o indice 1 do wim novo' {
+            Mock -CommandName Get-TmxInstallImagePath -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ caminho = (Join-Path $Raiz 'sources\install.esd'); formato = 'esd' }
+            }
+            $global:TmxExport = [System.Collections.ArrayList]::Synchronized((New-Object System.Collections.ArrayList))
+            Mock -CommandName Export-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('export-wim')
+                [void]$global:TmxExport.Add("origem=$SourceImagePath indice=$SourceIndex destino=$DestinationImagePath")
+            }
+            $global:TmxMount = [System.Collections.ArrayList]::Synchronized((New-Object System.Collections.ArrayList))
+            Mock -CommandName Mount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('mount-image')
+                [void]$global:TmxMount.Add("imagem=$ImagePath indice=$Index")
+            }
+
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 3 `
+                -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeTrue
+            Should -Invoke -CommandName Export-TmxWindowsImageWrapper -ModuleName TweakMaxing -Times 1 -Exactly
+
+            # exporta a edicao ESCOLHIDA do esd...
+            $exportado = "$(@($global:TmxExport.ToArray())[0])"
+            $exportado | Should -Match 'install\.esd'
+            $exportado | Should -Match 'indice=3'
+            $exportado | Should -Match 'install\.wim'
+
+            # ...e o wim novo nasce com ela no indice 1
+            $montado = "$(@($global:TmxMount.ToArray())[0])"
+            $montado | Should -Match 'install\.wim'
+            $montado | Should -Match 'indice=1'
+
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'converter-esd' -and $_.ok }).Count | Should -Be 1
+            Remove-Variable -Name TmxExport, TmxMount -Scope Global -ErrorAction SilentlyContinue
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    Context 'Copia, somente-leitura e limpeza' {
+
+        BeforeAll { . (Join-Path $PSScriptRoot '_Helpers.ps1') }
+
+        BeforeEach {
+            New-TmxMicroWinTestSync -TestMode $true | Out-Null
+            $script:Tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('TmxMicroWinLimp_{0}' -f ([guid]::NewGuid().ToString('N')))
+            New-Item -ItemType Directory -Path $script:Tmp -Force | Out-Null
+        }
+
+        AfterEach {
+            Remove-Item -LiteralPath $script:Tmp -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Variable -Name TmxRoboArgs, TmxRoboCodigo -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It 'Copy-TmxIsoTree passa os argumentos exatos ao robocopy' {
+            $global:TmxRoboCodigo = 1
+            Mock -CommandName 'robocopy.exe' -ModuleName TweakMaxing -MockWith {
+                $global:TmxRoboArgs = @($args | ForEach-Object { "$_" })
+                $global:LASTEXITCODE = $global:TmxRoboCodigo
+                'robocopy: 1 arquivo copiado'
+            }
+
+            $r = Copy-TmxIsoTree -Source 'Z:\' -Destination 'C:\trab\contents'
+            [int]$r.codigo | Should -Be 1
+            @($global:TmxRoboArgs) | Should -Be @(
+                'Z:\', 'C:\trab\contents', '/E', '/R:2', '/W:2', '/NFL', '/NDL', '/NJH', '/NJS', '/NP'
+            )
+        }
+
+        It 'Copy-TmxIsoTree aceita os codigos 0 e 7 do robocopy' {
+            foreach ($codigo in @(0, 7)) {
+                $global:TmxRoboCodigo = $codigo
+                Mock -CommandName 'robocopy.exe' -ModuleName TweakMaxing -MockWith {
+                    $global:LASTEXITCODE = $global:TmxRoboCodigo
+                    'ok'
+                }
+                $r = Copy-TmxIsoTree -Source 'Z:\' -Destination 'C:\trab\contents'
+                [int]$r.codigo | Should -Be $codigo
+            }
+        }
+
+        It 'Copy-TmxIsoTree lanca no codigo 8 com as ultimas linhas da saida' {
+            $global:TmxRoboCodigo = 8
+            Mock -CommandName 'robocopy.exe' -ModuleName TweakMaxing -MockWith {
+                $global:LASTEXITCODE = $global:TmxRoboCodigo
+                'linha antiga'
+                'ERRO 112 Espaco insuficiente no disco'
+            }
+
+            { Copy-TmxIsoTree -Source 'Z:\' -Destination 'C:\trab\contents' } | Should -Throw '*codigo 8*'
+            { Copy-TmxIsoTree -Source 'Z:\' -Destination 'C:\trab\contents' } | Should -Throw '*Espaco insuficiente no disco*'
+        }
+
+        It 'Set-TmxPathWritable tira o somente-leitura de uma arvore real' {
+            $sub = Join-Path $script:Tmp 'sources'
+            New-Item -ItemType Directory -Path $sub -Force | Out-Null
+            $arquivo = Join-Path $sub 'install.wim'
+            Set-Content -LiteralPath $arquivo -Value 'conteudo' -Encoding ASCII
+            $item = Get-Item -LiteralPath $arquivo
+            $item.IsReadOnly = $true
+            (Get-Item -LiteralPath $arquivo).IsReadOnly | Should -BeTrue
+
+            Set-TmxPathWritable -Path $script:Tmp | Should -BeTrue
+            (Get-Item -LiteralPath $arquivo).IsReadOnly | Should -BeFalse
+        }
+
+        It 'Remove-TmxUnattendFile zera o arquivo antes de apagar' {
+            $xml = Join-Path $script:Tmp 'autounattend.xml'
+            Set-Content -LiteralPath $xml -Value '<unattend>SenhaSuperSecreta777</unattend>' -Encoding UTF8
+
+            Remove-TmxUnattendFile -Path $xml | Should -BeTrue
+            Test-Path -LiteralPath $xml | Should -BeFalse
+            # apagar o que nao existe mais nao e erro
+            Remove-TmxUnattendFile -Path $xml | Should -BeTrue
+        }
+
+        It 'microwin.cleanupWorkDirs apaga as pastas de trabalho que sobraram' {
+            Register-TmxMicroWinActions
+
+            $raiz = Get-TmxMicroWinWorkRoot
+            New-Item -ItemType Directory -Path $raiz -Force | Out-Null
+            foreach ($nome in @('20260101-000001', '20260101-000002')) {
+                $pasta = Join-Path $raiz "$nome\contents"
+                New-Item -ItemType Directory -Path $pasta -Force | Out-Null
+                Set-Content -LiteralPath (Join-Path $pasta 'autounattend.xml') -Value '<unattend/>' -Encoding UTF8
+            }
+
+            $r = Invoke-TmxBridgeTest -Action 'microwin.cleanupWorkDirs' -Payload @{ manterUltimas = 0 }
+            $r.ok | Should -BeTrue
+            $r.result.ok | Should -BeTrue
+            [int]$r.result.removidas | Should -BeGreaterOrEqual 2
+            @(Get-ChildItem -LiteralPath $raiz -Directory -ErrorAction SilentlyContinue).Count | Should -Be 0
+        }
+
+        It 'microwin.cleanupWorkDirs preserva as N mais recentes' {
+            Register-TmxMicroWinActions
+
+            $raiz = Get-TmxMicroWinWorkRoot
+            New-Item -ItemType Directory -Path $raiz -Force | Out-Null
+            foreach ($nome in @('20260101-000001', '20260101-000002', '20260101-000003')) {
+                New-Item -ItemType Directory -Path (Join-Path $raiz $nome) -Force | Out-Null
+            }
+
+            $r = Invoke-TmxBridgeTest -Action 'microwin.cleanupWorkDirs' -Payload @{ manterUltimas = 1 }
+            $r.result.ok | Should -BeTrue
+            $restantes = @(Get-ChildItem -LiteralPath $raiz -Directory | ForEach-Object { "$($_.Name)" })
+            $restantes.Count | Should -Be 1
+            $restantes[0] | Should -Be '20260101-000003'
+        }
+
+        It 'microwin.cleanupWorkDirs recusa enquanto ha trabalho em andamento' {
+            Register-TmxMicroWinActions
+            $sync.activeJob = @{ jobId = 'fake'; name = 'microwin.build' }
+            try {
+                $r = Invoke-TmxBridgeTest -Action 'microwin.cleanupWorkDirs'
+                $r.ok | Should -BeFalse
+                "$($r.error.message)" | Should -Match 'trabalho atual'
+            } finally {
+                $sync.activeJob = $null
+            }
         }
     }
 

@@ -135,6 +135,11 @@
 
     caixa.innerHTML = html;
 
+    var alvo = el('mw-trabalho');
+    if (alvo) {
+      alvo.textContent = c.pastaTrabalho ? ('Pasta de trabalho: ' + c.pastaTrabalho) : '';
+    }
+
     var botao = el('mw-adk');
     if (botao) {
       botao.addEventListener('click', function () {
@@ -143,6 +148,36 @@
         });
       });
     }
+  }
+
+  /* Um build que falha deixa para trás uma cópia inteira do Windows (vários
+     GB). O botão existe para o usuário recuperar o espaço sem ter que caçar a
+     pasta no disco. */
+  function limparPastasTrabalho() {
+    tmx.modal.open({
+      titulo: 'Limpar pastas de trabalho',
+      html: '<p>Apaga as cópias temporárias que builds anteriores deixaram em:</p>' +
+            '<p class="mw-caminho">' + escapar((estado.prereq && estado.prereq.pastaTrabalho) || '') + '</p>' +
+            '<p>As ISOs já geradas não são tocadas: só a área de trabalho temporária é apagada.</p>',
+      botoes: [
+        {
+          rotulo: 'Limpar',
+          classe: 'btn-danger',
+          onClick: function () {
+            tmx.bridge.call('microwin.cleanupWorkDirs', { manterUltimas: 0 }).then(function (r) {
+              var n = (r && r.removidas) || 0;
+              if (r && r.erros && r.erros.length) {
+                tmx.toast(n + ' pasta(s) apagada(s); ' + r.erros.length + ' resistiram', 'aviso');
+              } else {
+                tmx.toast(n === 0 ? 'Nada a limpar' : (n + ' pasta(s) de trabalho apagada(s)'), 'ok');
+              }
+              carregarPrereq();
+            }).catch(function (e) { tmx.toast(e.message, 'erro'); });
+          }
+        },
+        { rotulo: 'Cancelar' }
+      ]
+    });
   }
 
   function carregarPrereq() {
@@ -432,6 +467,7 @@
       el('mw-recomendados').addEventListener('click', marcarRecomendados);
       el('mw-limpar-apps').addEventListener('click', limparApps);
       el('mw-gerar').addEventListener('click', gerar);
+      el('mw-limpar-trabalho').addEventListener('click', limparPastasTrabalho);
       el('mw-apps').addEventListener('change', atualizarContagem);
 
       // 'input', 'change' e 'blur': o preenchimento programático das suites de
