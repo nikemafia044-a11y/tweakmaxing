@@ -1,4 +1,4 @@
-# Testes do engine de acoes (src/Engine/Actions.ps1 + Apply.ps1).
+﻿# Testes do engine de acoes (src/Engine/Actions.ps1 + Apply.ps1).
 #
 # Registro e testado de verdade em HKCU:\Software\TweakMaxing_Tests\Engine\Actions;
 # servico, tarefa agendada, appx, recurso do Windows, powercfg, netadapter e
@@ -8,13 +8,9 @@
 #   (a) o registro de estado esta no disco ANTES do wrapper ser chamado
 #       (o mock le o state.json de dentro dele mesmo);
 #   (b) Test-TmxAction reflete o estado depois da aplicacao;
-#   (c) a reversao chama o wrapper inverso com o valor anterior capturado.
-#
-# Dois pontos dependem do agente do Core (Task 2/3) e sao detectados em tempo
-# de execucao, nunca assumidos:
-#   $script:SetRegistryTemRemove  - Set-TmxRegistry -Remove
-#   $script:UndoDispatchDinamico  - branch 'default' de Undo-TweakMaxing que
-#                                   chama Undo-Tmx<Tipo>Record para tipos novos.
+#   (c) Undo-TweakMaxing -Latest chama o wrapper inverso com o valor anterior
+#       capturado (o Core despacha 'scheduledTask'/'appx'/'feature' para os
+#       Undo-Tmx<Tipo>Record deste arquivo).
 
 . "$PSScriptRoot\_Helpers.ps1"
 
@@ -117,25 +113,6 @@ BeforeAll {
         @($dados.registros | Where-Object { $null -ne $_ })
     }
 
-    function script:Invoke-TmxUndoTeste {
-        <#
-            Reverte a execucao atual. Usa Undo-TweakMaxing -Latest; enquanto o
-            Core nao tiver o despacho dinamico, completa na mao os tipos novos.
-        #>
-        param([Parameter(Mandatory)] [string] $StatePath)
-        $sum = Undo-TweakMaxing -Latest 6> $null
-        if (-not $script:UndoDispatchDinamico) {
-            foreach ($rec in @(Import-TmxState -StatePath $StatePath)) {
-                switch ("$($rec.tipo)") {
-                    'scheduledTask' { Undo-TmxScheduledTaskRecord -Record $rec | Out-Null }
-                    'appx'          { Undo-TmxAppxRecord          -Record $rec | Out-Null }
-                    'feature'       { Undo-TmxFeatureRecord       -Record $rec | Out-Null }
-                }
-            }
-        }
-        $sum
-    }
-
     # --- funcoes customizadas usadas pelo tipo de acao 'funcao' -------------
     function global:Set-TmxFake {
         param($Tweak, $Profile, $Parametros)
@@ -171,21 +148,11 @@ BeforeAll {
         [pscustomobject]@{ aplicado = $false; atual = 'ruim'; esperado = 'bom'; detalhe = 'sempre falso' }
     }
 
-    # --- deteccao de capacidades entregues pelo agente do Core -------------
-    $cmdSet = Get-Command -Name 'Set-TmxRegistry' -ErrorAction SilentlyContinue
-    $script:SetRegistryTemRemove = [bool]($cmdSet -and $cmdSet.Parameters.ContainsKey('Remove'))
-
-    function global:Undo-TmxSondaRecord { param($Record) 'sonda revertida' }
-    New-TmxRun | Out-Null
-    $sonda = New-TmxStateRecord -TweakId 'SND-001' -Tipo 'sonda' -Alvo 'sonda de despacho'
-    Complete-TmxStateRecord -Record $sonda -Ok $true | Out-Null
-    $sumSonda = Undo-TweakMaxing -Latest 6> $null
-    $script:UndoDispatchDinamico = (@($sumSonda.itens | Where-Object { "$($_.tipo)" -eq 'sonda' -and $_.resultado -eq 'revertido' }).Count -gt 0)
 }
 
 AfterAll {
     Remove-Item -LiteralPath 'HKCU:\Software\TweakMaxing_Tests\Engine\Actions' -Recurse -Force -ErrorAction SilentlyContinue
-    foreach ($fn in 'Set-TmxFake', 'Test-TmxFake', 'Undo-TmxFake', 'Set-TmxFalha', 'Test-TmxFalha', 'Undo-TmxSondaRecord') {
+    foreach ($fn in 'Set-TmxFake', 'Test-TmxFake', 'Undo-TmxFake', 'Set-TmxFalha', 'Test-TmxFalha') {
         Remove-Item -LiteralPath "Function:\$fn" -Force -ErrorAction SilentlyContinue
     }
     Remove-TmxTestHome
@@ -251,7 +218,7 @@ Describe 'Invoke-TmxAction registry' -Tag 'Engine' {
         (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
     }
 
-    It 'acao com remove apaga o valor (ou reporta naoSuportado ate o Core ter -Remove)' {
+    It 'acao com remove apaga o valor e o undo o recria' {
         New-ItemProperty -LiteralPath "$script:Raiz\Reg" -Name 'Sumir' -Value 42 -PropertyType DWord -Force | Out-Null
         $a = New-TmxAcaoRegistro -Sub 'Reg' -Nome 'Sumir' -Remover
         $t = New-TmxTweakTeste -Id 'REG-004' -Acoes @($a)
@@ -259,21 +226,19 @@ Describe 'Invoke-TmxAction registry' -Tag 'Engine' {
         (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeFalse
 
         $r = Invoke-TmxAction -Action $a -Tweak $t -Profile $script:Perfil
+        $r.ok | Should -BeTrue
+        (Get-TmxValorTeste 'Reg' 'Sumir') | Should -BeNullOrEmpty
+        (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
 
-        if ($script:SetRegistryTemRemove) {
-            $r.ok | Should -BeTrue
-            (Get-TmxValorTeste 'Reg' 'Sumir') | Should -BeNullOrEmpty
-            (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
-            Undo-TweakMaxing -Latest 6> $null | Out-Null
-            (Get-TmxValorTeste 'Reg' 'Sumir') | Should -Be 42
-        } else {
-            # Set-TmxRegistry -Remove ainda nao existe: a acao nao pode inventar
-            # uma remocao sem registro de estado - reporta naoSuportado e nao toca em nada.
-            $r.naoSuportado | Should -BeTrue
-            $r.ok           | Should -BeFalse
-            (Get-TmxValorTeste 'Reg' 'Sumir') | Should -Be 42
-            @(Get-TmxRegistrosDoDisco $script:run.StatePath).Count | Should -Be 0
-        }
+        Undo-TweakMaxing -Latest 6> $null | Out-Null
+        (Get-TmxValorTeste 'Reg' 'Sumir') | Should -Be 42
+    }
+
+    It 'String compara sem diferenciar maiusculas' {
+        New-ItemProperty -LiteralPath "$script:Raiz\Reg" -Name 'Caixa' -Value 'Habilitado' -PropertyType String -Force | Out-Null
+        $a = New-TmxAcaoRegistro -Sub 'Reg' -Nome 'Caixa' -Valor 'habilitado' -Tipo 'String'
+        $t = New-TmxTweakTeste -Id 'REG-005' -Acoes @($a)
+        (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
     }
 }
 
@@ -368,7 +333,7 @@ Describe 'Invoke-TmxAction scheduledTask' -Tag 'Engine' {
 
         (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
 
-        Invoke-TmxUndoTeste -StatePath $script:run.StatePath | Out-Null
+        Undo-TweakMaxing -Latest 6> $null | Out-Null
         $global:TmxT_Task[1].Estado | Should -Be 'Enabled'
         $global:TmxT_TaskEstado     | Should -Be 'Enabled'
     }
@@ -418,7 +383,7 @@ Describe 'Invoke-TmxAction appx' -Tag 'Engine' {
 
         (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
 
-        Invoke-TmxUndoTeste -StatePath $script:run.StatePath | Out-Null
+        Undo-TweakMaxing -Latest 6> $null | Out-Null
         $global:TmxT_Instalados[0] | Should -Be '9NBLGGH4XYZ'
     }
 
@@ -441,16 +406,47 @@ Describe 'Invoke-TmxAction appx' -Tag 'Engine' {
 
         (Invoke-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).ok | Should -BeTrue
 
-        if ($script:UndoDispatchDinamico) {
-            $sum = Undo-TweakMaxing -Latest 6> $null
-            $item = @($sum.itens | Where-Object { "$($_.tipo)" -eq 'appx' })[0]
-            $item.resultado | Should -Be 'falha'
-            $item.detalhe   | Should -Match 'Microsoft Store'
-        } else {
-            $rec = @(Import-TmxState -StatePath $script:run.StatePath | Where-Object { "$($_.tipo)" -eq 'appx' })[0]
-            { Undo-TmxAppxRecord -Record $rec } | Should -Throw -ExpectedMessage '*Microsoft Store*'
-        }
+        $sum = Undo-TweakMaxing -Latest 6> $null
+        $item = @($sum.itens | Where-Object { "$($_.tipo)" -eq 'appx' })[0]
+        $item.resultado | Should -Be 'falha'
+        $item.detalhe   | Should -Match 'Microsoft Store'
         $global:TmxT_Instalados.Count | Should -Be 0
+    }
+
+    It 'o mesmo PackageFullName repetido (-AllUsers) vira um registro e uma remocao' {
+        Mock Get-TmxAppx -ModuleName TweakMaxing {
+            [pscustomobject]@{ Name = 'Contoso.Bloat'; PackageFullName = 'Contoso.Bloat_1.2.3.0_x64__8wekyb3d8bbwe' }
+            [pscustomobject]@{ Name = 'Contoso.Bloat'; PackageFullName = 'Contoso.Bloat_1.2.3.0_x64__8wekyb3d8bbwe' }
+        }
+        $a = [pscustomobject]@{ tipo = 'appx'; pacote = 'Contoso.Bloat'; storeId = '9NBLGGH4XYZ'; todosUsuarios = $true }
+        $t = New-TmxTweakTeste -Id 'APX-004' -Acoes @($a) -Reversivel 'parcial'
+
+        $r = Invoke-TmxAction -Action $a -Tweak $t -Profile $script:Perfil
+        $r.ok | Should -BeTrue
+        @($r.registros).Count | Should -Be 1
+        @(Get-TmxRegistrosDoDisco $script:run.StatePath).Count | Should -Be 1
+        $global:TmxT_Removidos.Count | Should -Be 1
+    }
+
+    It 'pacote que ja sumiu durante a remocao nao vira falha' {
+        Mock Remove-TmxAppx -ModuleName TweakMaxing { throw 'Remove-AppxPackage: o pacote nao foi possivel localizar (0x80073CF1)' }
+        $a = [pscustomobject]@{ tipo = 'appx'; pacote = 'Contoso.Bloat'; storeId = '9NBLGGH4XYZ'; todosUsuarios = $false }
+        $t = New-TmxTweakTeste -Id 'APX-005' -Acoes @($a) -Reversivel 'parcial'
+
+        $r = Invoke-TmxAction -Action $a -Tweak $t -Profile $script:Perfil
+        $r.ok | Should -BeTrue
+        @(Get-TmxRegistrosDoDisco $script:run.StatePath)[0].status | Should -Be 'aplicado'
+    }
+
+    It 'erro real na remocao continua sendo falha' {
+        Mock Remove-TmxAppx -ModuleName TweakMaxing { throw 'Acesso negado' }
+        $a = [pscustomobject]@{ tipo = 'appx'; pacote = 'Contoso.Bloat'; storeId = '9NBLGGH4XYZ'; todosUsuarios = $false }
+        $t = New-TmxTweakTeste -Id 'APX-006' -Acoes @($a) -Reversivel 'parcial'
+
+        $r = Invoke-TmxAction -Action $a -Tweak $t -Profile $script:Perfil
+        $r.ok      | Should -BeFalse
+        $r.detalhe | Should -Match 'Acesso negado'
+        @(Get-TmxRegistrosDoDisco $script:run.StatePath)[0].status | Should -Be 'falha'
     }
 }
 
@@ -488,7 +484,7 @@ Describe 'Invoke-TmxAction feature' -Tag 'Engine' {
 
         (Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
 
-        Invoke-TmxUndoTeste -StatePath $script:run.StatePath | Out-Null
+        Undo-TweakMaxing -Latest 6> $null | Out-Null
         $global:TmxT_FeatCalls[1] | Should -Be 'Enable:Printing-XPSServices-Features'
     }
 
@@ -822,6 +818,104 @@ Describe 'Invoke-TmxPlan' -Tag 'Engine' {
             $global:TmxT_PosAplicar | Should -Be 1
         } finally {
             Remove-Item -LiteralPath 'Function:\Send-TmxSettingChange' -Force -ErrorAction SilentlyContinue
+        }
+    }
+
+    It 'falha parcial: registros das acoes que passaram e depois preenchido' {
+        $t = New-TmxTweakTeste -Id 'PAR-001' -Acoes @(
+            (New-TmxAcaoRegistro -Sub 'P' -Nome 'Parcial' -Valor 8),
+            [pscustomobject]@{ tipo = 'funcao'; nome = 'Set-TmxFalha'; parametros = $null }
+        )
+        $r = Invoke-TmxPlan -Plan (New-TmxPlanoTeste -Tweaks @($t)) -Profile $script:Perfil
+        $item = @($r.itens)[0]
+
+        $item.status    | Should -Be 'falha'
+        $item.registros | Should -Be 1
+        $item.detalhe   | Should -Match 'falhou de proposito'
+        # a 1a acao passou: o pos-check mostra o que sobrou no sistema
+        $item.depois    | Should -Not -BeNullOrEmpty
+        $item.depois    | Should -Match '8'
+        $item.depois    | Should -Match 'ruim'
+        (Get-TmxValorTeste 'P' 'Parcial') | Should -Be 8
+    }
+}
+
+Describe 'Invoke-TmxBackupForTweak (exports nao bloqueantes)' -Tag 'Engine' {
+
+    BeforeEach {
+        $script:run = New-TmxRun
+        $global:TmxT_PowBackups = 0
+        $global:TmxT_NetBackups = 0
+        $global:TmxT_Idx        = 1
+        $global:TmxT_NicValor   = '1'
+
+        # powercfg e netadapter "de verdade": o estado acompanha a escrita, senao
+        # o pos-check de Invoke-TmxPlan reprovaria o tweak e mascararia o aviso.
+        Mock Get-TmxActivePowerScheme -ModuleName TweakMaxing { [pscustomobject]@{ guid = '381b4222-f694-41f0-9685-ff5bb260df2e'; nome = 'Balanceado' } }
+        Mock Get-TmxPowerSettingIndex -ModuleName TweakMaxing { $global:TmxT_Idx }
+        Mock Invoke-TmxPowercfg -ModuleName TweakMaxing {
+            if (@($Arguments)[0] -eq '/setacvalueindex') { $global:TmxT_Idx = [int64](@($Arguments)[4]) }
+            [pscustomobject]@{ saida = ''; codigo = 0 }
+        }
+        Mock Get-TmxAdapterAdvanced -ModuleName TweakMaxing {
+            [pscustomobject]@{ RegistryKeyword = '*InterruptModeration'; DisplayName = 'Interrupt Moderation'; RegistryValue = @($global:TmxT_NicValor) }
+        }
+        Mock Set-TmxAdapterAdvanced -ModuleName TweakMaxing { $global:TmxT_NicValor = "$Value" }
+
+        # valores-alvo diferentes por tweak: se fossem iguais, o segundo cairia
+        # em 'jaAplicado' e nem chegaria ao backup.
+        function script:New-AcaoPwr { param($Valor) [pscustomobject]@{ tipo = 'powercfg'; subgrupo = 'SUB_PROCESSOR'; configuracao = 'PERFBOOSTMODE'; valor = $Valor; descricao = 'Boost' } }
+        function script:New-AcaoNic { param($Valor) [pscustomobject]@{ tipo = 'netadapter'; chaves = @('*InterruptModeration'); valorRegistro = $Valor; valorExibicao = 'x'; aplicarTodas = $false } }
+    }
+
+    It 'export do .pow falhando vira aviso, nao bloqueia, e o proximo tweak tenta de novo' {
+        Mock Backup-TmxPowerScheme -ModuleName TweakMaxing { $global:TmxT_PowBackups++; $null }
+
+        $plano = New-TmxPlanoTeste -Tweaks @(
+            (New-TmxTweakTeste -Id 'BKP-001' -Acoes @((New-AcaoPwr 0))),
+            (New-TmxTweakTeste -Id 'BKP-002' -Acoes @((New-AcaoPwr 2)))
+        )
+
+        $r = Invoke-TmxPlan -Plan $plano -Profile $script:Perfil
+
+        # tentou nos dois tweaks: a flag de "feito" so e marcada quando o arquivo sai
+        $global:TmxT_PowBackups | Should -Be 2
+        foreach ($item in @($r.itens)) {
+            $item.status | Should -Be 'aplicado'
+            @($item.avisos).Count | Should -Be 1
+            @($item.avisos)[0] | Should -Match 'esquema de energia'
+        }
+        # e o valor anterior foi para o state.json mesmo sem o .pow
+        @(Get-TmxRegistrosDoDisco $script:run.StatePath | Where-Object { $_.tipo -eq 'powercfg' }).Count | Should -Be 2
+    }
+
+    It 'export dos adaptadores falhando vira aviso e tambem e retentado' {
+        Mock Backup-TmxNetworkAdapters -ModuleName TweakMaxing { $global:TmxT_NetBackups++; $null }
+
+        $plano = New-TmxPlanoTeste -Tweaks @(
+            (New-TmxTweakTeste -Id 'BKP-003' -Acoes @((New-AcaoNic '0'))),
+            (New-TmxTweakTeste -Id 'BKP-004' -Acoes @((New-AcaoNic '2')))
+        )
+
+        $r = Invoke-TmxPlan -Plan $plano -Profile $script:Perfil
+        $global:TmxT_NetBackups | Should -Be 2
+        @(@($r.itens)[0].avisos)[0] | Should -Match 'adaptadores'
+        @($r.itens | Where-Object { $_.status -eq 'falha' }).Count | Should -Be 0
+    }
+
+    It 'export bem-sucedido acontece uma vez so na execucao' {
+        Mock Backup-TmxPowerScheme -ModuleName TweakMaxing { $global:TmxT_PowBackups++; [pscustomobject]@{ guid = 'g'; arquivo = 'x.pow' } }
+
+        $plano = New-TmxPlanoTeste -Tweaks @(
+            (New-TmxTweakTeste -Id 'BKP-005' -Acoes @((New-AcaoPwr 0))),
+            (New-TmxTweakTeste -Id 'BKP-006' -Acoes @((New-AcaoPwr 2)))
+        )
+
+        $r = Invoke-TmxPlan -Plan $plano -Profile $script:Perfil
+        $global:TmxT_PowBackups | Should -Be 1
+        foreach ($item in @($r.itens)) {
+            $item.status | Should -Be 'aplicado'
+            @($item.avisos).Count | Should -Be 0
         }
     }
 }

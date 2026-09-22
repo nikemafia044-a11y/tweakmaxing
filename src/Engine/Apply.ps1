@@ -21,11 +21,19 @@ function Invoke-TmxBackupForTweak {
     .NOTES
         M1: Backup-TmxRegistryHive devolvendo $null para um ramo existente e
         erro fatal do tweak - lanca para que o chamador marque 'falha'.
+
+        powercfg/netadapter sao diferentes: o valor anterior de cada acao ja vai
+        para o state.json, entao um export que falha vira aviso e nao bloqueio.
+        A flag de "feito" so e marcada quando o arquivo realmente saiu, para que
+        o proximo tweak tente de novo em vez de seguir sem backup nenhum.
+    .OUTPUTS
+        Os avisos acumulados (array vazio quando tudo saiu).
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)] $Tweak)
 
-    $acoes = @($Tweak.acoes)
+    $acoes  = @($Tweak.acoes)
+    $avisos = New-Object 'System.Collections.Generic.List[string]'
 
     $paths = @($acoes | Where-Object { "$($_.tipo)" -eq 'registry' -and $_.path } |
                 ForEach-Object { "$($_.path)" } | Select-Object -Unique)
@@ -37,17 +45,29 @@ function Invoke-TmxBackupForTweak {
     }
 
     if (@($acoes | Where-Object { "$($_.tipo)" -eq 'powercfg' }).Count -gt 0 -and -not $script:TmxPowerBackupFeito) {
-        Backup-TmxPowerScheme | Out-Null
-        $script:TmxPowerBackupFeito = $true
+        if (Backup-TmxPowerScheme) {
+            $script:TmxPowerBackupFeito = $true
+        } else {
+            $aviso = 'export do esquema de energia (.pow) falhou; o valor anterior de cada acao continua no state.json'
+            Write-TmxLog -Level WARN -Message "$aviso [$($Tweak.id)]"
+            $avisos.Add($aviso)
+        }
     }
     if (@($acoes | Where-Object { "$($_.tipo)" -eq 'netadapter' }).Count -gt 0 -and -not $script:TmxNetBackupFeito) {
-        Backup-TmxNetworkAdapters | Out-Null
-        $script:TmxNetBackupFeito = $true
+        if (Backup-TmxNetworkAdapters) {
+            $script:TmxNetBackupFeito = $true
+        } else {
+            $aviso = 'export dos adaptadores (net-adapters.json) falhou; o valor anterior de cada acao continua no state.json'
+            Write-TmxLog -Level WARN -Message "$aviso [$($Tweak.id)]"
+            $avisos.Add($aviso)
+        }
     }
     if (@($acoes | Where-Object { "$($_.tipo)" -eq 'bcdedit' }).Count -gt 0 -and -not $script:TmxBcdBackupFeito) {
         Backup-TmxBcd | Out-Null
         $script:TmxBcdBackupFeito = $true
     }
+
+    $avisos.ToArray()
 }
 
 function Invoke-TmxPostApply {
@@ -108,6 +128,7 @@ function Invoke-TmxPlan {
             antes        = $null
             depois       = $null
             registros    = 0
+            avisos       = @()
             requerReboot = [bool]$t.requerReboot
         }
         Write-Progress -Activity 'Aplicando tweaks' -Status "$($t.id) $($t.nome)" -PercentComplete ([int]($i / $selecionados.Count * 100))
@@ -138,7 +159,7 @@ function Invoke-TmxPlan {
         }
 
         try {
-            Invoke-TmxBackupForTweak -Tweak $t
+            $res.avisos = @(Invoke-TmxBackupForTweak -Tweak $t)
         } catch {
             $res.status  = 'falha'
             $res.detalhe = $_.Exception.Message
@@ -166,8 +187,12 @@ function Invoke-TmxPlan {
         $res.registros = $registros.Count
 
         if ($falhas.Count -gt 0) {
+            # Falha parcial: parte das acoes pode ter passado. Reler o estado
+            # mostra na UI (e no relatorio) o que de fato ficou no sistema.
             $res.status  = 'falha'
             $res.detalhe = ($falhas -join '; ')
+            $posFalha    = Test-TmxTweakApplied -Tweak $t -Profile $Profile
+            $res.depois  = $posFalha.atual
         } elseif ($naoSuportado) {
             $res.status  = 'naoSuportado'
             $res.detalhe = ($detalhes -join '; ')

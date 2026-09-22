@@ -62,8 +62,19 @@ function Test-TmxRegistryValueEqual {
         'QWord'       { return ([int64]$Atual -eq [int64]$Esperado) }
         'Binary'      { return ((@($Atual) -join ',') -eq (@($Esperado) -join ',')) }
         'MultiString' { return ((@($Atual) -join "`n") -eq (@($Esperado) -join "`n")) }
-        default       { return ("$Atual" -eq "$Esperado") }
+        default       { return ("$Atual" -ieq "$Esperado") }
     }
+}
+
+function Test-TmxAppxJaRemovido {
+    <#
+    .SYNOPSIS
+        Erro de remocao que na verdade significa "o pacote ja nao esta ai".
+        Nesse caso o alvo foi atingido e a acao nao deve virar falha.
+    #>
+    param([string] $Mensagem)
+    if (-not $Mensagem) { return $false }
+    [bool]($Mensagem -match '(?i)n[aã]o foi possivel localizar|n[aã]o encontrad|not found|is not installed|n[aã]o est[aá] instalado|0x80073CF1')
 }
 
 function Get-TmxRegistryCurrentValue {
@@ -311,12 +322,6 @@ function Invoke-TmxAction {
                 $tipoVal = "$(Get-TmxActionProp -Action $Action -Nome 'valueType' -Padrao 'DWord')"
 
                 if ($remover) {
-                    $cmd = Get-Command -Name 'Set-TmxRegistry' -ErrorAction SilentlyContinue
-                    if (-not ($cmd -and $cmd.Parameters.ContainsKey('Remove'))) {
-                        $out.naoSuportado = $true
-                        $out.detalhe = "Set-TmxRegistry -Remove indisponivel nesta versao do Core: $($Action.path)::$($Action.name)"
-                        break
-                    }
                     $rec = Set-TmxRegistry -Path "$($Action.path)" -Name "$($Action.name)" -Remove -TweakId $tweakId -PassThru
                 } else {
                     $val = ConvertTo-TmxRegistryValue -Value $Action.value -Type $tipoVal
@@ -373,7 +378,11 @@ function Invoke-TmxAction {
             'appx' {
                 $todos = [bool](Get-TmxActionProp -Action $Action -Nome 'todosUsuarios' -Padrao $false)
                 $storeId = Get-TmxActionProp -Action $Action -Nome 'storeId' -Padrao $null
-                $pacotes = @(Get-TmxAppx -Pacote "$($Action.pacote)" -TodosUsuarios:$todos)
+                # -AllUsers repete o mesmo PackageFullName uma vez por usuario:
+                # sem deduplicar sairiam N registros e N remocoes do mesmo pacote.
+                $pacotes = @(Get-TmxAppx -Pacote "$($Action.pacote)" -TodosUsuarios:$todos |
+                             Where-Object { $_ -and "$($_.PackageFullName)" } |
+                             Sort-Object PackageFullName -Unique)
 
                 if ($pacotes.Count -eq 0) {
                     $out.ok = $true; $out.naoAplicavel = $true
@@ -397,8 +406,15 @@ function Invoke-TmxAction {
                         }
                         Complete-TmxStateRecord -Record $rec -Ok $true | Out-Null
                     } catch {
-                        Complete-TmxStateRecord -Record $rec -Ok $false -Erro $_.Exception.Message | Out-Null
-                        $falhas += "$full : $($_.Exception.Message)"
+                        $msg = $_.Exception.Message
+                        if (Test-TmxAppxJaRemovido -Mensagem $msg) {
+                            # ja nao estava instalado: alvo atingido, nao e falha
+                            Complete-TmxStateRecord -Record $rec -Ok $true | Out-Null
+                            Write-TmxLog -Level WARN -Message "appx '$full' ja nao estava instalado: $msg"
+                        } else {
+                            Complete-TmxStateRecord -Record $rec -Ok $false -Erro $msg | Out-Null
+                            $falhas += "$full : $msg"
+                        }
                     }
                 }
                 $out.registros = $regs.ToArray()
