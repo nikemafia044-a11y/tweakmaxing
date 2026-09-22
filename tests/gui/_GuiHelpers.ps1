@@ -6,9 +6,21 @@
 # finally e o PID vai para tests/gui/out/gui.pid (tests/gui/out/ e gitignorado).
 
 $script:TmxGuiOutDir  = Join-Path $PSScriptRoot 'out'
-$script:TmxGuiPidFile = Join-Path $script:TmxGuiOutDir 'gui.pid'
 $script:TmxRepoRoot   = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
 $script:TmxAbTimeoutSeconds = 30
+
+function Get-TmxGuiPidFile {
+    <#
+    .SYNOPSIS
+        Arquivo de PID DESTA porta (out\gui-<porta>.pid).
+    .DESCRIPTION
+        Um unico gui.pid era global: dois testes de GUI em portas diferentes
+        rodando junto se matavam. Tudo aqui e por porta - arquivo de PID,
+        varredura de processo e checagem de socket.
+    #>
+    param([Parameter(Mandatory)] [int] $Port)
+    Join-Path $script:TmxGuiOutDir ("gui-{0}.pid" -f $Port)
+}
 
 function Initialize-TmxGuiOut {
     if (-not (Test-Path -LiteralPath $script:TmxGuiOutDir)) {
@@ -38,30 +50,43 @@ function Test-TmxPortOpen {
 function Clear-TmxGuiLeftovers {
     <#
     .SYNOPSIS
-        Derruba uma GUI de teste anterior (arquivo de PID) e o WebView2 orfao dela.
+        Derruba a GUI de teste DESTA porta e o WebView2 orfao dela.
+    .DESCRIPTION
+        Nada e morto por nome: so o PID registrado para esta porta e os
+        processos cuja linha de comando cita exatamente esta porta
+        (-DebugPort <porta> no runner, --remote-debugging-port=<porta> no
+        WebView2). Um teste de GUI em outra porta continua de pe.
     #>
-    param([int] $Port)
+    param([Parameter(Mandatory)] [int] $Port)
 
     Initialize-TmxGuiOut | Out-Null
 
-    if (Test-Path -LiteralPath $script:TmxGuiPidFile) {
+    $arquivoPid = Get-TmxGuiPidFile -Port $Port
+    if (Test-Path -LiteralPath $arquivoPid) {
         $anterior = 0
-        [int]::TryParse((Get-Content -LiteralPath $script:TmxGuiPidFile -Raw).Trim(), [ref]$anterior) | Out-Null
+        [int]::TryParse((Get-Content -LiteralPath $arquivoPid -Raw).Trim(), [ref]$anterior) | Out-Null
         if ($anterior -gt 0) { Stop-TmxProcessTree -ProcessId $anterior }
-        Remove-Item -LiteralPath $script:TmxGuiPidFile -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $arquivoPid -Force -ErrorAction SilentlyContinue
     }
 
-    # Um msedgewebview2 sobrevivente segura a porta CDP e o proximo Start falha
-    # sem explicacao. So sao mortos os que apontam para a pasta de dados de teste.
-    $alvo = [IO.Path]::Combine([IO.Path]::GetTempPath(), 'TweakMaxing_Tests')
-    foreach ($p in @(Get-CimInstance Win32_Process -Filter "Name='msedgewebview2.exe'" -ErrorAction SilentlyContinue)) {
-        if ("$($p.CommandLine)" -like "*$alvo*") { Stop-TmxProcessTree -ProcessId ([int]$p.ProcessId) }
+    # Sobrevivente sem arquivo de PID (a rodada anterior morreu no meio): um
+    # msedgewebview2 vivo segura a porta CDP e o proximo Start falha sem
+    # explicacao. As duas marcas abaixo carregam a porta, entao nunca acertam
+    # outra instancia.
+    $marcas = @("-DebugPort $Port", "--remote-debugging-port=$Port")
+    foreach ($nome in @('msedgewebview2.exe', 'powershell.exe')) {
+        foreach ($p in @(Get-CimInstance Win32_Process -Filter "Name='$nome'" -ErrorAction SilentlyContinue)) {
+            $linha = "$($p.CommandLine)"
+            if (-not $linha) { continue }
+            if ([int]$p.ProcessId -eq $PID) { continue }
+            foreach ($marca in $marcas) {
+                if ($linha -like "*$marca*") { Stop-TmxProcessTree -ProcessId ([int]$p.ProcessId); break }
+            }
+        }
     }
 
-    if ($Port -gt 0) {
-        $fim = (Get-Date).AddSeconds(10)
-        while ((Test-TmxPortOpen -Port $Port) -and (Get-Date) -lt $fim) { Start-Sleep -Milliseconds 300 }
-    }
+    $fim = (Get-Date).AddSeconds(10)
+    while ((Test-TmxPortOpen -Port $Port) -and (Get-Date) -lt $fim) { Start-Sleep -Milliseconds 300 }
 }
 
 function Start-TmxGui {
@@ -93,7 +118,7 @@ function Start-TmxGui {
         -RedirectStandardOutput (Join-Path $saida 'gui-stdout.txt') `
         -RedirectStandardError  (Join-Path $saida 'gui-stderr.txt')
 
-    Set-Content -LiteralPath $script:TmxGuiPidFile -Value "$($processo.Id)" -Encoding ASCII
+    Set-Content -LiteralPath (Get-TmxGuiPidFile -Port $Port) -Value "$($processo.Id)" -Encoding ASCII
 
     $limite = (Get-Date).AddSeconds($TimeoutSeconds)
     $versao = $null
@@ -130,11 +155,13 @@ function Stop-TmxGui {
     [CmdletBinding()]
     param([int] $Port = 9333)
 
-    try { Invoke-AB 'close' '--all' | Out-Null } catch { }
+    # 'close' e nao 'close --all': --all derrubaria tambem a sessao do
+    # agent-browser de um teste de GUI concorrente em outra porta.
+    try { Invoke-AB 'close' | Out-Null } catch { }
 
     Clear-TmxGuiLeftovers -Port $Port
 
-    if ($Port -gt 0 -and (Test-TmxPortOpen -Port $Port)) {
+    if (Test-TmxPortOpen -Port $Port) {
         Write-Warning "A porta $Port continua ocupada depois do Stop-TmxGui."
         return $false
     }
