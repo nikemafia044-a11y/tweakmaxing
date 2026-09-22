@@ -147,6 +147,18 @@ function Get-TmxState {
 }
 
 function Save-TmxState {
+    <#
+    .SYNOPSIS
+        Persiste o estado EM MEMORIA do run ativo.
+    .NOTES
+        Antes de escrever, rele o arquivo (se ja existir) e preserva
+        registros "estrangeiros": qualquer um cujo 'seq' a memoria nao
+        conhece. Isso acontece quando outro escritor grava diretamente no
+        state.json deste run sem passar pela memoria deste processo (ex.:
+        Save-TmxStateFile de um Undo-TweakMaxing rodando em outro processo).
+        O estrangeiro e anexado ao payload gravado, mas NAO e trazido para
+        $script:TmxStateRecords - este processo continua sem conhece-lo.
+    #>
     [CmdletBinding()]
     param()
     if (-not $script:TmxRun) { return }
@@ -156,11 +168,48 @@ function Save-TmxState {
     $registros = New-Object 'object[]' 0
     if ($null -ne $script:TmxStateRecords) { $registros = $script:TmxStateRecords.ToArray() }
 
+    $memSeqs = New-Object 'System.Collections.Generic.HashSet[int]'
+    $i = 0
+    foreach ($rec in $registros) {
+        $i++
+        [void]$memSeqs.Add((Get-TmxRecordSeq -Record $rec -Position $i))
+    }
+
+    $estrangeiros = New-Object 'System.Collections.Generic.List[object]'
+    if (Test-Path -LiteralPath $script:TmxRun.StatePath) {
+        try {
+            $existing = Get-Content -LiteralPath $script:TmxRun.StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+            $emDisco  = @($existing.registros | Where-Object { $null -ne $_ })
+            $p = 0
+            foreach ($discoRec in $emDisco) {
+                $p++
+                $seq = Get-TmxRecordSeq -Record $discoRec -Position $p
+                if (-not $memSeqs.Contains($seq)) {
+                    $estrangeiros.Add($discoRec)
+                    Write-TmxLog -Level WARN -Message "registro estrangeiro preservado seq=$seq" -Data @{ tweakId = $discoRec.tweakId; alvo = $discoRec.alvo }
+                }
+            }
+        } catch {
+            # Arquivo corrompido/sendo escrito nesse instante por outro processo:
+            # nao ha o que preservar com seguranca; segue so com a memoria.
+            Write-TmxLog -Level WARN -Message "Falha ao reler state.json para preservar registros estrangeiros: $($_.Exception.Message)"
+        }
+    }
+
+    # .ToArray() SEMPRE (mesmo vazio): New-Object 'object[]' N produz um array
+    # que o ConvertTo-Json deste PowerShell serializa errado, como
+    # {"value":[...],"Count":N} em vez de um array JSON puro. .ToArray() de
+    # uma List (mesmo vazia) nao tem esse problema.
+    $todosList = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($rec in $registros)    { $todosList.Add($rec) }
+    foreach ($rec in $estrangeiros) { $todosList.Add($rec) }
+    $todos = $todosList.ToArray()
+
     $payload = [ordered]@{
         runId      = $script:TmxRun.RunId
         criadoEm   = $script:TmxRun.CriadoEm.ToString('o')
         computador = $env:COMPUTERNAME
-        registros  = $registros
+        registros  = $todos
     }
     $json = $payload | ConvertTo-Json -Depth 12
     # -WhatIf:$false: o state.json e a garantia de reversao; nunca pode ser pulado.
@@ -190,6 +239,21 @@ function Save-TmxStateFile {
         escrita e so altera os registros que baterem por seq (ou posicao, na
         ausencia de seq), preservando registros novos que outro processo
         possa ter escrito nesse meio-tempo.
+    .NOTES
+        O fallback por posicao (quando 'seq' esta ausente) pressupoe que o
+        arquivo e append-only entre a leitura original e esta escrita: nada
+        reordena ou remove registros existentes, so acrescenta no fim. Se
+        essa premissa for violada, o fallback por posicao pode casar o
+        registro errado - por isso 'seq' e sempre preferido quando presente.
+
+        Colisao de 'seq' entre os REGISTROS INFORMADOS (dois ou mais
+        candidatos com o mesmo seq) e desempatada por (seq, tweakId, alvo)
+        contra cada registro em disco. Se, mesmo assim, mais de um candidato
+        continuar batendo (ambiguidade real), a mudanca NAO e aplicada aquele
+        registro, um aviso e logado e o seq entra na lista retornada.
+    .OUTPUTS
+        Array (possivelmente vazio) com os valores de 'seq' que nao puderam
+        ser aplicados por ambiguidade.
     #>
     [CmdletBinding()]
     param(
@@ -200,13 +264,18 @@ function Save-TmxStateFile {
         throw "state.json nao encontrado em: $StatePath"
     }
 
-    # Indexa as mudancas (memoria) por seq/posicao ANTES de reler o disco.
-    $mudancas = @{}
+    # Indexa as mudancas (memoria) por seq ANTES de reler o disco. Guarda TODOS
+    # os candidatos de cada seq (pode haver colisao) para desempatar depois
+    # por (seq, tweakId, alvo) contra cada registro em disco especifico.
+    $porSeq = @{}
     $i = 0
     foreach ($rec in @($Registros)) {
         $i++
         $chave = Get-TmxRecordSeq -Record $rec -Position $i
-        $mudancas[$chave] = $rec
+        if (-not $porSeq.ContainsKey($chave)) {
+            $porSeq[$chave] = New-Object 'System.Collections.Generic.List[object]'
+        }
+        $porSeq[$chave].Add($rec)
     }
 
     # Rele o arquivo AGORA (o mais perto possivel da escrita) para minimizar
@@ -214,31 +283,53 @@ function Save-TmxStateFile {
     $existing = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
     $emDisco  = @($existing.registros | Where-Object { $null -ne $_ })
 
+    $naoAplicados = New-Object 'System.Collections.Generic.List[int]'
     $pos = 0
     foreach ($discoRec in $emDisco) {
         $pos++
         $chave = Get-TmxRecordSeq -Record $discoRec -Position $pos
-        if ($mudancas.ContainsKey($chave)) {
-            $match = $mudancas[$chave]
-            $discoRec | Add-Member -NotePropertyName status      -NotePropertyValue $match.status -Force
-            $discoRec | Add-Member -NotePropertyName revertidoEm -NotePropertyValue $match.revertidoEm -Force
+        if (-not $porSeq.ContainsKey($chave)) { continue }
+
+        $candidatos = $porSeq[$chave]
+        $match = $null
+        if ($candidatos.Count -eq 1) {
+            $match = $candidatos[0]
+        } else {
+            # Colisao de seq entre as mudancas: desempata por (seq, tweakId, alvo).
+            $refinados = @($candidatos | Where-Object {
+                "$($_.tweakId)" -eq "$($discoRec.tweakId)" -and "$($_.alvo)" -eq "$($discoRec.alvo)"
+            })
+            if ($refinados.Count -eq 1) { $match = $refinados[0] }
         }
+
+        if ($null -eq $match) {
+            if (-not $naoAplicados.Contains($chave)) {
+                $naoAplicados.Add($chave)
+                Write-TmxLog -Level WARN -Message 'seq duplicado; mudanca nao aplicada' -Data @{ seq = $chave }
+            }
+            continue
+        }
+
+        $discoRec | Add-Member -NotePropertyName status      -NotePropertyValue $match.status -Force
+        $discoRec | Add-Member -NotePropertyName revertidoEm -NotePropertyValue $match.revertidoEm -Force
     }
 
-    # .ToArray()/array vazio: mesma cautela do Save-TmxState (ver comentario la).
-    $arr = New-Object 'object[]' 0
-    if ($emDisco.Count -gt 0) { $arr = $emDisco }
-
+    # $emDisco ja e um array puro (via @(...) sobre pipeline, nao New-Object) -
+    # serializa certo mesmo vazio (ver nota em Save-TmxState sobre o problema
+    # especifico de New-Object 'object[]' N com ConvertTo-Json).
     $payload = [ordered]@{
         runId      = $existing.runId
         criadoEm   = $existing.criadoEm
         computador = $existing.computador
-        registros  = $arr
+        registros  = $emDisco
     }
     $json = $payload | ConvertTo-Json -Depth 12
     # -WhatIf:$false: reescrever o state.json apos reversao e a garantia contra
     # reverter o mesmo registro duas vezes; nunca pode ser pulado.
     Set-Content -LiteralPath $StatePath -Value $json -Encoding UTF8 -WhatIf:$false
+
+    # ,@(): forca a saida a ser SEMPRE um array (mesmo vazio/1 item) para quem capturar.
+    ,@($naoAplicados.ToArray())
 }
 
 function Import-TmxState {
@@ -247,7 +338,12 @@ function Import-TmxState {
         Le os registros de um state.json. Nao depende do estado em memoria.
     .NOTES
         Registros antigos sem 'seq' recebem seq = posicao (1-based) no
-        arquivo, para que Save-TmxStateFile ainda consiga mescla-los.
+        arquivo, para que Save-TmxStateFile ainda consiga mescla-los. Esse
+        fallback por posicao pressupoe um arquivo append-only: se algo
+        reordenar ou remover registros entre esta leitura e uma escrita
+        posterior (Save-TmxStateFile), a posicao deixa de identificar o
+        mesmo registro com seguranca - por isso 'seq' real (quando presente)
+        e sempre preferido a posicao.
     #>
     [CmdletBinding()]
     param(

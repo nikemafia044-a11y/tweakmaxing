@@ -191,6 +191,16 @@ function Undo-TweakMaxing {
         Undo-TweakMaxing -RunId 20250909-120000-1a2b
     .EXAMPLE
         Undo-TweakMaxing -StatePath 'C:\...\state.json' -WhatIf
+    .NOTES
+        Se o run apontado por -StatePath (ou resolvido por -Latest/-RunId)
+        ainda esta ativo NESTE processo, a reversao opera sobre os registros
+        em memoria e persiste com Save-TmxState (sem risco de concorrencia:
+        so este processo, dono do run ativo, deveria estar escrevendo nele).
+        Caso contrario (run de outro processo ou ja encerrado), le do disco e
+        persiste com Save-TmxStateFile, que faz merge por 'seq' - o cenario
+        aqui e justamente permitir que OUTRO escritor (tipicamente o processo
+        dono do run) continue gravando no mesmo arquivo durante a reversao
+        sem perder dados.
     #>
     [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Latest')]
     param(

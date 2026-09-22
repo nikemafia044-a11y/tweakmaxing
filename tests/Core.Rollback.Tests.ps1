@@ -467,3 +467,122 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
         ($st | Where-Object { $_.tweakId -eq 'CONCORRENTE' }).status | Should -Be 'aplicado'
     }
 }
+
+Describe 'Save-TmxState' -Tag 'Rollback' {
+
+    BeforeEach {
+        Remove-TmxTestKey -SubKey $script:TestSubKey
+        New-Item -Path $script:TestRoot -Force | Out-Null
+        $script:run = New-TmxRun
+    }
+
+    It 'preserva registro estrangeiro escrito diretamente no arquivo (run ativo)' {
+        $key1 = "$script:TestRoot\Estr1"
+        New-Item -Path $key1 -Force | Out-Null
+        New-ItemProperty -Path $key1 -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+
+        Set-TmxRegistry -Path $key1 -Name 'V' -Value 2 -Type DWord -TweakId 'MEM-1'
+        $statePath = $script:run.StatePath
+
+        # simula outro escritor gravando diretamente no arquivo, sem passar pela memoria
+        $json = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+        $estranho = [pscustomobject]@{
+            tweakId = 'ESTRANHO'; tipo = 'registry'; alvo = 'x::y'; seq = 777
+            detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+            existiaAntes = $false; valorNovo = $null
+            reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+        }
+        $json.registros = @($json.registros) + $estranho
+        $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath -Encoding UTF8
+
+        $key2 = "$script:TestRoot\Estr2"
+        New-Item -Path $key2 -Force | Out-Null
+        Set-TmxRegistry -Path $key2 -Name 'V' -Value 9 -Type DWord -TweakId 'MEM-2' 3> $null
+
+        $st = @(Import-TmxState -StatePath $statePath)
+        $st.Count | Should -Be 3
+        ($st | Where-Object { $_.tweakId -eq 'MEM-1' }).status    | Should -Be 'aplicado'
+        ($st | Where-Object { $_.tweakId -eq 'MEM-2' }).status    | Should -Be 'aplicado'
+        ($st | Where-Object { $_.tweakId -eq 'ESTRANHO' }).seq    | Should -Be 777
+        ($st | Where-Object { $_.tweakId -eq 'ESTRANHO' }).status | Should -Be 'aplicado'
+
+        # o estrangeiro nunca entrou na memoria deste processo
+        (Get-TmxState).Count | Should -Be 2
+    }
+}
+
+Describe 'Save-TmxStateFile' -Tag 'Rollback' {
+
+    BeforeEach {
+        Remove-TmxTestKey -SubKey $script:TestSubKey
+        New-Item -Path $script:TestRoot -Force | Out-Null
+        $script:run = New-TmxRun
+    }
+
+    It 'seq duplicado e ambiguo mesmo apos desempate: mudanca nao aplicada e seq retornado' {
+        $statePath = $script:run.StatePath
+
+        $json = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+        $json.registros = @(
+            [pscustomobject]@{
+                tweakId = 'DUP'; tipo = 'registry'; alvo = 'a::b'; seq = 5
+                detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                existiaAntes = $false; valorNovo = $null
+                reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            },
+            [pscustomobject]@{
+                tweakId = 'OK'; tipo = 'registry'; alvo = 'c::d'; seq = 6
+                detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                existiaAntes = $false; valorNovo = $null
+                reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            }
+        )
+        $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath -Encoding UTF8
+
+        # duas mudancas com o MESMO seq=5, tweakId e alvo - ambiguo mesmo apos
+        # desempate por (seq, tweakId, alvo), pois sao indistinguiveis entre si.
+        $mudanca1  = [pscustomobject]@{ tweakId = 'DUP'; alvo = 'a::b'; seq = 5; status = 'revertido'; revertidoEm = (Get-Date).ToString('o') }
+        $mudanca2  = [pscustomobject]@{ tweakId = 'DUP'; alvo = 'a::b'; seq = 5; status = 'revertido'; revertidoEm = (Get-Date).ToString('o') }
+        $mudancaOk = [pscustomobject]@{ tweakId = 'OK';  alvo = 'c::d'; seq = 6; status = 'revertido'; revertidoEm = (Get-Date).ToString('o') }
+
+        $naoAplicados = Save-TmxStateFile -StatePath $statePath -Registros @($mudanca1, $mudanca2, $mudancaOk) 3> $null
+
+        @($naoAplicados) | Should -Be @(5)
+
+        $st = @(Import-TmxState -StatePath $statePath)
+        ($st | Where-Object { $_.tweakId -eq 'DUP' }).status | Should -Be 'aplicado'
+        ($st | Where-Object { $_.tweakId -eq 'OK' }).status  | Should -Be 'revertido'
+    }
+
+    It 'seq duplicado com tweakId/alvo diferentes e desempatado corretamente' {
+        $statePath = $script:run.StatePath
+
+        $json = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+        $json.registros = @(
+            [pscustomobject]@{
+                tweakId = 'A'; tipo = 'registry'; alvo = 'x::y'; seq = 5
+                detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                existiaAntes = $false; valorNovo = $null
+                reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            },
+            [pscustomobject]@{
+                tweakId = 'B'; tipo = 'registry'; alvo = 'p::q'; seq = 5
+                detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                existiaAntes = $false; valorNovo = $null
+                reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            }
+        )
+        $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath -Encoding UTF8
+
+        $mudancaA = [pscustomobject]@{ tweakId = 'A'; alvo = 'x::y'; seq = 5; status = 'revertido'; revertidoEm = (Get-Date).ToString('o') }
+        $mudancaB = [pscustomobject]@{ tweakId = 'B'; alvo = 'p::q'; seq = 5; status = 'revertido'; revertidoEm = (Get-Date).ToString('o') }
+
+        $naoAplicados = Save-TmxStateFile -StatePath $statePath -Registros @($mudancaA, $mudancaB)
+
+        @($naoAplicados).Count | Should -Be 0
+
+        $st = @(Import-TmxState -StatePath $statePath)
+        ($st | Where-Object { $_.tweakId -eq 'A' }).status | Should -Be 'revertido'
+        ($st | Where-Object { $_.tweakId -eq 'B' }).status | Should -Be 'revertido'
+    }
+}
