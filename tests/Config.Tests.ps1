@@ -67,7 +67,6 @@ Describe 'src nao executa texto do catalogo' -Tag 'Config' {
         $script:SitiosDinamicosConhecidos = @{
             'Catalog.ps1'      = 'OK - o validador cita os proprios padroes proibidos dentro da regex que procura por eles; nada e executado.'
             'Start-TmxJob.ps1' = 'OK - scriptblock tem afinidade com o runspace onde nasceu e nao atravessa a fronteira; o texto vem de $Handler.ToString(), um scriptblock ja compilado neste processo, nunca de JSON.'
-            '_Wrappers.ps1'    = 'PENDENTE (src/functions/install, Task de instalacao) - executa o install.ps1 do Chocolatey baixado em tempo de execucao. O SHA-256 e calculado e registrado no log, mas NAO e comparado com um valor esperado, entao nao e um controle: e so trilha de auditoria. Fora do escopo da Task 6; reportado ao coordenador.'
         }
 
         # Comentario de verdade e o que o parser do PowerShell marca como

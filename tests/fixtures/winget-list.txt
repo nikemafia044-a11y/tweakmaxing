@@ -1,0 +1,13 @@
+
+Name                                       Id                                    Version         Available       Source
+------------------------------------------------------------------------------------------------------------------------
+7-Zip                                      7zip.7zip                            23.01           -               winget
+Firefox                                    Mozilla.Firefox                      129.0.1         130.0.2         winget
+Google Chrome                              Google.Chrome                        127.0.6533.89   -               winget
+アプリ名                                     Wide.App                             1.0.0           -               winget
+Microsoft Edge                             Microsoft.Edge                       127.0.2651.86   128.0.1.0       winget
+Visual Studio Code                         Microsoft.VisualStudioCode           1.92.2          -               winget
+Notepad++ (64-bit x64)                     Notepad++.Notepad++                  8.6.9           -               winget
+PowerToys (Preview)                        Microsoft.PowerToys                  0.83.0          0.84.0          winget
+
+8 upgrades available.
