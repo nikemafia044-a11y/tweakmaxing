@@ -20,8 +20,14 @@ function Set-TmxEnumRoot {
     .SYNOPSIS
         Hook de teste: redireciona a raiz Enum usada para achar a chave da GPU
         (padrao HKLM:\SYSTEM\CurrentControlSet\Enum).
+    .NOTES
+        So tem efeito com $env:TWEAKMAXING_TEST_HOOKS -eq '1'. Sem essa variavel
+        (o caso normal, fora dos testes), lanca - ninguem deve conseguir
+        redirecionar a raiz do registro que Set-TmxGpuMsi escreve fora de um
+        ambiente de teste que ligou o hook de proposito.
     #>
     param([Parameter(Mandatory)] [string] $Path)
+    if ($env:TWEAKMAXING_TEST_HOOKS -ne '1') { throw 'hook de teste desabilitado' }
     $script:TmxEnumRoot = $Path
 }
 

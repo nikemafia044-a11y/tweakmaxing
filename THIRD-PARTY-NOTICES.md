@@ -71,3 +71,5 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.```
 ## 3. CS2Tuner
 
 Mesmo autor do TweakMaxing. `src/Core` e `src/Engine` são portas do Core/Engine do CS2Tuner (ponto de restauração verificado, `state.json` antes da escrita, rollback por estratégia, avaliador de condições sem `Invoke-Expression`).
+
+A categoria "Jogos" (`src/config/tweaks.jogos.json`) é gerada por `tools/Convert-CS2TunerCatalog.ps1` a partir do catálogo de tweaks do CS2Tuner (`data/tweaks.json`, 47 tweaks). O CS2Tuner não é um repositório público, então — diferente do WinUtil, clonado sob `reference/` e ignorado pelo git — uma cópia desse catálogo de origem está commitada em `tools/data/cs2tuner-tweaks.json`, usada como `-Source` padrão do conversor. `src/functions/tweaks/{NicPower,DefenderExclusion,Trim,Pagefile,GpuMsi,Native}.ps1` são portas dos handlers nomeados que esse catálogo referencia (`Tweaks/Power.ps1`, `Tweaks/Services.ps1`, `Tweaks/Storage.ps1`, `Tweaks/CpuScheduling.ps1`, `Profile/Native.ps1`, `Tweaks/InputStack.ps1`).

@@ -8,6 +8,16 @@
     <Out>/tweaks.jogos.json no schema descrito em src/Engine/Catalog.ps1
     (Test-TmxCatalog).
 
+    Origem do catalogo: o CS2Tuner e do mesmo autor do TweakMaxing (ver
+    THIRD-PARTY-NOTICES.md, secao 3), mas nao e publico, entao o data/tweaks.json
+    de origem nao pode ser referenciado por caminho absoluto fora deste
+    repositorio (quebraria em qualquer outra maquina/CI). Por isso uma copia
+    commitada vive em tools/data/cs2tuner-tweaks.json - mesmo padrao usado por
+    Convert-WinUtilCatalog.ps1 com reference/winutil, so que versionada porque
+    a fonte nao e um clone git publico reproduzivel. -Source usa essa copia por
+    padrao; passe outro caminho so para reconverter a partir de uma copia mais
+    nova do CS2Tuner.
+
     Mapeamento por tweak (ver docs da tarefa):
       id           : JOG-001..JOG-NNN, ordem do arquivo de origem
       origem       : { cs2tuner: '<id original>' }
@@ -29,18 +39,22 @@
     chaves estavel. Rodar duas vezes produz bytes identicos.
 
 .PARAMETER Source
-    Caminho do data/tweaks.json de origem (CS2Tuner).
+    Caminho do data/tweaks.json de origem (CS2Tuner). Padrao: a copia
+    commitada em tools/data/cs2tuner-tweaks.json (relativo a este script).
 
 .PARAMETER Out
     Diretorio de saida (normalmente src/config). O arquivo gravado e
     tweaks.jogos.json dentro dele.
 
 .EXAMPLE
+    .\tools\Convert-CS2TunerCatalog.ps1 -Out src\config
+
+.EXAMPLE
     .\tools\Convert-CS2TunerCatalog.ps1 -Source C:\Users\fantasy\Desktop\tweak\data\tweaks.json -Out src\config
 #>
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory)] [string] $Source,
+    [string] $Source = (Join-Path $PSScriptRoot 'data\cs2tuner-tweaks.json'),
     [Parameter(Mandatory)] [string] $Out
 )
 

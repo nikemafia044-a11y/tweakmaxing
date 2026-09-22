@@ -11,7 +11,7 @@ BeforeAll {
 
     $script:RepoRaiz   = Split-Path $PSScriptRoot -Parent
     $script:Conversor  = Join-Path $script:RepoRaiz 'tools\Convert-CS2TunerCatalog.ps1'
-    $script:FonteCs2   = 'C:\Users\fantasy\Desktop\tweak\data\tweaks.json'
+    $script:FonteCs2   = Join-Path $script:RepoRaiz 'tools\data\cs2tuner-tweaks.json'
     $script:ConfigDir  = Join-Path $script:RepoRaiz 'src\config'
 
     $script:Temp = Join-Path ([System.IO.Path]::GetTempPath()) ('TmxConvertJogos_{0}' -f ([guid]::NewGuid().ToString('N')))
@@ -62,6 +62,13 @@ Describe 'Convert-CS2TunerCatalog contagens e formato' -Tag 'Jogos' {
     It 'falha claramente quando a fonte nao existe' {
         { & $script:Conversor -Source (Join-Path $script:Temp 'nao-existe.json') -Out (Join-Path $script:Temp 'saida-x') } |
             Should -Throw -ExpectedMessage '*nao encontrado*'
+    }
+
+    It 'sem -Source, usa por padrao a copia commitada em tools/data/cs2tuner-tweaks.json' {
+        $saidaPadrao = Join-Path $script:Temp 'saida-fonte-padrao'
+        $resumo = & $script:Conversor -Out $saidaPadrao
+        $resumo.tweaks | Should -Be 47
+        @((Get-Content -LiteralPath (Join-Path $saidaPadrao 'tweaks.jogos.json') -Raw -Encoding UTF8 | ConvertFrom-Json).tweaks).Count | Should -Be 47
     }
 }
 

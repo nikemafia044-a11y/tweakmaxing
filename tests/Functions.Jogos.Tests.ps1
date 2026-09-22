@@ -285,11 +285,49 @@ Describe 'Set-TmxPagefile' -Tag 'Jogos' {
         Undo-TmxPagefile -Estado @{ automatico = $true; arquivos = @() } | Should -Match 'automatico=True'
         $global:TmxT_Chamadas[0].automatico | Should -BeTrue
     }
+
+    It 'poscondicao: se o CIM nao refletir o pedido apos escrever, ok=$false com detalhe' {
+        # Simula Set-CimInstance/New-CimInstance "bem-sucedido" (sem excecao) mas o
+        # estado relido nao bate com o pedido (2 arquivos em vez de 1) - mesmo
+        # espirito do A1 do Trim: nao confiar so na ausencia de excecao.
+        Mock Set-TmxPagefileState -ModuleName TweakMaxing {
+            param($Automatico, $Arquivos)
+            Add-TmxChamada ([pscustomobject]@{ automatico = $Automatico; arquivos = @($Arquivos) })
+            $global:TmxT_Pagefile = [pscustomobject]@{
+                automatico = $Automatico
+                arquivos   = @(
+                    [pscustomobject]@{ nome = 'C:\pagefile.sys'; inicial = 16384; maximo = 16384 }
+                    [pscustomobject]@{ nome = 'D:\pagefile.sys'; inicial = 4096;  maximo = 4096 }
+                )
+            }
+        }
+
+        $t = New-TmxTweakFake -Id 'JOG-043'
+        $r = Set-TmxPagefile -Tweak $t -Profile $script:Perfil -Parametros @{ tamanhoMB = 16384 }
+
+        $r.ok      | Should -BeFalse
+        $r.detalhe | Should -Match 'poscondicao'
+
+        $recs = @(Get-TmxRegistrosDoDisco $script:run.StatePath)
+        $recs.Count     | Should -Be 1
+        $recs[0].status | Should -Be 'falha'
+        "$($recs[0].erro)" | Should -Match 'poscondicao'
+    }
 }
 
 # ---------------------------------------------------------------------------
 
 Describe 'Set-TmxGpuMsi' -Tag 'Jogos' {
+
+    BeforeAll {
+        # Set-TmxEnumRoot so aceita redirecionar a raiz do registro com este
+        # hook ligado (fora de teste ele lanca 'hook de teste desabilitado').
+        $env:TWEAKMAXING_TEST_HOOKS = '1'
+    }
+
+    AfterAll {
+        Remove-Item Env:\TWEAKMAXING_TEST_HOOKS -ErrorAction SilentlyContinue
+    }
 
     BeforeEach {
         Remove-TmxTestKey -SubKey 'Jogos\GpuMsi'
@@ -302,6 +340,15 @@ Describe 'Set-TmxGpuMsi' -Tag 'Jogos' {
     AfterEach {
         Set-TmxEnumRoot -Path 'HKLM:\SYSTEM\CurrentControlSet\Enum'
         Remove-TmxTestKey -SubKey 'Jogos\GpuMsi'
+    }
+
+    It 'Set-TmxEnumRoot lanca quando o hook de teste esta desligado' {
+        Remove-Item Env:\TWEAKMAXING_TEST_HOOKS -ErrorAction SilentlyContinue
+        try {
+            { Set-TmxEnumRoot -Path $script:EnumRoot } | Should -Throw '*hook de teste desabilitado*'
+        } finally {
+            $env:TWEAKMAXING_TEST_HOOKS = '1'
+        }
     }
 
     It 'sem MessageSignaledInterruptProperties: naoAplicavel e nada e escrito' {

@@ -70,8 +70,23 @@ function Set-TmxPagefile {
             -ValorAnterior "auto=$($antes.automatico)" -ValorNovo "$arquivo fixo $alvoMB MB"
     try {
         Set-TmxPagefileState -Automatico $false -Arquivos @([pscustomobject]@{ nome = $arquivo; inicial = $alvoMB; maximo = $alvoMB })
-        Complete-TmxStateRecord -Record $rec -Ok $true | Out-Null
-        [pscustomobject]@{ ok = $true; detalhe = "pagefile fixo em $alvoMB MB ($arquivo); efetivo apos reboot"; registro = $rec }
+
+        # Poscondicao: rele o estado e so confirma sucesso se o CIM realmente
+        # ficou como pedido (mesmo espirito do A1 do Trim - nao confiar so na
+        # ausencia de excecao do Set-CimInstance/New-CimInstance).
+        $depois = Get-TmxPagefileState
+        $ok = (-not $depois.automatico) -and (@($depois.arquivos).Count -eq 1) -and
+              ($depois.arquivos[0].inicial -eq $alvoMB) -and ($depois.arquivos[0].maximo -eq $alvoMB)
+
+        if ($ok) {
+            Complete-TmxStateRecord -Record $rec -Ok $true | Out-Null
+            [pscustomobject]@{ ok = $true; detalhe = "pagefile fixo em $alvoMB MB ($arquivo); efetivo apos reboot"; registro = $rec }
+        } else {
+            $resumoDepois = "auto=$($depois.automatico); $(@($depois.arquivos | ForEach-Object { "$($_.nome) $($_.inicial)-$($_.maximo)" }) -join ', ')"
+            $erro = "poscondicao falhou apos a escrita: esperado fixo $alvoMB MB, ficou [$resumoDepois]"
+            Complete-TmxStateRecord -Record $rec -Ok $false -Erro $erro | Out-Null
+            [pscustomobject]@{ ok = $false; detalhe = $erro; registro = $rec }
+        }
     } catch {
         Complete-TmxStateRecord -Record $rec -Ok $false -Erro $_.Exception.Message | Out-Null
         [pscustomobject]@{ ok = $false; detalhe = $_.Exception.Message; registro = $rec }
