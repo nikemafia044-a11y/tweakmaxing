@@ -1,0 +1,201 @@
+/* microwin.css - aba "MicroWin".
+   Só tokens de app.css: nenhuma cor literal nasce aqui, para o tema claro
+   (prefers-color-scheme) continuar valendo sem uma segunda folha. */
+
+.mw-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid var(--linha);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--raio);
+  background: var(--panel);
+  color: var(--fg);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+#mw-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 1100px) {
+  #mw-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+.mw-col {
+  min-width: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel);
+}
+
+.mw-col h3 {
+  margin: 14px 0 6px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.mw-col h3:first-child { margin-top: 0; }
+
+.mw-nota {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mw-rotulo {
+  display: block;
+  margin: 10px 0 4px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mw-linha {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.mw-linha .campo { flex: 1 1 160px; min-width: 0; }
+
+.mw-erro {
+  margin: 4px 0 0;
+  min-height: 16px;
+  color: var(--danger);
+  font-size: 12px;
+}
+
+.mw-erro:empty { min-height: 0; }
+
+/* ---------- pré-requisitos ---------- */
+
+.mw-pre-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px 0;
+  font-size: 13px;
+}
+
+.mw-pre-marca {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.mw-pre-ok  .mw-pre-marca { color: var(--ok); }
+.mw-pre-nao .mw-pre-marca { color: var(--danger); }
+
+.mw-pre-texto { min-width: 0; }
+
+.mw-pre-detalhe {
+  display: block;
+  color: var(--muted);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.mw-adk {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---------- lista de aplicativos ---------- */
+
+#mw-apps {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 6px 8px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel-2);
+}
+
+.mw-app {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 4px 2px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.mw-app input[type="checkbox"] {
+  margin-top: 3px;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+}
+
+.mw-app-nome { font-weight: 600; }
+
+.mw-app-pacote {
+  display: block;
+  color: var(--muted);
+  font-size: 11px;
+  word-break: break-all;
+}
+
+#mw-pacotes-bloco {
+  margin-top: 12px;
+  font-size: 13px;
+}
+
+#mw-pacotes-bloco summary {
+  cursor: pointer;
+  color: var(--muted);
+  padding: 4px 0;
+}
+
+#mw-pacotes { width: 100%; box-sizing: border-box; resize: vertical; }
+
+/* ---------- ação ---------- */
+
+.mw-gerar {
+  margin-top: 14px;
+  width: 100%;
+}
+
+.mw-progresso {
+  margin: 8px 0 0;
+  min-height: 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.mw-progresso:empty { min-height: 0; margin: 0; }
+
+/* ---------- modais ---------- */
+
+.mw-resumo {
+  margin: 0 0 10px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.mw-passos {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.mw-passo-falhou { color: var(--danger); }
+
+.mw-caminho {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+  word-break: break-all;
+}

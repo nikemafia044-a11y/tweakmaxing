@@ -8,6 +8,7 @@
 <link rel="stylesheet" href="tweaks.css">
 <link rel="stylesheet" href="configure.css">
 <link rel="stylesheet" href="updates.css">
+<link rel="stylesheet" href="microwin.css">
 </head>
 <body>
 
@@ -78,7 +79,80 @@
 
   <section id="tab-microwin" class="tab" hidden>
     <h2>MicroWin</h2>
-    <p class="vazio">Em construção</p>
+    <p class="mw-banner" role="note">
+      <strong>Avançado</strong> — leva 20 a 60 min, usa até 20 GB e exige o Windows ADK (oscdimg).
+      A ISO original não é alterada.
+    </p>
+
+    <div id="mw-grid">
+      <section class="mw-col" aria-labelledby="mw-h-pre">
+        <h3 id="mw-h-pre">Pré-requisitos</h3>
+        <div id="mw-prereq">
+          <p class="vazio">Verificando…</p>
+        </div>
+
+        <h3 id="mw-h-iso">ISO de origem</h3>
+        <p class="mw-nota">Use uma ISO oficial do Windows. Ela é apenas lida: nada é gravado nela.</p>
+        <div class="mw-linha">
+          <input type="text" id="mw-iso" class="campo" spellcheck="false" autocomplete="off"
+                 placeholder="C:\ISOs\Windows11.iso" aria-label="Caminho da ISO de origem">
+          <button type="button" id="mw-escolher" class="btn">Escolher…</button>
+          <button type="button" id="mw-ler" class="btn">Ler ISO</button>
+        </div>
+        <p id="mw-iso-erro" class="mw-erro" role="alert"></p>
+
+        <label class="mw-rotulo" for="mw-edicao">Edição do Windows</label>
+        <select id="mw-edicao" class="campo" disabled>
+          <option value="">Leia a ISO primeiro</option>
+        </select>
+      </section>
+
+      <section class="mw-col" aria-labelledby="mw-h-apps">
+        <h3 id="mw-h-apps">Aplicativos a remover</h3>
+        <div class="mw-linha">
+          <button type="button" id="mw-recomendados" class="btn">Marcar recomendados</button>
+          <button type="button" id="mw-limpar-apps" class="btn">Limpar</button>
+          <span id="mw-apps-contagem" class="mw-nota"></span>
+        </div>
+        <div id="mw-apps" role="group" aria-labelledby="mw-h-apps">
+          <p class="vazio">Carregando…</p>
+        </div>
+
+        <details id="mw-pacotes-bloco">
+          <summary>Pacotes do Windows (avançado)</summary>
+          <p class="mw-nota">Um nome por linha. Cada linha é casada por pedaço do nome do pacote
+            (ex.: <code>Microsoft-Windows-InternetExplorer</code>). Deixe vazio se não souber.</p>
+          <textarea id="mw-pacotes" class="campo" rows="4" spellcheck="false"
+                    aria-label="Pacotes do Windows a remover"></textarea>
+        </details>
+      </section>
+
+      <section class="mw-col" aria-labelledby="mw-h-conta">
+        <h3 id="mw-h-conta">Conta local</h3>
+        <p class="mw-nota">Criada pelo autounattend.xml da ISO nova, com idioma pt-BR.</p>
+
+        <label class="mw-rotulo" for="mw-usuario">Usuário</label>
+        <input type="text" id="mw-usuario" class="campo" spellcheck="false" autocomplete="off"
+               maxlength="20" placeholder="usuario">
+        <p id="mw-erro-usuario" class="mw-erro" role="alert"></p>
+
+        <label class="mw-rotulo" for="mw-senha">Senha</label>
+        <input type="password" id="mw-senha" class="campo" autocomplete="new-password">
+
+        <label class="mw-rotulo" for="mw-senha2">Confirmar senha</label>
+        <input type="password" id="mw-senha2" class="campo" autocomplete="new-password">
+        <p id="mw-erro-senha" class="mw-erro" role="alert"></p>
+
+        <h3 id="mw-h-destino">Destino</h3>
+        <label class="mw-rotulo" for="mw-destino">Pasta onde gravar a ISO nova</label>
+        <input type="text" id="mw-destino" class="campo" spellcheck="false" autocomplete="off"
+               placeholder="C:\ISOs">
+        <p id="mw-erro-destino" class="mw-erro" role="alert"></p>
+
+        <button type="button" id="mw-gerar" class="btn btn-primary mw-gerar">Gerar ISO</button>
+        <p id="mw-progresso" class="mw-progresso" aria-live="polite"></p>
+      </section>
+    </div>
   </section>
 </main>
 

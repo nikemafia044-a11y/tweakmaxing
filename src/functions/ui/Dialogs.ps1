@@ -187,6 +187,46 @@ function Read-TmxDialogText {
     $estado.texto
 }
 
+function Show-TmxOpenFileDialog {
+    <#
+    .SYNOPSIS
+        Dialogo nativo "Abrir arquivo"; devolve o caminho ou $null.
+    .PARAMETER Filtro
+        Filtro no formato do Win32, ex.: 'Imagem de disco (*.iso)|*.iso'.
+    .OUTPUTS
+        O caminho escolhido, ou $null se o usuario cancelou.
+    .NOTES
+        Microsoft.Win32.OpenFileDialog (WPF) e nao o do WinForms: nao exige
+        System.Windows.Forms nem apartamento STA proprio.
+
+        O dialogo TEM que abrir na thread da UI. Quando $sync.window existe a
+        chamada passa pelo Dispatcher; sem janela (testes, modo sem UI) roda
+        direto, que ja e a thread certa.
+    #>
+    [CmdletBinding()]
+    param(
+        [string] $Filtro = 'Todos os arquivos (*.*)|*.*',
+        [string] $Titulo = 'Escolher arquivo'
+    )
+
+    Initialize-TmxWpf
+
+    $abrir = {
+        $dlg = New-Object Microsoft.Win32.OpenFileDialog
+        $dlg.Filter          = $Filtro
+        $dlg.Title           = $Titulo
+        $dlg.Multiselect     = $false
+        $dlg.CheckFileExists = $true
+        if ($dlg.ShowDialog()) { return "$($dlg.FileName)" }
+        $null
+    }.GetNewClosure()
+
+    if ($null -ne $sync -and $null -ne $sync.window) {
+        return $sync.window.Dispatcher.Invoke([Func[object]] $abrir)
+    }
+    & $abrir
+}
+
 function Confirm-TmxSkipRestorePointDialog {
     <#
     .SYNOPSIS

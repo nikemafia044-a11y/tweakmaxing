@@ -39,7 +39,7 @@ if (Test-Path -LiteralPath $tmxEngineDir) {
 }
 
 # --- Pastas de funcoes (alfabetica dentro de cada pasta) --------------------
-$tmxFunctionFolders = 'tweaks', 'install', 'features', 'session', 'bridge', 'ui'
+$tmxFunctionFolders = 'tweaks', 'install', 'features', 'microwin', 'session', 'bridge', 'ui'
 foreach ($tmxFolder in $tmxFunctionFolders) {
     $tmxDir = Join-Path $here "functions\$tmxFolder"
     if (Test-Path -LiteralPath $tmxDir) {
