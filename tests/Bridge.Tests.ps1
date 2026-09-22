@@ -218,6 +218,57 @@ Describe 'Ponte JSON' -Tag 'Bridge' {
             $r2.error.message | Should -Be 'ja existe um trabalho em andamento'
         }
 
+        It 'enxerga as constantes de escopo de script dentro do job' {
+            # Regressao: sem copiar $script:Tmx* para a InitialSessionState,
+            # $script:TmxConditionRegex chega $null na runspace do job e
+            # ConvertFrom-TmxCondition morre com "Operador '' exige um valor".
+            Register-TmxBridgeAction -Name 'teste.async.condicao' -Async -Handler {
+                param($p)
+                $c = ConvertFrom-TmxCondition -Expression 'os.isLaptop == true :: x'
+                @{ caminho = "$($c.caminho)"; operador = "$($c.operador)"; motivo = "$($c.motivo)" }
+            }
+            $r = Invoke-TmxBridgeRequest -Json '{"id":"24","action":"teste.async.condicao"}' | ConvertFrom-Json
+            $r.ok | Should -BeTrue
+
+            $pronto = Wait-TmxTestEvent -Nome 'job.done' -TimeoutSeconds 20
+            $pronto | Should -Not -BeNullOrEmpty
+            $pronto.payload.ok | Should -BeTrue
+            $pronto.payload.result.caminho | Should -Be 'os.isLaptop'
+            $pronto.payload.result.operador | Should -Be '=='
+            $pronto.payload.result.motivo | Should -Be 'x'
+        }
+
+        It 'mantem o estado de execucao de um job para o proximo' {
+            # Regressao: o pool tem uma unica runspace justamente para que o
+            # $script:TmxRun criado aqui continue valendo no job seguinte.
+            Register-TmxBridgeAction -Name 'teste.async.novoRun' -Async -Handler {
+                param($p)
+                @{ runId = "$((New-TmxRun).RunId)" }
+            }
+            Register-TmxBridgeAction -Name 'teste.async.leRun' -Async -Handler {
+                param($p)
+                $r = Get-TmxRun
+                @{ runId = "$($r.RunId)" }
+            }
+
+            $r1 = Invoke-TmxBridgeRequest -Json '{"id":"25","action":"teste.async.novoRun"}' | ConvertFrom-Json
+            $r1.ok | Should -BeTrue
+            $criado = Wait-TmxTestEvent -Nome 'job.done' -TimeoutSeconds 20
+            $criado | Should -Not -BeNullOrEmpty
+            $criado.payload.ok | Should -BeTrue
+            $criado.payload.result.runId | Should -Not -BeNullOrEmpty
+
+            $sync.uiEvents.Clear()
+            Wait-TmxRemainingWork -TimeoutSeconds 20 | Out-Null
+
+            $r2 = Invoke-TmxBridgeRequest -Json '{"id":"26","action":"teste.async.leRun"}' | ConvertFrom-Json
+            $r2.ok | Should -BeTrue
+            $lido = Wait-TmxTestEvent -Nome 'job.done' -TimeoutSeconds 20
+            $lido | Should -Not -BeNullOrEmpty
+            $lido.payload.ok | Should -BeTrue
+            $lido.payload.result.runId | Should -Be $criado.payload.result.runId
+        }
+
         It 'reporta erro do handler assincrono em job.done' {
             Register-TmxBridgeAction -Name 'teste.async.boom' -Async -Handler { param($p) throw 'falhou no job' }
             $r = Invoke-TmxBridgeRequest -Json '{"id":"23","action":"teste.async.boom"}' | ConvertFrom-Json

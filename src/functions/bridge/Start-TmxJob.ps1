@@ -10,9 +10,24 @@ function New-TmxSessionState {
     .SYNOPSIS
         InitialSessionState compartilhado pela runspace da UI e pelo pool.
     .DESCRIPTION
-        Leva o $sync e toda funcao do TweakMaxing ja definida nesta sessao
-        (nome contendo '-Tmx' ou 'TweakMaxing'). E o que permite a um job
-        chamar qualquer helper sem reinjetar definicoes.
+        Leva tres coisas para cada runspace nova:
+          1. $sync (a mesma referencia - e por onde as threads conversam);
+          2. toda funcao do TweakMaxing ja definida nesta sessao (nome com
+             '-Tmx' ou 'TweakMaxing');
+          3. uma COPIA das variaveis de escopo de script chamadas Tmx* .
+
+        O item 3 existe porque uma runspace nova so recebe funcoes: sem ele,
+        $script:TmxConditionRegex, $script:TmxThrottleKeyPath, $script:TmxSkipPhrase
+        e companhia chegam $null e a funcao falha de um jeito dificil de ler
+        (o sintoma classico foi "Operador '' exige um valor").
+
+        Sao copias por valor, feitas uma unica vez: servem para as CONSTANTES.
+        O estado mutavel de execucao ($script:TmxRun, $script:TmxStateRecords,
+        $script:TmxLog) comeca $null aqui e passa a viver dentro da runspace do
+        pool - que e uma so, justamente para esse estado sobreviver de um job
+        para o seguinte. Quem precisa ver estado de sessao da thread da UI le
+        $sync.session, nunca $script:Tmx*.
+
         Fica em cache em $sync.SessionState: montar isso nao e barato.
     #>
     [CmdletBinding()]
@@ -26,6 +41,19 @@ function New-TmxSessionState {
     $iss.Variables.Add(
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'sync', $sync, $null)
     )
+
+    $constantes = @()
+    try {
+        $constantes = @(Get-Variable -Scope Script -Name 'Tmx*' -ErrorAction SilentlyContinue)
+    } catch {
+        Write-Verbose "Nenhum escopo de script com variaveis Tmx*: $($_.Exception.Message)"
+    }
+    foreach ($v in $constantes) {
+        if ($v.Name -eq 'sync') { continue }
+        $iss.Variables.Add(
+            (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList $v.Name, $v.Value, $null)
+        )
+    }
 
     foreach ($fn in (Get-Command -CommandType Function -ErrorAction SilentlyContinue)) {
         if ($fn.Name -notmatch '-Tmx|TweakMaxing') { continue }
@@ -55,7 +83,12 @@ function Get-TmxRunspacePool {
     $pool = $sync.runspacePool
     if ($null -ne $pool -and "$($pool.RunspacePoolStateInfo.State)" -eq 'Opened') { return $pool }
 
-    $pool = [runspacefactory]::CreateRunspacePool(1, 2, (New-TmxSessionState), $Host)
+    # Exatamente UMA runspace (1,1), reaproveitada por todos os jobs. Nao e por
+    # economia: o estado de execucao que um job cria ($script:TmxRun,
+    # $script:TmxStateRecords) mora na runspace, e o job seguinte - o Undo, por
+    # exemplo - precisa enxergar o mesmo run. Com duas runspaces isso viraria
+    # loteria. Serializar os trabalhos ja e a regra da ponte (um por vez).
+    $pool = [runspacefactory]::CreateRunspacePool(1, 1, (New-TmxSessionState), $Host)
     $pool.Open()
     $sync.runspacePool = $pool
     $pool

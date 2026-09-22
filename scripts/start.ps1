@@ -46,7 +46,10 @@ if ($script:TmxRepo -like '#{*') {
     $script:TmxRepo = if ($env:TMX_DEV_REPO) { $env:TMX_DEV_REPO } else { 'TweakMaxing/TweakMaxing' }
 }
 
-$global:sync = $null
+$global:sync   = $null
+# Marcador explicito de "nao continue": o Start-TmxDev.ps1 faz dot-source deste
+# arquivo, e um 'return' aqui devolve o controle para ele em vez de encerrar.
+$global:TmxBootstrapAbortado = $true
 
 # ---------------------------------------------------------------------------
 # 1. Modo de linguagem
@@ -71,7 +74,10 @@ if ($precisaElevar) {
     $raiz = Join-Path $env:LOCALAPPDATA 'TweakMaxing'
     New-Item -ItemType Directory -Path $raiz -Force | Out-Null
 
-    $self = $PSCommandPath
+    # No modo de desenvolvimento quem carrega as funcoes e o Start-TmxDev.ps1;
+    # relancar so este arquivo daria um processo elevado sem funcao nenhuma.
+    $self = $env:TMX_DEV_ENTRY
+    if (-not $self) { $self = $PSCommandPath }
     if (-not $self) {
         # Invocado por 'iex (irm ...)': nao ha arquivo para o processo elevado
         # abrir. Usa o proprio texto quando ele e o artefato compilado; senao
@@ -167,3 +173,4 @@ try {
 }
 
 $global:sync = $sync
+$global:TmxBootstrapAbortado = $false

@@ -13,6 +13,13 @@
       4. src/config/*.json em $sync.configs, $sync.webRoot = src/web e
          $sync.sdkDir = packages/webview2 (baixado se faltar);
       5. scripts/main.ps1 com os mesmos parametros.
+
+    start.ps1 e main.ps1 tambem entram por DOT-SOURCE, nao por '&'. No artefato
+    compilado os tres pedacos sao um unico arquivo, ou seja, um unico escopo de
+    script; com '&' cada um ganhava o seu, e $script:Tmx* (TmxConditionRegex,
+    TmxRun, TmxThrottleKeyPath, ...) definido aqui ficava invisivel para as
+    funcoes chamadas de dentro do main.ps1 - o sintoma era
+    "Operador '' exige um valor" com o catalogo real.
 .EXAMPLE
     .\Start-TmxDev.ps1
 .EXAMPLE
@@ -32,7 +39,11 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$raiz = $PSScriptRoot
+$tmxRaiz = $PSScriptRoot
+
+# O processo elevado precisa reabrir ESTE runner (que carrega as funcoes), nao
+# o scripts/start.ps1 sozinho - start.ps1 le esta variavel antes de $PSCommandPath.
+$env:TMX_DEV_ENTRY = $PSCommandPath
 
 # --- 1. Funcoes -------------------------------------------------------------
 $ordemCore   = 'Logger', 'Backup', 'Registry', 'Rollback', 'RestorePoint', 'Guard'
@@ -40,13 +51,13 @@ $ordemEngine = 'Condition', 'Profile', 'Catalog', 'Plan', 'Actions', 'Apply', 'P
 $pastasFunc  = 'tweaks', 'install', 'features', 'session', 'bridge', 'ui'
 
 foreach ($nome in $ordemCore) {
-    $caminho = Join-Path $raiz "src\Core\$nome.ps1"
+    $caminho = Join-Path $tmxRaiz "src\Core\$nome.ps1"
     if (-not (Test-Path -LiteralPath $caminho)) { throw "Core\$nome.ps1 nao encontrado." }
     . $caminho
 }
 
 $carregados = New-Object 'System.Collections.Generic.List[string]'
-$dirEngine  = Join-Path $raiz 'src\Engine'
+$dirEngine  = Join-Path $tmxRaiz 'src\Engine'
 foreach ($nome in $ordemEngine) {
     $caminho = Join-Path $dirEngine "$nome.ps1"
     if (Test-Path -LiteralPath $caminho) { . $caminho; $carregados.Add("$nome.ps1") }
@@ -58,7 +69,7 @@ if (Test-Path -LiteralPath $dirEngine) {
 }
 
 foreach ($pasta in $pastasFunc) {
-    $dir = Join-Path $raiz "src\functions\$pasta"
+    $dir = Join-Path $tmxRaiz "src\functions\$pasta"
     if (-not (Test-Path -LiteralPath $dir)) { continue }
     foreach ($arquivo in (Get-ChildItem -LiteralPath $dir -Filter '*.ps1' -File | Sort-Object Name)) {
         . $arquivo.FullName
@@ -66,7 +77,7 @@ foreach ($pasta in $pastasFunc) {
 }
 
 # --- 2. Versao e repositorio ------------------------------------------------
-$arquivoVersao = Join-Path $raiz 'VERSION'
+$arquivoVersao = Join-Path $tmxRaiz 'VERSION'
 $env:TMX_DEV_VERSION = if (Test-Path -LiteralPath $arquivoVersao) {
     (Get-Content -LiteralPath $arquivoVersao -Raw).Trim()
 } else {
@@ -75,16 +86,16 @@ $env:TMX_DEV_VERSION = if (Test-Path -LiteralPath $arquivoVersao) {
 if (-not $env:TMX_DEV_REPO) { $env:TMX_DEV_REPO = 'TweakMaxing/TweakMaxing' }
 
 # --- 3. Bootstrap -----------------------------------------------------------
-& (Join-Path $raiz 'scripts\start.ps1') @PSBoundParameters | Out-Null
+. (Join-Path $tmxRaiz 'scripts\start.ps1') @PSBoundParameters | Out-Null
 
-if ($null -eq $global:sync) {
-    # start.ps1 relancou elevado ou recusou o host.
+if ($global:TmxBootstrapAbortado -or $null -eq $global:sync) {
+    # start.ps1 relancou elevado, recusou o host, ou nao chegou ao fim.
     return
 }
 $sync = $global:sync
 
 # --- 4. Recursos de desenvolvimento ----------------------------------------
-$dirConfig = Join-Path $raiz 'src\config'
+$dirConfig = Join-Path $tmxRaiz 'src\config'
 if (Test-Path -LiteralPath $dirConfig) {
     foreach ($arquivo in (Get-ChildItem -LiteralPath $dirConfig -Filter '*.json' -File | Sort-Object Name)) {
         try {
@@ -95,16 +106,16 @@ if (Test-Path -LiteralPath $dirConfig) {
     }
 }
 
-$sync.webRoot = Join-Path $raiz 'src\web'
-$sync.sdkDir  = Join-Path $raiz 'packages\webview2'
+$sync.webRoot = Join-Path $tmxRaiz 'src\web'
+$sync.sdkDir  = Join-Path $tmxRaiz 'packages\webview2'
 
 if (-not (Test-Path -LiteralPath (Join-Path $sync.sdkDir 'Microsoft.Web.WebView2.Wpf.dll'))) {
     Write-Host 'SDK do WebView2 ausente; baixando...' -ForegroundColor Cyan
-    & (Join-Path $raiz 'tools\Get-WebView2Sdk.ps1')
+    & (Join-Path $tmxRaiz 'tools\Get-WebView2Sdk.ps1')
 }
 
 # --- 5. Orquestrador --------------------------------------------------------
-& (Join-Path $raiz 'scripts\main.ps1') @PSBoundParameters
+. (Join-Path $tmxRaiz 'scripts\main.ps1') @PSBoundParameters
 
 $codigo = 0
 if ($null -ne $global:TmxExitCode) { $codigo = [int]$global:TmxExitCode }
