@@ -79,6 +79,16 @@ function Test-TmxStringField {
             if ($v -match $padrao) { $achados.Add($v) }
             return
         }
+        if ($v -is [System.Collections.IDictionary]) {
+            # Hashtable/IDictionary primeiro, ANTES do IEnumerable generico: "foreach ($x in
+            # $hashtableVazia)" no PowerShell 5.1 nao itera zero vezes como o .GetEnumerator()
+            # direto faria - ele "desenrola" a colecao vazia de volta para o proprio objeto,
+            # entregando $x = a mesma hashtable. Sem este caso especial, Walk($x) chamaria
+            # Walk na MESMA hashtable de novo, e de novo, e de novo - recursao infinita /
+            # estouro de pilha em qualquer acao com "parametros": {} (comum em tipo 'funcao').
+            foreach ($chave in @($v.Keys)) { Walk $v[$chave] }
+            return
+        }
         if ($v -is [System.Collections.IEnumerable] -and -not ($v -is [string])) {
             foreach ($x in $v) { Walk $x }
             return
@@ -92,6 +102,44 @@ function Test-TmxStringField {
     $achados.ToArray()
 }
 
+function Test-TmxAcaoList {
+    <#
+    .SYNOPSIS
+        Valida uma lista de acoes (tipo no conjunto fechado + trio Set-/Undo-/Test-Tmx<X>
+        para 'funcao'). Usado para acoes[] do proprio tweak, opcoes[].acoes[] (combobox) e
+        toggleDesligar[] (acoes de desligar de um toggle, geradas pelo conversor da Task 6).
+    .PARAMETER Erros
+        Lista mutavel (System.Collections.Generic.List[string]) onde os erros sao acumulados.
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $Id,
+        $Acoes,
+        [Parameter(Mandatory)] [string] $Origem,
+        [Parameter(Mandatory)] $Erros
+    )
+    foreach ($a in @($Acoes)) {
+        if ($null -eq $a) { continue }
+        if ("$($a.tipo)" -cnotin $script:TmxAcaoTipos) { $Erros.Add("$Id`: $Origem.tipo invalido '$($a.tipo)'") }
+        if ($a.tipo -eq 'funcao') {
+            $nome = "$($a.nome)"
+            if ($nome -notmatch '^Set-Tmx[A-Za-z0-9]+$') {
+                $Erros.Add("$Id`: $Origem.nome de funcao invalido '$nome' (esperado Set-Tmx<X>)")
+            } else {
+                $sufixo = $nome.Substring('Set-Tmx'.Length)
+                if (-not (Get-Command -Name $nome -ErrorAction SilentlyContinue)) {
+                    $Erros.Add("$Id`: funcao '$nome' nao encontrada (Get-Command)")
+                }
+                if (-not (Get-Command -Name "Undo-Tmx$sufixo" -ErrorAction SilentlyContinue)) {
+                    $Erros.Add("$Id`: funcao 'Undo-Tmx$sufixo' nao encontrada (par obrigatorio de '$nome')")
+                }
+                if (-not (Get-Command -Name "Test-Tmx$sufixo" -ErrorAction SilentlyContinue)) {
+                    $Erros.Add("$Id`: funcao 'Test-Tmx$sufixo' nao encontrada (par obrigatorio de '$nome')")
+                }
+            }
+        }
+    }
+}
+
 function Test-TmxCatalog {
     <#
     .SYNOPSIS
@@ -100,16 +148,24 @@ function Test-TmxCatalog {
     param([Parameter(Mandatory)] $Catalog)
 
     $erros = New-Object 'System.Collections.Generic.List[string]'
-    $ids   = New-Object 'System.Collections.Generic.HashSet[string]'
+    # OrdinalIgnoreCase: 'REG-001' e 'reg-001' devem contar como o MESMO id para fins de
+    # duplicidade, mesmo que o formato CAT-NNN (abaixo, com -cnotmatch) va rejeitar o
+    # segundo por nao estar em maiusculas.
+    $ids = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
 
     # regex de promessa de ganho percentual (portado do CS2Tuner: proibe "ganho de 30%",
     # "20% mais FPS" etc; permite metricas de fato como "1% low", "85-90% de uso").
-    $promessa = '(?i)(ganh|melhor|reduz|aument|cai|queda|mais r[aá]pid|menos lat)\w*.{0,25}?\d+\s*%|\d+\s*%\s*(de ganho|a mais|a menos|mais|menos|melhor)'
+    # 'a' com acento montado via [char]0x00E1 (nao como literal): este arquivo nao tem BOM
+    # e o parser do PowerShell 5.1 sem BOM le UTF-8 como codepage ANSI, corrompendo o
+    # literal acentuado embutido na string do regex ('mais r[aá]pid' virava 'mais r[aÃ¡]pid').
+    $promessa = '(?i)(ganh|melhor|reduz|aument|cai|queda|mais r[a' + [char]0x00E1 + ']pid|menos lat)\w*.{0,25}?\d+\s*%|\d+\s*%\s*(de ganho|a mais|a menos|mais|menos|melhor)'
 
     foreach ($t in $Catalog) {
         $id = "$($t.id)"
         if (-not $id) { $erros.Add('tweak sem id'); continue }
-        if ($id -notmatch '^[A-Z]{3}-\d{3}$') { $erros.Add("$id`: id fora do formato CAT-NNN") }
+        # -cnotmatch (case-sensitive): '-notmatch' sozinho e case-INsensitive, entao
+        # '[A-Z]{3}' aceitaria 'reg-001' tambem - o formato exige maiusculas de verdade.
+        if ($id -cnotmatch '^[A-Z]{3}-\d{3}$') { $erros.Add("$id`: id fora do formato CAT-NNN") }
         if (-not $ids.Add($id)) { $erros.Add("$id`: id duplicado") }
 
         foreach ($campo in 'nome', 'categoria', 'tier', 'risco', 'porque', 'evidencia') {
@@ -119,37 +175,26 @@ function Test-TmxCatalog {
             if ($null -eq $t.PSObject.Properties[$campo]) { $erros.Add("$id`: campo '$campo' ausente") }
         }
 
-        if ($t.tier -notin $script:TmxTiers)   { $erros.Add("$id`: tier invalido '$($t.tier)'") }
-        if ($t.risco -notin $script:TmxRiscos) { $erros.Add("$id`: risco invalido '$($t.risco)'") }
-        foreach ($p in @($t.presets)) { if ($p -notin $script:TmxPresets) { $erros.Add("$id`: preset invalido '$p'") } }
-        if ($t.controle -and $t.controle -notin $script:TmxControles) { $erros.Add("$id`: controle invalido '$($t.controle)'") }
-        if ($t.reversivel -and $t.reversivel -notin $script:TmxReversiveis) { $erros.Add("$id`: reversivel invalido '$($t.reversivel)'") }
+        # -cnotin (case-sensitive): os conjuntos fechados usam grafia exata (MEDIDO, nao
+        # medido/Medido); '-notin' sozinho compara sem diferenciar maiusculas de minusculas
+        # e deixaria passar variantes de caixa que nao existem no schema.
+        if ($t.tier -cnotin $script:TmxTiers)   { $erros.Add("$id`: tier invalido '$($t.tier)'") }
+        if ($t.risco -cnotin $script:TmxRiscos) { $erros.Add("$id`: risco invalido '$($t.risco)'") }
+        foreach ($p in @($t.presets)) { if ($p -cnotin $script:TmxPresets) { $erros.Add("$id`: preset invalido '$p'") } }
+        if ($t.controle -and $t.controle -cnotin $script:TmxControles) { $erros.Add("$id`: controle invalido '$($t.controle)'") }
+        if ($t.reversivel -and $t.reversivel -cnotin $script:TmxReversiveis) { $erros.Add("$id`: reversivel invalido '$($t.reversivel)'") }
 
         # acoes[]: controle 'info' pode ter acoes vazias, mas exige instrucoes.
         $acoes = @($t.acoes)
         if ($t.controle -eq 'info') {
             if (-not "$($t.instrucoes)") { $erros.Add("$id`: controle 'info' exige 'instrucoes'") }
         }
-        foreach ($a in $acoes) {
-            if ($null -eq $a) { continue }
-            if ("$($a.tipo)" -notin $script:TmxAcaoTipos) { $erros.Add("$id`: acoes[].tipo invalido '$($a.tipo)'") }
-            if ($a.tipo -eq 'funcao') {
-                $nome = "$($a.nome)"
-                if ($nome -notmatch '^Set-Tmx[A-Za-z0-9]+$') {
-                    $erros.Add("$id`: acoes[].nome de funcao invalido '$nome' (esperado Set-Tmx<X>)")
-                } else {
-                    $sufixo = $nome.Substring('Set-Tmx'.Length)
-                    if (-not (Get-Command -Name $nome -ErrorAction SilentlyContinue)) {
-                        $erros.Add("$id`: funcao '$nome' nao encontrada (Get-Command)")
-                    }
-                    if (-not (Get-Command -Name "Undo-Tmx$sufixo" -ErrorAction SilentlyContinue)) {
-                        $erros.Add("$id`: funcao 'Undo-Tmx$sufixo' nao encontrada (par obrigatorio de '$nome')")
-                    }
-                    if (-not (Get-Command -Name "Test-Tmx$sufixo" -ErrorAction SilentlyContinue)) {
-                        $erros.Add("$id`: funcao 'Test-Tmx$sufixo' nao encontrada (par obrigatorio de '$nome')")
-                    }
-                }
-            }
+        Test-TmxAcaoList -Id $id -Acoes $acoes -Origem 'acoes[]' -Erros $erros
+
+        # toggleDesligar[]: acoes de desligar de um toggle (gerado pelo conversor da Task 6),
+        # mesmas regras de acoes[] quando presente.
+        if ($null -ne $t.PSObject.Properties['toggleDesligar']) {
+            Test-TmxAcaoList -Id $id -Acoes $t.toggleDesligar -Origem 'toggleDesligar[]' -Erros $erros
         }
 
         if ($t.tier -eq 'FOLCLORE') {
@@ -175,6 +220,7 @@ function Test-TmxCatalog {
                     foreach ($campo in 'valor', 'rotulo', 'acoes') {
                         if ($null -eq $o.PSObject.Properties[$campo]) { $erros.Add("$id`: opcoes[] falta campo '$campo'") }
                     }
+                    Test-TmxAcaoList -Id $id -Acoes $o.acoes -Origem 'opcoes[].acoes[]' -Erros $erros
                 }
             }
         }

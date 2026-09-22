@@ -20,6 +20,12 @@ BeforeAll {
         param($Plan, [string] $Id)
         $Plan.itens | Where-Object { $_.id -eq $Id } | Select-Object -First 1
     }
+
+    function script:Get-TmxTestCatalogClone {
+        # Clone profundo: testes que mutam um tweak (ex.: trocar condicoes) precisam da
+        # propria copia, sem afetar $script:Catalog usado pelos outros testes.
+        @($script:Catalog | ConvertTo-Json -Depth 12 | ConvertFrom-Json)
+    }
 }
 
 AfterAll {
@@ -115,6 +121,41 @@ Describe 'Resolve-TmxPlan: status especiais' -Tag 'Plan' {
         ($fun.motivos -join '; ') | Should -Not -BeNullOrEmpty
         $fun.condicoes.Count | Should -BeGreaterThan 0
     }
+
+    It "condicoes tem prioridade sobre FOLCLORE: 'requer' insatisfeito vira bloqueado, nao folclore" {
+        $c = Get-TmxTestCatalogClone
+        $fol = $c | Where-Object { $_.id -eq 'FOL-003' }
+        # memory.capacidadeGB do perfil desktop e 32 - bem abaixo de 999999, entao o
+        # requisito nunca e atendido, seja qual for o perfil de teste usado aqui.
+        $fol.condicoes.requer = @('memory.capacidadeGB >= 999999 :: teste requer insatisfeito')
+
+        $plan = Resolve-TmxPlan -Catalog $c -Profile $script:ProfileDesktop -Preset 'desktop'
+        $item = Get-TmxPlanItem -Plan $plan -Id 'FOL-003'
+        $item.status | Should -Be 'bloqueado'
+        $item.selecionado | Should -BeFalse
+        $item.alternavel | Should -BeFalse
+        $item.condicoes.Count | Should -BeGreaterThan 0
+
+        $res = Set-TmxPlanSelection -Plan $plan -Id 'FOL-003' -Selected $true
+        $res.ok | Should -BeFalse
+        $res.mensagem | Should -Match 'bloqueado'
+    }
+
+    It "preset notebook exclui semanticamente 'os.isLaptop != false', nao so '== true' literal" {
+        $c = Get-TmxTestCatalogClone
+        $fun = $c | Where-Object { $_.id -eq 'FUN-002' }
+        # Se a regra do preset notebook fosse so um "grep" textual por '== true', esta
+        # expressao (semanticamente equivalente) passaria batido e o item entraria
+        # planejado no preset notebook - por isso presets tambem inclui 'notebook' aqui,
+        # para isolar o efeito da regra de qualquer exclusao por presets[].
+        $fun.presets = @('desktop', 'notebook')
+        $fun.condicoes.bloqueiaSe = @('os.isLaptop != false :: teste semantico')
+
+        $plan = Resolve-TmxPlan -Catalog $c -Profile $script:ProfileDesktop -Preset 'notebook'
+        $item = Get-TmxPlanItem -Plan $plan -Id 'FUN-002'
+        $item.status | Should -Be 'foraDoPreset'
+        $item.selecionado | Should -BeFalse
+    }
 }
 
 Describe 'Resolve-TmxPlan -IncludeState' -Tag 'Plan' {
@@ -135,6 +176,29 @@ Describe 'Resolve-TmxPlan -IncludeState' -Tag 'Plan' {
         $plan = Resolve-TmxPlan -Catalog $script:Catalog -Profile $script:ProfileDesktop -Preset 'desktop'
         $reg = Get-TmxPlanItem -Plan $plan -Id 'REG-001'
         $reg.estadoAtual | Should -BeNullOrEmpty
+    }
+
+    It 'so chama Test-TmxTweakApplied para planejado/opcional/folclore/irreversivel - nao para bloqueado/foraDoPreset/manual' {
+        Mock -CommandName Test-TmxTweakApplied -ModuleName TweakMaxing -MockWith { @{ aplicado = $true } }
+        # Preset desktop + perfil desktop (ver 'Get-TmxPlanSummary'): 2 planejados
+        # (REG-001, FUN-002) + 1 opcional (TGL-005) + 1 folclore (FOL-003) + 1
+        # irreversivel (IRR-004) = 5 chamadas esperadas; manual (INF-007) e
+        # foraDoPreset (CMB-006) nao devem chamar a funcao.
+        $plan = Resolve-TmxPlan -Catalog $script:Catalog -Profile $script:ProfileDesktop -Preset 'desktop' -IncludeState
+
+        Should -Invoke -CommandName Test-TmxTweakApplied -ModuleName TweakMaxing -Times 5 -Exactly
+
+        (Get-TmxPlanItem -Plan $plan -Id 'INF-007').estadoAtual | Should -BeNullOrEmpty
+        (Get-TmxPlanItem -Plan $plan -Id 'CMB-006').estadoAtual | Should -BeNullOrEmpty
+    }
+
+    It 'nao chama Test-TmxTweakApplied para um item bloqueado, mesmo com -IncludeState' {
+        Mock -CommandName Test-TmxTweakApplied -ModuleName TweakMaxing -MockWith { @{ aplicado = $true } }
+        # Perfil laptop + preset desktop: FUN-002 fica bloqueado (ver describe acima).
+        $plan = Resolve-TmxPlan -Catalog $script:Catalog -Profile $script:ProfileLaptop -Preset 'desktop' -IncludeState
+        $fun = Get-TmxPlanItem -Plan $plan -Id 'FUN-002'
+        $fun.status | Should -Be 'bloqueado'
+        $fun.estadoAtual | Should -BeNullOrEmpty
     }
 }
 

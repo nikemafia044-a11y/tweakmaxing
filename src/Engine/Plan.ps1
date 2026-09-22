@@ -5,14 +5,19 @@
 # Set-TunerPlanSelection / Set-TunerPlanConsent) para o schema do TweakMaxing.
 #
 # Status de cada item:
-#   planejado    - elegivel para o preset atual e selecionado
-#   opcional     - elegivel mas presets = [] (opt-in explicito do usuario por ID)
+#   bloqueado    - alguma condicao (requer/bloqueiaSe) nao foi satisfeita. Avaliado
+#                  ANTES de tier/reversibilidade: um FOLCLORE ou irreversivel que nem
+#                  atende seu proprio 'requer' fica bloqueado, nao folclore/irreversivel.
+#   folclore     - tier FOLCLORE (e condicoes ok): nunca selecionado automaticamente,
+#                  mas o usuario PODE ligar a mao
+#   irreversivel - reversivel = 'nenhuma' (e condicoes ok): nao selecionado por padrao,
+#                  exige confirmacao para ligar
 #   manual       - controle = info: vai para o guia, nao e selecionavel
-#   bloqueado    - alguma condicao (requer/bloqueiaSe) nao foi satisfeita
 #   foraDoPreset - preset atual nao inclui o tweak (ou preset notebook excluindo
-#                  algo marcado bloqueiaSe os.isLaptop == true, mesmo fora de um notebook real)
-#   folclore     - tier FOLCLORE: nunca selecionado automaticamente, mas o usuario PODE ligar a mao
-#   irreversivel - reversivel = 'nenhuma': nao selecionado por padrao, exige confirmacao para ligar
+#                  algo cujo bloqueiaSe e verdadeiro contra um perfil sintetico de
+#                  notebook, mesmo fora de um notebook real - ver Test-TmxNotebookBloqueiaSeIsLaptop)
+#   opcional     - elegivel mas presets = [] (opt-in explicito do usuario por ID)
+#   planejado    - elegivel para o preset atual e selecionado
 
 $script:TmxPresetNomes = @('desktop', 'notebook', 'minimo')
 
@@ -32,19 +37,24 @@ function Get-TmxPresets {
 function Test-TmxNotebookBloqueiaSeIsLaptop {
     <#
     .SYNOPSIS
-        Verdadeiro se algum condicoes.bloqueiaSe do tweak e textualmente
-        "os.isLaptop == true", independente do perfil atual.
+        Verdadeiro se alguma condicoes.bloqueiaSe do tweak e VERDADEIRA quando avaliada
+        contra um perfil sintetico de notebook (os.isLaptop = $true), independente do
+        perfil atualmente em maos.
+    .NOTES
+        Avaliacao semantica via Test-TmxCondition (nao comparacao textual da expressao):
+        cobre variantes equivalentes como 'os.isLaptop != false', nao so '== true'.
+        Qualquer condicao que nao fale de os.isLaptop resolve para $null (caminho
+        ausente no perfil sintetico minimo) e portanto nao entra aqui.
     #>
     param($Tweak)
+    $perfilNotebookSintetico = @{ os = @{ isLaptop = $true } }
     foreach ($expr in @($Tweak.condicoes.bloqueiaSe)) {
         try {
-            $c = ConvertFrom-TmxCondition -Expression $expr
+            $c = Test-TmxCondition -Expression $expr -Profile $perfilNotebookSintetico
         } catch {
             continue
         }
-        if ($c.caminho -eq 'os.isLaptop' -and $c.operador -eq '==' -and "$($c.valor)" -ieq 'true') {
-            return $true
-        }
+        if ($c.resultado -eq $true) { return $true }
     }
     $false
 }
@@ -90,28 +100,10 @@ function Resolve-TmxPlan {
         $motivos   = New-Object 'System.Collections.Generic.List[string]'
         $avaliadas = New-Object 'System.Collections.Generic.List[object]'
 
-        # 1. Folclore: nunca selecionado automaticamente, mas o usuario pode ligar a mao.
-        if ($t.tier -eq 'FOLCLORE') {
-            $item.status = 'folclore'
-            $item.alternavel = $true
-            $motivos.Add('tier FOLCLORE: sem sustentacao empirica; disponivel na secao anti-folclore, pode ser ligado manualmente')
-            $item.motivos = $motivos.ToArray()
-            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
-            $itens.Add($item); continue
-        }
-
-        # 2. Irreversivel: nao selecionado por padrao, exige confirmacao explicita.
-        if ("$($t.reversivel)" -eq 'nenhuma') {
-            $item.status = 'irreversivel'
-            $item.alternavel = $true
-            $item.exigeConfirmacao = $true
-            $motivos.Add('reversivel = nenhuma: recusado por padrao, exige confirmacao explicita para ligar')
-            $item.motivos = $motivos.ToArray()
-            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
-            $itens.Add($item); continue
-        }
-
-        # 3. Condicoes (avaliadas antes do preset: o usuario ve por que algo esta bloqueado mesmo fora do preset).
+        # 0. Condicoes PRIMEIRO, antes de tier/reversibilidade: um tweak FOLCLORE ou
+        #    irreversivel que nem atende seu proprio 'requer' (ou cai num 'bloqueiaSe')
+        #    fica 'bloqueado' - nao 'folclore'/'irreversivel' - porque bloqueado e o
+        #    unico status verdadeiramente nao-alternavel (o usuario nem pode tentar ligar).
         $bloqueado = $false
         foreach ($expr in @($t.condicoes.requer)) {
             $c = Test-TmxCondition -Expression $expr -Profile $Profile
@@ -139,33 +131,59 @@ function Resolve-TmxPlan {
             $item.status = 'bloqueado'
             $item.alternavel = $false
             $item.motivos = $motivos.ToArray()
+            # -IncludeState nao chama Test-TmxTweakApplied para bloqueado: o item nem e
+            # elegivel, entao o estado "aplicado ou nao" e irrelevante para a decisao.
+            $itens.Add($item); continue
+        }
+
+        # 1. Folclore: nunca selecionado automaticamente, mas o usuario pode ligar a mao.
+        if ($t.tier -eq 'FOLCLORE') {
+            $item.status = 'folclore'
+            $item.alternavel = $true
+            $motivos.Add('tier FOLCLORE: sem sustentacao empirica; disponivel na secao anti-folclore, pode ser ligado manualmente')
+            $item.motivos = $motivos.ToArray()
             if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
             $itens.Add($item); continue
         }
 
-        # 4. Controle info: vai para o guia manual, nao e selecionavel.
+        # 2. Irreversivel: nao selecionado por padrao, exige confirmacao explicita.
+        if ("$($t.reversivel)" -eq 'nenhuma') {
+            $item.status = 'irreversivel'
+            $item.alternavel = $true
+            $item.exigeConfirmacao = $true
+            $motivos.Add('reversivel = nenhuma: recusado por padrao, exige confirmacao explicita para ligar')
+            $item.motivos = $motivos.ToArray()
+            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
+            $itens.Add($item); continue
+        }
+
+        # 3. Controle info: vai para o guia manual, nao e selecionavel.
         if ($t.controle -eq 'info') {
             $item.status = 'manual'
             $item.alternavel = $false
             $motivos.Add('controle info: instrucoes manuais, nao e aplicado automaticamente')
             $item.motivos = $motivos.ToArray()
-            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
+            # -IncludeState nao chama Test-TmxTweakApplied para manual: nunca e aplicado
+            # automaticamente, entao nao ha "estado aplicado" gerenciado pelo Engine.
             $itens.Add($item); continue
         }
 
-        # 5. Preset notebook: exclui explicitamente qualquer tweak marcado bloqueiaSe
-        #    os.isLaptop == true, mesmo quando o perfil atual nao e um notebook real -
-        #    o preset 'notebook' e para notebooks, entao esses itens nunca entram nele.
+        # 4. Preset notebook: exclui qualquer tweak cujo bloqueiaSe seja verdadeiro contra
+        #    um perfil sintetico de notebook, mesmo quando o perfil atual nao e um
+        #    notebook real - o preset 'notebook' e para notebooks, entao esses itens
+        #    nunca entram nele. Ver Test-TmxNotebookBloqueiaSeIsLaptop (avaliacao
+        #    semantica via Test-TmxCondition, cobre 'os.isLaptop != false' etc, nao so '== true').
         if ($Preset -eq 'notebook' -and (Test-TmxNotebookBloqueiaSeIsLaptop -Tweak $t)) {
             $item.status = 'foraDoPreset'
             $item.alternavel = $true
-            $motivos.Add('excluido do preset notebook: prejudica notebooks (bloqueiaSe os.isLaptop == true), independente do perfil atual')
+            $motivos.Add('excluido do preset notebook: a condicao bloqueiaSe do tweak seria verdadeira num notebook real, independente do perfil atual')
             $item.motivos = $motivos.ToArray()
-            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
+            # -IncludeState nao chama Test-TmxTweakApplied para foraDoPreset: fora do
+            # preset atual, o estado aplicado nao influencia a decisao do usuario aqui.
             $itens.Add($item); continue
         }
 
-        # 6. Presets e tier.
+        # 5. Presets e tier.
         $presetsDoTweak = @($t.presets)
         if ($presetsDoTweak.Count -eq 0) {
             $item.status = 'opcional'
@@ -180,7 +198,7 @@ function Resolve-TmxPlan {
             $item.alternavel = $true
             $motivos.Add("fora do preset '$Preset' (disponivel em: $($presetsDoTweak -join ', '))")
             $item.motivos = $motivos.ToArray()
-            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
+            # -IncludeState nao chama Test-TmxTweakApplied para foraDoPreset (ver item 4).
             $itens.Add($item); continue
         }
 

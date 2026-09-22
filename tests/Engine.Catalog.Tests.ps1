@@ -130,6 +130,32 @@ Describe 'Test-TmxCatalog' -Tag 'Catalog' {
         ($r.erros -join '; ') | Should -Match 'tier invalido'
     }
 
+    It "rejeita id em minusculas ('reg-001') mesmo tendo o formato CAT-NNN em letras" {
+        $c = Get-TmxTestCatalogClone
+        (Find-TmxTestItem $c 'REG-001').id = 'reg-001'
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'id fora do formato'
+    }
+
+    It "considera 'REG-001' e 'reg-001' o mesmo id (duplicado, case-insensitive)" {
+        $c = Get-TmxTestCatalogClone
+        # REG-001 ja existe no catalogo; renomear outro item para a mesma grafia em
+        # minusculas ainda deve contar como duplicado (HashSet com OrdinalIgnoreCase).
+        (Find-TmxTestItem $c 'FUN-002').id = 'reg-001'
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'duplicado'
+    }
+
+    It "rejeita tier em minusculas ('medido') - conjunto fechado e case-sensitive" {
+        $c = Get-TmxTestCatalogClone
+        (Find-TmxTestItem $c 'REG-001').tier = 'medido'
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'tier invalido'
+    }
+
     It 'rejeita risco fora do conjunto fechado' {
         $c = Get-TmxTestCatalogClone
         (Find-TmxTestItem $c 'REG-001').risco = 'extremo'
@@ -170,7 +196,7 @@ Describe 'Test-TmxCatalog' -Tag 'Catalog' {
         ($r.erros -join '; ') | Should -Match 'acoes\[\]\.tipo invalido'
     }
 
-    It 'rejeita nome de funcao fora do padrao Set-Tmx<X>' {
+    It 'rejeita nome de funcao fora do padrao Set-Tmx(X)' {
         $c = Get-TmxTestCatalogClone
         (Find-TmxTestItem $c 'FUN-002').acoes[0].nome = 'Invoke-TmxDummy'
         $r = Test-TmxCatalog -Catalog $c
@@ -186,7 +212,7 @@ Describe 'Test-TmxCatalog' -Tag 'Catalog' {
         ($r.erros -join '; ') | Should -Match 'nao encontrada'
     }
 
-    It 'rejeita funcao sem o par Undo-Tmx<X>/Test-Tmx<X>' {
+    It 'rejeita funcao sem o par Undo-Tmx(X)/Test-Tmx(X)' {
         function global:Set-TmxSemPar { }
         try {
             $c = Get-TmxTestCatalogClone
@@ -257,6 +283,49 @@ Describe 'Test-TmxCatalog' -Tag 'Catalog' {
         ($r.erros -join '; ') | Should -Match "opcoes\[\] falta campo 'rotulo'"
     }
 
+    It 'rejeita acao invalida dentro de opcoes[].acoes[] (combobox) mencionando id e tipo' {
+        $c = Get-TmxTestCatalogClone
+        $item = Find-TmxTestItem $c 'CMB-006'
+        $item.opcoes[0].acoes[0].tipo = 'shellexec'
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'CMB-006'
+        ($r.erros -join '; ') | Should -Match 'shellexec'
+        ($r.erros -join '; ') | Should -Match 'opcoes\[\]\.acoes\[\]\.tipo invalido'
+    }
+
+    It 'rejeita funcao inexistente dentro de opcoes[].acoes[] (combobox)' {
+        $c = Get-TmxTestCatalogClone
+        $item = Find-TmxTestItem $c 'CMB-006'
+        $item.opcoes[0].acoes[0] = [pscustomobject]@{ tipo = 'funcao'; nome = 'Set-TmxNaoExisteOpcao'; parametros = @{} }
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'CMB-006'
+        ($r.erros -join '; ') | Should -Match "'Set-TmxNaoExisteOpcao' nao encontrada"
+    }
+
+    It 'rejeita acao invalida dentro de toggleDesligar[] quando presente' {
+        $c = Get-TmxTestCatalogClone
+        $item = Find-TmxTestItem $c 'TGL-005'
+        $item | Add-Member -MemberType NoteProperty -Name 'toggleDesligar' -Value @(
+            [pscustomobject]@{ tipo = 'shellexec' }
+        )
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'TGL-005'
+        ($r.erros -join '; ') | Should -Match 'toggleDesligar\[\]\.tipo invalido'
+    }
+
+    It 'aceita toggleDesligar[] valido sem introduzir erros novos' {
+        $c = Get-TmxTestCatalogClone
+        $item = Find-TmxTestItem $c 'TGL-005'
+        $item | Add-Member -MemberType NoteProperty -Name 'toggleDesligar' -Value @(
+            [pscustomobject]@{ tipo = 'registry'; caminho = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager'; nome = 'SoftLandingEnabled'; valor = 1; tipoValor = 'DWord' }
+        )
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeTrue -Because ($r.erros -join '; ')
+    }
+
     It 'rejeita radio sem grupo' {
         $c = Get-TmxTestCatalogClone
         (Find-TmxTestItem $c 'REG-001').controle = 'radio'
@@ -284,6 +353,17 @@ Describe 'Test-TmxCatalog' -Tag 'Catalog' {
     It 'rejeita percentual usado como promessa de ganho em evidencia/porque' {
         $c = Get-TmxTestCatalogClone
         (Find-TmxTestItem $c 'REG-001').evidencia = 'Testes internos mostram ganho de 30% em FPS'
+        $r = Test-TmxCatalog -Catalog $c
+        $r.ok | Should -BeFalse
+        ($r.erros -join '; ') | Should -Match 'percentual usado como promessa de ganho'
+    }
+
+    It 'rejeita promessa percentual com "a" acentuado (regex nao pode depender de BOM no arquivo)' {
+        $c = Get-TmxTestCatalogClone
+        # [char]0x00E1 monta o 'a' acentuado sem depender da codificacao do .ps1 do teste
+        # (mesma razao pela qual o regex $promessa em Catalog.ps1 monta o literal assim).
+        $frase = 'Deixa o sistema mais r' + [char]0x00E1 + 'pido em 20%'
+        (Find-TmxTestItem $c 'REG-001').porque = $frase
         $r = Test-TmxCatalog -Catalog $c
         $r.ok | Should -BeFalse
         ($r.erros -join '; ') | Should -Match 'percentual usado como promessa de ganho'
