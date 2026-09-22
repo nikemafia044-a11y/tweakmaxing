@@ -126,6 +126,46 @@ Describe 'Sessao' -Tag 'Session' {
                 -ParameterFilter { $AllowUnelevated -eq $true }
         }
 
+        It 'nunca publica pronto sem o comando de reversao' {
+            Start-TmxSession | Out-Null
+
+            $eventos = Get-TmxTestEvents -Nome 'session.changed'
+            foreach ($ev in $eventos) {
+                if ($ev.payload.pronto -eq $true) {
+                    $ev.payload.undoCommand | Should -Not -BeNullOrEmpty
+                    $ev.payload.restorePoint.estado | Should -Not -Be 'criando'
+                }
+            }
+            # O primeiro evento continua dizendo 'criando' depois do fim: cada
+            # transicao publica um objeto novo, nunca muta o ja publicado.
+            $eventos[0].payload.pronto | Should -BeFalse
+            $eventos[0].payload.undoCommand | Should -BeNullOrEmpty
+            $eventos[0].payload.restorePoint.seq | Should -BeNullOrEmpty
+        }
+
+        It 'troca a referencia publicada a cada transicao' {
+            Start-TmxSession | Out-Null
+
+            $eventos = Get-TmxTestEvents -Nome 'session.changed'
+            $eventos.Count | Should -BeGreaterOrEqual 2
+            [object]::ReferenceEquals($eventos[0].payload, $eventos[-1].payload) | Should -BeFalse
+            [object]::ReferenceEquals($sync.session, $eventos[0].payload) | Should -BeFalse
+        }
+
+        It 'session.simulateFailure derruba so a proxima criacao' {
+            $sync.simulateRestorePointFailure = $true
+
+            $falhou = Start-TmxSession
+            $falhou.ok | Should -BeFalse
+            $falhou.session.restorePoint.estado | Should -Be 'falhou'
+            $falhou.session.pronto | Should -BeFalse
+            $sync.simulateRestorePointFailure | Should -BeFalse
+
+            $depois = Start-TmxSession
+            $depois.ok | Should -BeTrue
+            $depois.session.restorePoint.estado | Should -Be 'criado'
+        }
+
         It 'Get-TmxSessionStatus reflete a sessao pronta' {
             $r = Start-TmxSession
             $st = Get-TmxSessionStatus
@@ -177,6 +217,33 @@ Describe 'Sessao' -Tag 'Session' {
             Start-TmxSession | Out-Null
             Should -Invoke -CommandName Assert-TmxGuards -ModuleName TweakMaxing -Times 1 -Exactly `
                 -ParameterFilter { $AllowUnelevated -ne $true }
+        }
+
+        It 'ignora restorePointMock fora do modo de teste' {
+            # A flag e uma facilidade de teste, nao uma chave de fabrica: sem
+            # -TestMode o ponto real tem que ser sempre tentado.
+            $sync.restorePointMock = $true
+            Mock -ModuleName TweakMaxing -CommandName Invoke-TmxRestorePointStage -MockWith {
+                [pscustomobject]@{ proceed = $true; exitCode = 0; mensagem = 'real'; pulado = $false; resultado = [pscustomobject]@{ sequenceNumber = 42 } }
+            }
+
+            $r = Start-TmxSession
+
+            Should -Invoke -CommandName Invoke-TmxRestorePointStage -ModuleName TweakMaxing -Times 1 -Exactly
+            $r.ok | Should -BeTrue
+            $r.session.restorePoint.seq | Should -Be 42
+        }
+
+        It 'ignora simulateRestorePointFailure fora do modo de teste' {
+            $sync.simulateRestorePointFailure = $true
+            Mock -ModuleName TweakMaxing -CommandName Invoke-TmxRestorePointStage -MockWith {
+                [pscustomobject]@{ proceed = $true; exitCode = 0; mensagem = 'real'; pulado = $false; resultado = [pscustomobject]@{ sequenceNumber = 43 } }
+            }
+
+            $r = Start-TmxSession
+
+            $r.ok | Should -BeTrue
+            $r.session.restorePoint.seq | Should -Be 43
         }
 
         It 'marca o ponto como pulado quando o usuario confirmou a frase' {
@@ -305,6 +372,20 @@ Describe 'Sessao' -Tag 'Session' {
             $r.ok | Should -BeTrue
             $sync.session | Should -BeNullOrEmpty
             (Get-TmxTestEvents -Nome 'session.changed').Count | Should -BeGreaterOrEqual 1
+        }
+
+        It 'session.simulateFailure arma a flag no modo de teste' {
+            $r = Invoke-TmxBridgeRequest -Json '{"id":"9","action":"session.simulateFailure"}' | ConvertFrom-Json
+            $r.ok | Should -BeTrue
+            $r.result.armado | Should -BeTrue
+            $sync.simulateRestorePointFailure | Should -BeTrue
+        }
+
+        It 'session.simulateFailure nao existe fora do modo de teste' {
+            $sync.testMode = $false
+            $r = Invoke-TmxBridgeRequest -Json '{"id":"10","action":"session.simulateFailure"}' | ConvertFrom-Json
+            $r.ok | Should -BeFalse
+            $r.error.message | Should -Be 'session.simulateFailure so existe no modo de teste'
         }
 
         It 'session.reset nao existe fora do modo de teste' {

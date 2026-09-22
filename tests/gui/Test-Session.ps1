@@ -11,7 +11,11 @@
          mostrar "Ponto #999" (no modo de teste o Checkpoint-Computer NAO e
          chamado) e o id da execucao.
 
-    Deixa um print em tests/gui/out/sessao.png. Sai com 1 se algo falhar, e
+      4. session.simulateFailure (so no modo de teste) arma UMA falha do ponto:
+         o modal de erro aparece, "Prosseguir sem ponto" pede a frase exata,
+         a frase errada vira toast e a certa abre a sessao com o ponto pulado.
+
+    Deixa prints em tests/gui/out/sessao.png e sessao-pulado.png. Sai com 1 se algo falhar, e
     sempre fecha a GUI.
 .EXAMPLE
     .\tests\gui\Test-Session.ps1
@@ -84,6 +88,37 @@ function Wait-TmxModalFechado {
         Start-Sleep -Milliseconds 500
     }
     $false
+}
+
+function Invoke-TmxJsBridge {
+    <#
+    .SYNOPSIS
+        Chama uma acao da ponte pela propria pagina e espera a resposta.
+    .DESCRIPTION
+        O agent-browser nao espera promessa: o resultado e guardado numa
+        variavel global unica e lido por polling.
+    .OUTPUTS
+        O JSON da resposta (texto), ou '' se estourar o tempo.
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $Acao,
+        [int] $TimeoutSeconds = 20
+    )
+
+    $marca = 'tmx_' + ([guid]::NewGuid().ToString('N'))
+    $js = "window.$marca=null;window.tmx.bridge.call('$Acao').then(" +
+          "function(r){window.$marca={ok:true,r:r};}," +
+          "function(e){window.$marca={ok:false,e:String(e&&e.message)};});'disparado'"
+    Invoke-AB 'eval' $js | Out-Null
+
+    $limite = (Get-Date).AddSeconds($TimeoutSeconds)
+    while ((Get-Date) -lt $limite) {
+        $resp = ''
+        try { $resp = Invoke-AB 'eval' "JSON.stringify(window.$marca)" } catch { $resp = '' }
+        if ($resp -and ($resp -notmatch '^"?null"?$')) { return $resp }
+        Start-Sleep -Milliseconds 300
+    }
+    ''
 }
 
 function Wait-TmxTexto {
@@ -162,6 +197,61 @@ try {
     Invoke-AB 'screenshot' $print | Out-Null
     Assert-Tmx -Nome 'screenshot gravado' -Condicao (Test-Path -LiteralPath $print) -Detalhe $print
     Write-Host "Print: $print"
+
+    # ------------------------------------------------------------------
+    # Fluxo de erro -> prosseguir sem ponto -> frase exata
+    # ------------------------------------------------------------------
+    $reset = Invoke-TmxJsBridge -Acao 'session.reset'
+    Assert-Tmx -Nome 'session.reset devolve ok no modo de teste' -Condicao ($reset -like '*true*') -Detalhe "obtido: '$reset'"
+
+    $armado = Invoke-TmxJsBridge -Acao 'session.simulateFailure'
+    Assert-Tmx -Nome 'session.simulateFailure arma a falha do ponto' -Condicao ($armado -like '*armado*') -Detalhe "obtido: '$armado'"
+
+    $rpZerado = Wait-TmxTexto -Seletor '#st-rp' -Curinga '*Nenhum ponto*' -TimeoutSeconds 10
+    Assert-Tmx -Nome 'a barra volta a dizer que nao ha ponto' -Condicao ($rpZerado -like '*Nenhum ponto*') -Detalhe "obtido: '$rpZerado'"
+
+    Invoke-AB 'click' '#st-session-start' | Out-Null
+    Invoke-AB 'wait' '#modal-buttons .btn-primary' | Out-Null
+    Invoke-AB 'click' '#modal-buttons .btn-primary' | Out-Null
+
+    $tituloErro = Wait-TmxTexto -Seletor '#modal-title' -Curinga '*falhou*' -TimeoutSeconds 25
+    Assert-Tmx -Nome 'a falha do ponto abre o modal de erro' -Condicao ($tituloErro -like '*falhou*') -Detalhe "obtido: '$tituloErro'"
+
+    $rpFalhou = Invoke-AB 'get' 'text' '#st-rp'
+    Assert-Tmx -Nome 'a barra mostra a falha do ponto' -Condicao ($rpFalhou -like '*Falhou:*') -Detalhe "obtido: '$rpFalhou'"
+
+    $prosseguir = Invoke-AB 'get' 'text' '#modal-buttons .btn-danger'
+    Assert-Tmx -Nome 'o modal de erro oferece Prosseguir sem ponto' -Condicao ($prosseguir -like '*Prosseguir sem ponto*') -Detalhe "obtido: '$prosseguir'"
+
+    Invoke-AB 'click' '#modal-buttons .btn-danger' | Out-Null
+    Invoke-AB 'wait' '#modal-frase' | Out-Null
+
+    $frase = Invoke-AB 'get' 'text' '.sessao-frase'
+    Assert-Tmx -Nome 'o modal de pulo mostra a frase exigida' -Condicao ($frase -like '*SEM PONTO DE RESTAURACAO*') -Detalhe "obtido: '$frase'"
+
+    # Frase errada: toast de erro e o modal continua de pe.
+    Invoke-AB 'fill' '#modal-frase' 'sem ponto de restauracao' | Out-Null
+    Invoke-AB 'click' '#modal-buttons .btn-danger' | Out-Null
+
+    $toast = Wait-TmxTexto -Seletor '#toasts' -Curinga '*frase de confirmacao incorreta*' -TimeoutSeconds 15
+    Assert-Tmx -Nome 'frase errada vira toast de erro' -Condicao ($toast -like '*frase de confirmacao incorreta*') -Detalhe "obtido: '$toast'"
+
+    $aindaAberto = Invoke-AB 'is' 'visible' '#modal-frase'
+    Assert-Tmx -Nome 'o modal da frase continua aberto apos errar' -Condicao ("$aindaAberto" -match 'true|visible|yes') -Detalhe "obtido: '$aindaAberto'"
+
+    # Frase exata: a sessao abre com o ponto PULADO.
+    Invoke-AB 'fill' '#modal-frase' "$frase" | Out-Null
+    Invoke-AB 'click' '#modal-buttons .btn-danger' | Out-Null
+
+    $rpPulado = Wait-TmxTexto -Seletor '#st-rp' -Curinga '*Ponto pulado*' -TimeoutSeconds 25
+    Assert-Tmx -Nome 'a barra passa a mostrar Ponto pulado' -Condicao ($rpPulado -like '*Ponto pulado*') -Detalhe "obtido: '$rpPulado'"
+
+    Assert-Tmx -Nome 'o modal da frase fecha quando a sessao abre' -Condicao (Wait-TmxModalFechado -TimeoutSeconds 20)
+
+    $printPulado = Join-Path (Initialize-TmxGuiOut) 'sessao-pulado.png'
+    Invoke-AB 'screenshot' $printPulado | Out-Null
+    Assert-Tmx -Nome 'screenshot do pulo gravado' -Condicao (Test-Path -LiteralPath $printPulado) -Detalhe $printPulado
+    Write-Host "Print: $printPulado"
 
 } catch {
     $script:Falhas++

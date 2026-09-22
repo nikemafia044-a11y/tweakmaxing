@@ -80,7 +80,20 @@ if ($Headless -or $Undo) {
     # Sem janela nao ha pool de jobs: a sessao e aberta nesta mesma thread, o
     # que faz o $script:TmxRun ficar visivel para o Engine logo abaixo.
     if (-not $DryRun) {
-        $sessao = Start-TmxSession
+        # Start-TmxSession devolve { ok = $false } nos caminhos previstos, mas
+        # um imprevisto (disco somente-leitura na criacao do run, PSDrive,
+        # Checkpoint-Computer estourando de um jeito novo) nao pode virar stack
+        # trace: abortar sem aplicar nada e o mesmo desfecho, codigo 2.
+        $sessao = $null
+        try {
+            $sessao = Start-TmxSession
+        } catch {
+            Write-Host ''
+            Write-Host "Abortado: nao foi possivel abrir a sessao: $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host 'Nada foi alterado.' -ForegroundColor Red
+            exit (Complete-TmxRun 2)
+        }
+
         if (-not $sessao.ok) {
             Write-Host ''
             Write-Host "Abortado: $($sessao.mensagem)" -ForegroundColor Red

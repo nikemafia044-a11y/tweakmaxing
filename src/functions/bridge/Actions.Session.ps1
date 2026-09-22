@@ -63,4 +63,17 @@ function Register-TmxSessionActions {
         Send-TmxUiEvent -Event 'session.changed' -Payload (Get-TmxSessionStatus)
         @{ ok = $true }
     }
+
+    # So no modo de teste: arma UMA falha do ponto de restauracao, para a suite
+    # de GUI percorrer o caminho erro -> "Prosseguir sem ponto" -> frase exata
+    # sem depender de desligar a Protecao do Sistema da maquina.
+    Register-TmxBridgeAction -Name 'session.simulateFailure' -Handler {
+        param($payload)
+        if (-not $sync.testMode) { throw 'session.simulateFailure so existe no modo de teste' }
+
+        $armar = $true
+        if ($payload -and $null -ne $payload.armar) { $armar = [bool]$payload.armar }
+        $sync.simulateRestorePointFailure = $armar
+        @{ ok = $true; armado = $armar }
+    }
 }

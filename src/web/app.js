@@ -288,29 +288,62 @@
      nenhum job chegou a existir. */
   function abrirSessao(payload) {
     return new Promise(function (resolve, reject) {
-      var jobId = null;
+      var jobId = null;      // só conhecido quando session.start responde
       var fechado = false;
+      var guardados = [];    // job.* que chegaram antes disso
 
       function soltar() {
         bridge.off('job.progress', aoProgredir);
         bridge.off('job.done', aoTerminar);
       }
-      function aoProgredir(p) {
-        if (!p || (jobId && p.jobId !== jobId)) { return; }
-        pintarProgresso(p.status || 'Trabalhando…', p.pct);
-      }
-      function aoTerminar(p) {
-        if (fechado || !p || (jobId && p.jobId !== jobId)) { return; }
+
+      function aplicar(tipo, p) {
+        if (tipo === 'progresso') {
+          pintarProgresso(p.status || 'Trabalhando…', p.pct);
+          return;
+        }
+        if (fechado) { return; }
         fechado = true;
         soltar();
         resolve(p);
       }
+
+      /* Um evento sem jobId conhecido NÃO é assumido como deste trabalho: a
+         ponte só aceita um job por vez, mas a resposta com o jobId pode chegar
+         depois do primeiro job.progress. Guarda e reprocessa. */
+      function receber(tipo, p) {
+        if (!p || fechado) { return; }
+        if (jobId === null) { guardados.push({ tipo: tipo, p: p }); return; }
+        if (p.jobId !== jobId) {
+          console.warn('evento ' + tipo + ' de outro job ignorado:', p.jobId);
+          return;
+        }
+        aplicar(tipo, p);
+      }
+
+      function aoProgredir(p) { receber('progresso', p); }
+      function aoTerminar(p) { receber('done', p); }
 
       bridge.on('job.progress', aoProgredir);
       bridge.on('job.done', aoTerminar);
 
       bridge.call('session.start', payload).then(function (r) {
         jobId = (r && r.jobId) || null;
+        if (!jobId) {
+          fechado = true;
+          soltar();
+          reject(new Error('a ponte não devolveu o identificador do trabalho'));
+          return;
+        }
+        var fila = guardados;
+        guardados = [];
+        fila.forEach(function (item) {
+          if (item.p.jobId === jobId) {
+            aplicar(item.tipo, item.p);
+          } else {
+            console.warn('evento ' + item.tipo + ' de outro job descartado:', item.p.jobId);
+          }
+        });
       }).catch(function (e) {
         if (fechado) { return; }
         fechado = true;
@@ -424,31 +457,57 @@
     });
   }
 
+  // Fluxo em andamento: duas abas (ou dois cliques) pedindo sessão ao mesmo
+  // tempo compartilham a MESMA promessa, senão abririam dois modais e dois
+  // session.start - e o segundo morreria com "ja existe um trabalho".
+  var fluxoSessao = null;
+
+  function executarEnsure() {
+    return bridge.call('session.status').then(function (s) {
+      status.aplicar(s);
+      if (s && s.pronto) { return true; }
+
+      return new Promise(function (resolve) {
+        var terminado = false;
+
+        function fim(valor) {
+          if (terminado) { return; }
+          terminado = true;
+          document.removeEventListener('keydown', aoEscapar);
+          // Resolver aqui é o que libera o cache: quem zera fluxoSessao é o
+          // handler de encerramento abaixo, que confere a identidade da
+          // promessa (zerar direto daqui apagaria um fluxo novo já iniciado).
+          resolve(!!valor);
+        }
+        function aoEscapar(e) {
+          // O Escape fecha o modal: a promessa não pode ficar pendurada.
+          if (e.key === 'Escape') { fim(false); }
+        }
+
+        document.addEventListener('keydown', aoEscapar);
+        modalCriarPonto(fim);
+      });
+    }).catch(function (e) {
+      toast('Não foi possível consultar a sessão: ' + e.message, 'erro');
+      return false;
+    });
+  }
+
   var session = {
     ensure: function () {
-      return bridge.call('session.status').then(function (s) {
-        status.aplicar(s);
-        if (s && s.pronto) { return true; }
+      if (fluxoSessao) { return fluxoSessao; }
 
-        return new Promise(function (resolve) {
-          var terminado = false;
-          function fim(valor) {
-            if (terminado) { return; }
-            terminado = true;
-            document.removeEventListener('keydown', aoEscapar);
-            resolve(!!valor);
-          }
-          function aoEscapar(e) {
-            // O Escape fecha o modal: a promessa não pode ficar pendurada.
-            if (e.key === 'Escape') { fim(false); }
-          }
-          document.addEventListener('keydown', aoEscapar);
-          modalCriarPonto(fim);
-        });
-      }).catch(function (e) {
-        toast('Não foi possível consultar a sessão: ' + e.message, 'erro');
-        return false;
+      // Libera o cache quando o fluxo termina (fim(), atalho de sessão já
+      // pronta ou falha), e só se ninguém tiver começado outro nesse meio-tempo.
+      var meu = executarEnsure().then(function (v) {
+        if (fluxoSessao === meu) { fluxoSessao = null; }
+        return v;
+      }, function (e) {
+        if (fluxoSessao === meu) { fluxoSessao = null; }
+        throw e;
       });
+      fluxoSessao = meu;
+      return meu;
     }
   };
 

@@ -42,11 +42,11 @@ function Register-TmxSessionHkuDrive {
 function New-TmxSessionSnapshot {
     <#
     .SYNOPSIS
-        Copia rasa da sessao para viajar num evento.
+        Copia independente da sessao, pronta para ser publicada ou enviada.
     .DESCRIPTION
-        O payload do 'session.changed' nao pode ser a MESMA referencia que
-        continua sendo mutada depois: quem guardou o evento (testes, log,
-        fila da UI) veria o estado final, nao o do instante do envio.
+        O que vai para $sync.session e para o payload do 'session.changed' nao
+        pode ser a MESMA referencia que continua sendo trabalhada: quem leu
+        (a thread da janela, um teste, o log) veria campos mudando debaixo de si.
     #>
     [CmdletBinding()]
     param($Session)
@@ -71,6 +71,78 @@ function New-TmxSessionSnapshot {
     }
 }
 
+function Publish-TmxSession {
+    <#
+    .SYNOPSIS
+        Publica UMA transicao da sessao: snapshot novo, uma unica atribuicao em
+        $sync.session e o evento para a UI.
+    .DESCRIPTION
+        Atomico do ponto de vista de quem le: a thread da janela sempre enxerga
+        um objeto completo que nunca mais muda. Mutar campo a campo o objeto ja
+        publicado abriria a janela em que a UI le pronto=$true com undoCommand
+        ainda $null (ou o estado novo com o seq antigo).
+    .OUTPUTS
+        O snapshot publicado.
+    #>
+    [CmdletBinding()]
+    param($Session)
+
+    $instantaneo = New-TmxSessionSnapshot -Session $Session
+    $sync.session = $instantaneo
+    Send-TmxUiEvent -Event 'session.changed' -Payload $instantaneo
+    $instantaneo
+}
+
+function Get-TmxSimulatedRestorePointStage {
+    <#
+    .SYNOPSIS
+        Resultado simulado da etapa do ponto de restauracao (SO no modo de teste).
+    .DESCRIPTION
+        Existe porque um Mock de Invoke-TmxRestorePointStage nao atravessa
+        runspaces: o job roda noutra, onde mock nenhum foi instalado. A
+        simulacao precisa morar no codigo de producao - e por isso quem a
+        destranca e $sync.testMode em Start-TmxSession, nunca uma flag sozinha.
+
+        $sync.simulateRestorePointFailure (uma vez so) faz a proxima criacao
+        falhar, para a suite de GUI exercitar o caminho erro -> pular com a frase.
+    #>
+    [CmdletBinding()]
+    param([switch] $Pular)
+
+    if ($Pular) {
+        return [pscustomobject]@{
+            proceed   = $true
+            exitCode  = 0
+            mensagem  = 'Modo de teste: ponto de restauracao pulado.'
+            pulado    = $true
+            resultado = $null
+        }
+    }
+
+    $falharAgora = $false
+    if ($sync.ContainsKey('simulateRestorePointFailure')) {
+        $falharAgora = [bool]$sync.simulateRestorePointFailure
+    }
+    if ($falharAgora) {
+        $sync.simulateRestorePointFailure = $false
+        return [pscustomobject]@{
+            proceed   = $false
+            exitCode  = 2
+            mensagem  = 'Modo de teste: falha simulada do ponto de restauracao.'
+            pulado    = $false
+            resultado = $null
+        }
+    }
+
+    [pscustomobject]@{
+        proceed   = $true
+        exitCode  = 0
+        mensagem  = 'Modo de teste: ponto de restauracao simulado (#999).'
+        pulado    = $false
+        resultado = [pscustomobject]@{ ok = $true; sequenceNumber = 999; descricao = 'TweakMaxing (teste)' }
+    }
+}
+
 function Start-TmxSession {
     <#
     .SYNOPSIS
@@ -81,7 +153,8 @@ function Start-TmxSession {
 
         Publica $sync.session e emite 'session.changed' pelo menos duas vezes
         (ao criar o run e ao fechar o ponto de restauracao), para a barra de
-        status acompanhar sem perguntar.
+        status acompanhar sem perguntar. Cada publicacao e um objeto novo e
+        completo (ver Publish-TmxSession).
     .PARAMETER SkipConfirmado
         O usuario ja digitou a frase exata (a ponte valida antes de chamar):
         o ponto de restauracao e PULADO.
@@ -124,6 +197,8 @@ function Start-TmxSession {
     # --- 2. Pasta da execucao ----------------------------------------------
     $run = New-TmxRun
 
+    # Copia de trabalho. O que esta em $sync.session so muda por
+    # Publish-TmxSession: inteiro, uma transicao por vez.
     $sessao = @{
         runId        = "$($run.RunId)"
         runPath      = "$($run.RunPath)"
@@ -133,37 +208,23 @@ function Start-TmxSession {
         undoCommand  = $null
         criadoEm     = (Get-Date).ToString('o')
     }
-    $sync.session = $sessao
-    Send-TmxUiEvent -Event 'session.changed' -Payload (New-TmxSessionSnapshot -Session $sessao)
+    Publish-TmxSession -Session $sessao | Out-Null
 
     # --- 3. Ponto de restauracao -------------------------------------------
-    # No modo de teste o Checkpoint-Computer NAO e chamado: um mock de
-    # Invoke-TmxRestorePointStage nao atravessa runspaces (o job roda noutra),
-    # entao a simulacao mora aqui, controlada por $sync.restorePointMock.
+    # A simulacao SO existe dentro do modo de teste. $sync.restorePointMock nao
+    # e uma chave de fabrica: fora do -TestMode ela e ignorada e o ponto real e
+    # sempre criado.
     $usarMock = $testMode
-    if ($sync.ContainsKey('restorePointMock') -and $null -ne $sync.restorePointMock) {
+    if ($testMode -and $sync.ContainsKey('restorePointMock') -and $null -ne $sync.restorePointMock) {
         $usarMock = [bool]$sync.restorePointMock
     }
 
     if ($usarMock) {
-        if ($SkipConfirmado -or $DryRun) {
-            $etapa = [pscustomobject]@{
-                proceed   = $true
-                exitCode  = 0
-                mensagem  = 'Modo de teste: ponto de restauracao pulado.'
-                pulado    = $true
-                resultado = $null
-            }
-        } else {
-            $etapa = [pscustomobject]@{
-                proceed   = $true
-                exitCode  = 0
-                mensagem  = 'Modo de teste: ponto de restauracao simulado (#999).'
-                pulado    = $false
-                resultado = [pscustomobject]@{ ok = $true; sequenceNumber = 999; descricao = 'TweakMaxing (teste)' }
-            }
+        $etapa = Get-TmxSimulatedRestorePointStage -Pular:($SkipConfirmado -or $DryRun)
+        Write-TmxLog -Level WARN -Message 'Modo de teste: Checkpoint-Computer NAO foi chamado' -Data @{
+            pulado  = $etapa.pulado
+            proceed = $etapa.proceed
         }
-        Write-TmxLog -Level WARN -Message 'Modo de teste: Checkpoint-Computer NAO foi chamado' -Data @{ pulado = $etapa.pulado; seq = 999 }
     } else {
         # A frase de confirmacao ja foi conferida pela ponte (ou pelo dialogo
         # WPF no headless), por isso o -ConfirmSkip aqui so confirma.
@@ -177,11 +238,10 @@ function Start-TmxSession {
     if (-not $etapa.proceed) {
         $sessao.restorePoint.estado   = 'falhou'
         $sessao.restorePoint.mensagem = "$($etapa.mensagem)"
-        $sessao.pronto = $false
-        $sync.session  = $sessao
-        Send-TmxUiEvent -Event 'session.changed' -Payload (New-TmxSessionSnapshot -Session $sessao)
+        $sessao.pronto                = $false
+        $publicada = Publish-TmxSession -Session $sessao
         Write-TmxLog -Level ERROR -Message 'Sessao abortada: ponto de restauracao falhou' -Data @{ mensagem = "$($etapa.mensagem)" }
-        return [pscustomobject]@{ ok = $false; mensagem = "$($etapa.mensagem)"; session = $sessao }
+        return [pscustomobject]@{ ok = $false; mensagem = "$($etapa.mensagem)"; session = $publicada }
     }
 
     if ($etapa.pulado) {
@@ -193,16 +253,17 @@ function Start-TmxSession {
         if ($etapa.resultado) { $sessao.restorePoint.seq = $etapa.resultado.sequenceNumber }
     }
 
+    # pronto e undoCommand entram na MESMA publicacao que o estado final do
+    # ponto: a UI nunca ve uma sessao pronta sem o comando de reversao.
     $sessao.pronto      = $true
     $sessao.undoCommand = "TweakMaxing.ps1 -Headless -Undo $($sessao.runId)"
-    $sync.session       = $sessao
-    Send-TmxUiEvent -Event 'session.changed' -Payload (New-TmxSessionSnapshot -Session $sessao)
+    $publicada = Publish-TmxSession -Session $sessao
 
     Write-TmxLog -Level INFO -Message 'Sessao pronta' -Data @{
-        runId        = $sessao.runId
-        restorePoint = $sessao.restorePoint.estado
-        seq          = $sessao.restorePoint.seq
+        runId        = $publicada.runId
+        restorePoint = $publicada.restorePoint.estado
+        seq          = $publicada.restorePoint.seq
     }
 
-    [pscustomobject]@{ ok = $true; mensagem = "$($etapa.mensagem)"; session = $sessao }
+    [pscustomobject]@{ ok = $true; mensagem = "$($etapa.mensagem)"; session = $publicada }
 }
