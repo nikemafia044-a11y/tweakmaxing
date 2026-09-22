@@ -8,11 +8,15 @@
 # roda DENTRO de um job. A thread da janela so faz pre-validacao (sessao,
 # elevacao, id valido) lendo $sync.
 #
-# Modo de teste: nenhuma acao aqui toca HKLM nem servico real. O tweak
-# escolhido e reescrito (ConvertTo-TmxUpdateTestTweak) para gravar sob
-# HKCU:\Software\TweakMaxing_Tests\Updates e as acoes de servico (so existem
-# em UPD-002) sao descartadas - documentado tambem no cabecalho de
-# WindowsUpdate.ps1. $script:TmxUpdateTestRoot e definido em
+# Modo de teste: nenhuma acao aqui toca HKLM nem servico real, em nenhuma das
+# tres politicas. O tweak escolhido e reescrito (ConvertTo-TmxUpdateTestTweak)
+# para gravar sob HKCU:\Software\TweakMaxing_Tests\Updates: as acoes 'service'
+# declarativas (so existem em UPD-002) sao descartadas, e a acao 'funcao'
+# (UPD-001/UPD-003) ganha parametros.registryRoot = raiz de teste. Para
+# UPD-001 isso tambem faz Set-TmxUpdatePolicyDefault pular o bloco de
+# Get-/Set-TmxServiceState inteiro (ver Test-TmxUpdateServicosReais em
+# WindowsUpdate.ps1) - nenhum StartType de servico real e lido nem alterado
+# no modo de teste. $script:TmxUpdateTestRoot e definido em
 # functions/tweaks/WindowsUpdate.ps1 (carregado antes desta pasta) - mesma
 # raiz que Get-TmxUpdateDefaultRegistryRoot usa para as funcoes Test-.
 
@@ -263,10 +267,57 @@ function Get-TmxUpdateAtivo {
     }
 }
 
+function Resolve-TmxUpdateAtivoId {
+    <#
+    .SYNOPSIS
+        Entre os ids com 'ativo' bruto (Get-TmxUpdateAtivo) = $true, escolhe
+        UM so para a UI marcar - o grupo windows-update e um radio, nunca duas
+        politicas ao mesmo tempo. $null quando nenhum esta ativo.
+    .DESCRIPTION
+        Em teoria mais de uma politica pode "parecer" ativa ao mesmo tempo
+        (valores residuais de um teste manual anterior, um Undo parcial, uma
+        raiz de registro trocada por fora da ferramenta) mesmo o grupo sendo
+        logicamente exclusivo. Prioridade de desempate:
+          1. A de registro mais recente (maior 'seq') com status
+             aplicado/falha no state.json da sessao atual - reflete o que o
+             usuario REALMENTE clicou por ultimo nesta execucao.
+          2. Sem sessao/registro que desempate: precedencia fixa
+             UPD-003 > UPD-002 > UPD-001 (a pausa e a mais especifica e
+             temporaria; o padrao de fabrica e o "nada aplicado" natural,
+             entao fica por ultimo entre os candidatos ativos).
+    .PARAMETER Brutos
+        Hashtable { id -> bool } com o resultado cru de Get-TmxUpdateAtivo
+        para cada tweak do catalogo.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] $Brutos)
+
+    $candidatos = @(@($Brutos.Keys) | Where-Object { $Brutos[$_] })
+    if ($candidatos.Count -eq 0) { return $null }
+    if ($candidatos.Count -eq 1) { return $candidatos[0] }
+
+    $registros = @(Get-TmxUpdateRunRecords)
+    if ($registros.Count -gt 0) {
+        $aplicados = @($registros | Where-Object {
+            ("$($_.status)" -in @('aplicado', 'falha')) -and ($candidatos -contains "$($_.tweakId)")
+        })
+        if ($aplicados.Count -gt 0) {
+            $ultimo = @($aplicados | Sort-Object { [int]$_.seq })[-1]
+            return "$($ultimo.tweakId)"
+        }
+    }
+
+    foreach ($id in @('UPD-003', 'UPD-002', 'UPD-001')) {
+        if ($candidatos -contains $id) { return $id }
+    }
+    $candidatos[0]
+}
+
 function Get-TmxUpdateListPayload {
     <#
     .SYNOPSIS
-        As tres politicas + estado atual (Get-TmxUpdateAtivo) + o que tem
+        As tres politicas + estado atual (Get-TmxUpdateAtivo, com desempate de
+        Resolve-TmxUpdateAtivoId quando mais de uma parece ativa) + o que tem
         undo na execucao atual.
     .NOTES
         So roda dentro de um job: le o registro/servico de verdade e pode demorar.
@@ -278,8 +329,12 @@ function Get-TmxUpdateListPayload {
     $comUndo  = Get-TmxUpdateAppliedIdsInRun
     $lista    = New-Object 'System.Collections.Generic.List[object]'
 
+    $brutos = @{}
+    foreach ($t in $catalogo) { $brutos["$($t.id)"] = Get-TmxUpdateAtivo -Tweak $t }
+    $vencedor = Resolve-TmxUpdateAtivoId -Brutos $brutos
+
     foreach ($t in $catalogo) {
-        $ativo = Get-TmxUpdateAtivo -Tweak $t
+        $ativo = ($null -ne $vencedor) -and ("$($t.id)" -eq $vencedor)
 
         $lista.Add(@{
             id        = "$($t.id)"
@@ -370,13 +425,19 @@ function Register-TmxUpdateActions {
             }
 
             # grupo windows-update e exclusivo: antes de aplicar a escolhida,
-            # desfaz qualquer outra politica do grupo com registro nesta execucao.
+            # desfaz qualquer outra politica do grupo com registro nesta
+            # execucao. Se o desfazer falhar, aborta SEM aplicar a nova - a
+            # politica anterior pode ter ficado parcialmente no sistema, e
+            # empilhar outra por cima so pioraria o diagnostico.
             $aplicados = Get-TmxUpdateAppliedIdsInRun
             $outrosIds = @(Get-TmxUpdatePolicyCatalog | Where-Object { "$($_.id)" -cne "$($p.id)" } | ForEach-Object { "$($_.id)" })
             foreach ($outroId in $outrosIds) {
                 if ($aplicados.Contains($outroId) -and $null -ne $sync.session -and "$($sync.session.runId)") {
                     Send-TmxJobProgress -Pct 10 -Status "Revertendo $outroId..."
-                    Undo-TweakMaxing -RunId "$($sync.session.runId)" -TweakId $outroId -Quiet | Out-Null
+                    $resumoUndo = Undo-TweakMaxing -RunId "$($sync.session.runId)" -TweakId $outroId -Quiet
+                    if ([int]$resumoUndo.falhas -gt 0) {
+                        throw "nao foi possivel desfazer a politica anterior '$outroId' ($($resumoUndo.falhas) de $($resumoUndo.total) item(ns) com falha) antes de aplicar '$($p.id)'; nada foi aplicado - revise o Undo dessa politica antes de tentar de novo"
+                    }
                 }
             }
 

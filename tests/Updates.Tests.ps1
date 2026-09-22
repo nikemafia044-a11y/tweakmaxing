@@ -2,12 +2,14 @@
 # Aba Atualizacoes: tres politicas de Windows Update (UPD-001/002/003),
 # reversiveis, com o servico do Windows Update NUNCA desativado.
 #
-# Nada aqui toca servico real: Get-/Set-TmxServiceState sao sempre mockados
-# quando o teste envolve UPD-001 (funcao) ou UPD-002 (acao 'service' direta
-# no catalogo). O caminho pela ponte usa o modo de teste, que reescreve as
-# acoes para a raiz HKCU:\Software\TweakMaxing_Tests\Updates e DESCARTA
-# qualquer acao 'service' antes de chegar no Engine - por isso o teste de
-# ponte com UPD-002 nao precisa mockar nada.
+# Nada aqui toca servico real. Nos testes DIRETOS (chamando Set-/Test-
+# TmxUpdate* sem passar pela ponte) Get-/Set-TmxServiceState sao mockados
+# quando o teste quer exercitar o bloco de servicos de UPD-001. Pela PONTE, o
+# modo de teste reescreve as acoes para a raiz HKCU:\Software\TweakMaxing_Tests\Updates:
+# acoes 'service' declarativas (UPD-002) somem, e Set-TmxUpdatePolicyDefault
+# (UPD-001) pula o bloco de Get-/Set-TmxServiceState inteiro
+# (Test-TmxUpdateServicosReais) - por isso os testes de ponte nem precisam de
+# um mock funcional para os dois, so um para contar invocacoes (esperadas: 0).
 
 . (Join-Path $PSScriptRoot '_Helpers.ps1')
 
@@ -178,6 +180,18 @@ Describe 'Atualizacoes' -Tag 'Updates' {
             Undo-TweakMaxing -StatePath (Get-TmxRun).StatePath -TweakId 'UPD-003' -Quiet | Out-Null
             (Get-ItemProperty -LiteralPath $p -Name 'PauseUpdatesExpiryTime' -ErrorAction SilentlyContinue) | Should -BeNullOrEmpty
         }
+
+        It 'Test-TmxUpdatePause devolve aplicado=false quando PauseUpdatesExpiryTime ja expirou' {
+            $p = Join-Path $script:TmxUpdateTestRoot 'Microsoft\WindowsUpdate\UX\Settings'
+            New-Item -Path $p -Force | Out-Null
+            $passado = (Get-Date).ToUniversalTime().AddDays(-1).ToString('yyyy-MM-ddTHH:mm:ssZ')
+            New-ItemProperty -Path $p -Name 'PauseUpdatesExpiryTime' -Value $passado -PropertyType String -Force | Out-Null
+
+            $tweak = [pscustomobject]@{ id = 'UPD-003' }
+            $teste = Test-TmxUpdatePause -Tweak $tweak -Profile $null -RegistryRoot $script:TmxUpdateTestRoot
+            $teste.aplicado | Should -BeFalse
+            "$($teste.atual)" | Should -Be $passado
+        }
     }
 
     # -----------------------------------------------------------------------
@@ -227,6 +241,25 @@ Describe 'Atualizacoes' -Tag 'Updates' {
 
             # 3 chamadas na aplicacao + 3 chamadas no undo (Undo-TmxUpdatePolicyDefault restaura um a um)
             Should -Invoke -CommandName Set-TmxServiceState -ModuleName TweakMaxing -Times 6 -Exactly
+        }
+
+        It 'com Parametros.registryRoot fora de HKLM pula o bloco de servicos inteiro (Estado.servicos vazio, nenhuma chamada)' {
+            $tweak = [pscustomobject]@{ id = 'UPD-001' }
+            $r = Set-TmxUpdatePolicyDefault -Tweak $tweak -Profile $null `
+                -Parametros @{ registryRoot = $script:TmxUpdateTestRoot } -RegistryRoot $script:TmxUpdateTestRoot
+            $r.ok | Should -BeTrue
+
+            Should -Invoke -CommandName Get-TmxServiceState -ModuleName TweakMaxing -Times 0 -Exactly
+            Should -Invoke -CommandName Set-TmxServiceState -ModuleName TweakMaxing -Times 0 -Exactly
+
+            $registros = @(Get-TmxState | Where-Object { "$($_.tweakId)" -eq 'UPD-001' -and "$($_.tipo)" -eq 'cmdlet' })
+            $registros.Count | Should -Be 1
+            @($registros[0].detalhe.estado.servicos).Count | Should -Be 0
+
+            # o Undo do registro 'cmdlet' com Estado.servicos vazio nao lanca
+            # (nada a restaurar) e o undo dos valores de registro segue normal.
+            Undo-TweakMaxing -StatePath (Get-TmxRun).StatePath -TweakId 'UPD-001' -Quiet | Out-Null
+            Should -Invoke -CommandName Set-TmxServiceState -ModuleName TweakMaxing -Times 0 -Exactly
         }
     }
 
@@ -377,6 +410,130 @@ Describe 'Atualizacoes' -Tag 'Updates' {
             $listaFinal = $r2.done.result.lista
             $itemAtivo = @($listaFinal.itens | Where-Object { $_.id -eq 'UPD-002' })[0]
             $itemAtivo.ativo | Should -BeTrue
+        }
+
+        It 'no modo de teste, updates.apply UPD-001 nao toca servico real (StartType de BITS/wuauserv/UsoSvc fica identico)' {
+            # Nao mocka: um job roda numa runspace separada do pool (copia so
+            # as FUNCOES, nao a tabela de mocks do Pester), entao um Mock
+            # declarado aqui nunca seria chamado pelo handler mesmo que o
+            # codigo tentasse tocar o servico de verdade - "Should -Invoke"
+            # passaria sempre, mesmo com um bug real. Em vez disso le o
+            # StartType REAL dos tres servicos antes/depois (leitura, sem
+            # elevacao) e confere que nao mudou - a prova que realmente
+            # importa para "nunca toca servico real no modo de teste".
+            $antes = @{}
+            foreach ($nome in @('BITS', 'wuauserv', 'UsoSvc')) {
+                $antes[$nome] = (Get-Service -Name $nome -ErrorAction Stop).StartType
+            }
+
+            $sessao = Start-TmxTestRunSession
+            $sessao.pronto | Should -BeTrue
+
+            $r = Invoke-TmxBridgeJobTest -Action 'updates.apply' -Payload @{ id = 'UPD-001' }
+            $r.done | Should -Not -BeNullOrEmpty
+            $r.done.ok | Should -BeTrue
+
+            foreach ($nome in @('BITS', 'wuauserv', 'UsoSvc')) {
+                (Get-Service -Name $nome -ErrorAction Stop).StartType | Should -Be $antes[$nome]
+            }
+        }
+
+        It 'aborta sem aplicar a nova politica quando o Undo da politica anterior falha' {
+            # Nao mocka Undo-TweakMaxing: um Mock declarado no runspace do
+            # teste Pester nao atravessa para dentro do pool de jobs (o
+            # handler roda numa runspace separada, so com FUNCOES copiadas -
+            # a maquina de mock do Pester, que depende de estado interno do
+            # proprio modulo Pester carregado ali, nao viaja junto). Em vez
+            # disso provoca uma falha REAL e deterministica: corrompe a
+            # estrategia de reversao dos registros de UPD-003 (dentro de um
+            # job, para mexer no MESMO $script:TmxStateRecords em memoria que
+            # o proximo job vai usar) para um valor que Undo-TmxRegistryRecord
+            # nao reconhece - cada registro vira 'falha' de verdade.
+            $sessao = Start-TmxTestRunSession
+            $sessao.pronto | Should -BeTrue
+
+            $r1 = Invoke-TmxBridgeJobTest -Action 'updates.apply' -Payload @{ id = 'UPD-003' }
+            $r1.done | Should -Not -BeNullOrEmpty
+            $r1.done.ok | Should -BeTrue
+
+            $jobIdCorromper = Start-TmxJob -Name 'test.corromper' -Payload $null -Handler {
+                param($p)
+                $registros = @(Get-TmxState | Where-Object { "$($_.tweakId)" -eq 'UPD-003' -and "$($_.tipo)" -eq 'registry' })
+                foreach ($r in $registros) { $r.reversao = @{ tipo = 'estrategiaInvalidaDeTeste' } }
+                Save-TmxState
+                @{ corrompidos = $registros.Count }
+            }
+            $corromper = Wait-TmxJobDoneById -JobId $jobIdCorromper -TimeoutSeconds 30
+            $corromper | Should -Not -BeNullOrEmpty
+            $corromper.ok | Should -BeTrue
+            [int]$corromper.result.corrompidos | Should -BeGreaterThan 0
+
+            $r2 = Invoke-TmxBridgeJobTest -Action 'updates.apply' -Payload @{ id = 'UPD-002' }
+            $r2.done | Should -Not -BeNullOrEmpty
+            $r2.done.ok | Should -BeFalse
+            "$($r2.done.error.message)" | Should -Match 'UPD-003'
+            "$($r2.done.error.message)" | Should -Match 'nao foi possivel desfazer'
+
+            # a nova politica (UPD-002) nao foi aplicada: sem registros dela no state.json.
+            $registros = @(Import-TmxState -StatePath $sessao.statePath)
+            @($registros | Where-Object { "$($_.tweakId)" -eq 'UPD-002' }).Count | Should -Be 0
+
+            # a anterior (UPD-003) continua com registros 'aplicado' - o Undo
+            # mockado "falhou" sem de fato reverter nada.
+            @($registros | Where-Object { "$($_.tweakId)" -eq 'UPD-003' -and "$($_.status)" -eq 'aplicado' }).Count | Should -BeGreaterThan 0
+        }
+    }
+
+    # -----------------------------------------------------------------------
+    Context 'Resolve-TmxUpdateAtivoId (desempate quando mais de uma politica parece ativa)' {
+
+        BeforeEach {
+            Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It 'devolve o unico id ativo quando so um bate' {
+            $brutos = @{ 'UPD-001' = $false; 'UPD-002' = $true; 'UPD-003' = $false }
+            Resolve-TmxUpdateAtivoId -Brutos $brutos | Should -Be 'UPD-002'
+        }
+
+        It 'devolve $null quando nenhum esta ativo' {
+            $brutos = @{ 'UPD-001' = $false; 'UPD-002' = $false; 'UPD-003' = $false }
+            Resolve-TmxUpdateAtivoId -Brutos $brutos | Should -BeNullOrEmpty
+        }
+
+        It 'sem sessao, usa a precedencia fixa UPD-003 > UPD-002 > UPD-001 quando mais de um parece ativo' {
+            $brutos1 = @{ 'UPD-001' = $true; 'UPD-002' = $true; 'UPD-003' = $false }
+            Resolve-TmxUpdateAtivoId -Brutos $brutos1 | Should -Be 'UPD-002'
+
+            $brutos2 = @{ 'UPD-001' = $true; 'UPD-002' = $true; 'UPD-003' = $true }
+            Resolve-TmxUpdateAtivoId -Brutos $brutos2 | Should -Be 'UPD-003'
+        }
+
+        It 'com sessao, prioriza o id com o registro mais recente (maior seq) no state.json' {
+            New-TmxUpdateTestSync -TestMode $false | Out-Null
+            Remove-TmxTestKey -SubKey 'Updates'
+            $run = New-TmxRun
+            $sync.session = @{ statePath = $run.StatePath }
+
+            Add-TmxStateRecord -Record ([pscustomobject]@{
+                tweakId = 'UPD-002'; tipo = 'registry'; alvo = 'x'; detalhe = @{}
+                valorAnterior = $null; tipoAnterior = $null; existiaAntes = $false; valorNovo = 1
+                reversao = @{ tipo = 'removerValor' }; status = 'aplicado'
+                aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            }) | Out-Null
+            Add-TmxStateRecord -Record ([pscustomobject]@{
+                tweakId = 'UPD-003'; tipo = 'registry'; alvo = 'y'; detalhe = @{}
+                valorAnterior = $null; tipoAnterior = $null; existiaAntes = $false; valorNovo = 1
+                reversao = @{ tipo = 'removerValor' }; status = 'aplicado'
+                aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            }) | Out-Null
+
+            # UPD-003 foi o ULTIMO aplicado (seq mais alto) mesmo com UPD-002
+            # tambem parecendo ativo - vence pelo registro, nao pela precedencia fixa.
+            $brutos = @{ 'UPD-001' = $false; 'UPD-002' = $true; 'UPD-003' = $true }
+            Resolve-TmxUpdateAtivoId -Brutos $brutos | Should -Be 'UPD-003'
+
+            Remove-TmxTestKey -SubKey 'Updates'
         }
     }
 }

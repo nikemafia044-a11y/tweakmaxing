@@ -14,15 +14,25 @@
 #  - Adiar grava datas calculadas em tempo de execucao (agora + N dias), que
 #    o catalogo estatico (JSON) nao pode expressar.
 #
+# Servico real NUNCA e tocado fora de producao: Set-TmxUpdatePolicyDefault so
+# chama Get-/Set-TmxServiceState quando Test-TmxUpdateServicosReais devolve
+# $true (nem $sync.testMode nem Parametros.registryRoot apontam para fora de
+# HKLM:\SOFTWARE - mesmo sinal que Resolve-TmxUpdateRegistryRoot usa para a
+# raiz do registro, de proposito: "onde grava" e "se mexe em servico" nunca
+# podem discordar). No modo de teste o Estado.servicos gravado fica vazio (o
+# Undo ja trata isso sem erro).
+#
 # Toda funcao aqui aceita -RegistryRoot (default HKLM:\SOFTWARE, ou a raiz de
 # teste quando $sync.testMode - ver Get-TmxUpdateDefaultRegistryRoot) para que
 # os testes redirecionem para HKCU:\Software\TweakMaxing_Tests\Updates. Quando
 # chamada pelo Engine (tipo 'funcao'), a raiz tambem pode chegar via
 # Parametros.registryRoot - e o que a ponte usa no modo de teste (ver
-# Actions.Updates.ps1) para as funcoes Set-. As funcoes Test- NAO recebem
-# Parametros do despacho generico do Engine (Test-TmxAction chama
-# "& $teste -Tweak $Tweak -Profile $Profile", nunca com -Parametros) - sem o
-# fallback de Get-TmxUpdateDefaultRegistryRoot, a pos-verificacao de
+# Actions.Updates.ps1) para as funcoes Set-. As funcoes Test- tambem aceitam
+# -Parametros (opcional): preparado para quando Test-TmxAction do Engine
+# passar -Parametros ao despacho 'funcao' (endurecimento em andamento em
+# Engine/Actions.ps1, fora desta tarefa) - ate la, sem -RegistryRoot nem
+# -Parametros explicitos, Get-TmxUpdateDefaultRegistryRoot resolve pelo
+# $sync.testMode ambiente. Sem esse fallback a pos-verificacao de
 # Invoke-TmxPlan sempre leria HKLM:\SOFTWARE mesmo depois de Set- escrever na
 # raiz de teste, e reportaria 'falha' para uma escrita que na verdade deu certo.
 
@@ -75,6 +85,49 @@ function Resolve-TmxUpdateRegistryRoot {
     if ($viaParam) { return $viaParam }
     if ($RegistryRoot) { return $RegistryRoot }
     'HKLM:\SOFTWARE'
+}
+
+function Resolve-TmxUpdateTestRegistryRoot {
+    <#
+    .SYNOPSIS
+        Raiz efetiva para as funcoes Test-: -RegistryRoot explicito vence;
+        senao Parametros.registryRoot (presente quando o Engine passar
+        -Parametros ao despacho 'funcao' - ver nota no cabecalho do arquivo);
+        senao Get-TmxUpdateDefaultRegistryRoot ($sync.testMode ou HKLM:\SOFTWARE).
+    #>
+    [CmdletBinding()]
+    param($Parametros, [string] $RegistryRoot)
+
+    if ($RegistryRoot) { return $RegistryRoot }
+    $viaParam = "$(Get-TmxActionProp -Action $Parametros -Nome 'registryRoot' -Padrao '')"
+    if ($viaParam) { return $viaParam }
+    Get-TmxUpdateDefaultRegistryRoot
+}
+
+function Test-TmxUpdateServicosReais {
+    <#
+    .SYNOPSIS
+        $true quando os servicos reais do Windows PODEM ser tocados: nem
+        $sync.testMode nem Parametros.registryRoot apontam para fora de
+        HKLM:\SOFTWARE. Mesmo sinal que Resolve-TmxUpdateRegistryRoot usa
+        para decidir onde gravar - "onde grava" e "se mexe em servico" nunca
+        podem discordar, senao o modo de teste mudaria BITS/wuauserv/UsoSvc
+        de verdade so porque o registro foi redirecionado para HKCU.
+    .NOTES
+        Nao olha para -RegistryRoot explicito de proposito: uma chamada
+        direta de teste (Pester) com -RegistryRoot apontando para HKCU mas
+        sem $sync.testMode e sem Parametros.registryRoot continua exercitando
+        o bloco de servicos (com Get-/Set-TmxServiceState mockados) - so o
+        modo de teste da ponte (que injeta Parametros.registryRoot) ou
+        $sync.testMode pulam o bloco de verdade.
+    #>
+    [CmdletBinding()]
+    param($Parametros)
+
+    if ($null -ne $sync -and $sync.testMode) { return $false }
+    $viaParam = "$(Get-TmxActionProp -Action $Parametros -Nome 'registryRoot' -Padrao '')"
+    if ($viaParam -and $viaParam -ne 'HKLM:\SOFTWARE') { return $false }
+    $true
 }
 
 function Get-TmxUpdatePolicyValueList {
@@ -141,11 +194,14 @@ function Test-TmxUpdatePolicyDefault {
     <#
     .SYNOPSIS
         'aplicado' quando nenhum valor de politica/pausa (UPD-002 + pausa) existe mais.
+    .PARAMETER Parametros
+        Opcional. Quando presente (endurecimento futuro do Engine) e tiver
+        'registryRoot', vale sobre o fallback de $sync.testMode.
     #>
     [CmdletBinding()]
-    param($Tweak, $Profile, [string] $RegistryRoot)
+    param($Tweak, $Profile, $Parametros, [string] $RegistryRoot)
 
-    if (-not $RegistryRoot) { $RegistryRoot = Get-TmxUpdateDefaultRegistryRoot }
+    $RegistryRoot = Resolve-TmxUpdateTestRegistryRoot -Parametros $Parametros -RegistryRoot $RegistryRoot
 
     $valores = @(Get-TmxUpdatePolicyValueList -RegistryRoot $RegistryRoot) + @(Get-TmxUpdatePauseValueList -RegistryRoot $RegistryRoot)
     $presentes = New-Object 'System.Collections.Generic.List[string]'
@@ -168,12 +224,19 @@ function Set-TmxUpdatePolicyDefault {
     .SYNOPSIS
         Remove as politicas de adiamento/pausa (Set-TmxRegistry -Remove, valor
         anterior capturado por registro) e normaliza BITS/wuauserv/UsoSvc.
+    .NOTES
+        O bloco de servicos (Get-/Set-TmxServiceState) so roda quando
+        Test-TmxUpdateServicosReais diz que a raiz efetiva e HKLM de verdade -
+        no modo de teste (ou com Parametros.registryRoot fora de HKLM) nenhum
+        servico real e lido nem alterado; Estado.servicos fica @() e o Undo
+        ja trata isso como "nada a restaurar aqui" sem erro.
     #>
     [CmdletBinding()]
     param($Tweak, $Profile, $Parametros, [string] $RegistryRoot = 'HKLM:\SOFTWARE')
 
-    $raiz    = Resolve-TmxUpdateRegistryRoot -Parametros $Parametros -RegistryRoot $RegistryRoot
-    $tweakId = "$($Tweak.id)"
+    $raiz         = Resolve-TmxUpdateRegistryRoot -Parametros $Parametros -RegistryRoot $RegistryRoot
+    $tweakId      = "$($Tweak.id)"
+    $tocaServicos = Test-TmxUpdateServicosReais -Parametros $Parametros
 
     $valores   = @(Get-TmxUpdatePolicyValueList -RegistryRoot $raiz) + @(Get-TmxUpdatePauseValueList -RegistryRoot $raiz)
     $registros = New-Object 'System.Collections.Generic.List[object]'
@@ -186,17 +249,19 @@ function Set-TmxUpdatePolicyDefault {
     }
 
     $antesServicos = New-Object 'System.Collections.Generic.List[object]'
-    foreach ($alvo in $script:TmxUpdateServiceAlvos) {
-        try {
-            $s = Get-TmxServiceState -Nome $alvo.nome
-            $antesServicos.Add(@{ nome = $alvo.nome; startType = "$($s.startType)"; status = "$($s.status)" })
-        } catch {
-            $antesServicos.Add(@{ nome = $alvo.nome; startType = $null; status = $null })
+    if ($tocaServicos) {
+        foreach ($alvo in $script:TmxUpdateServiceAlvos) {
+            try {
+                $s = Get-TmxServiceState -Nome $alvo.nome
+                $antesServicos.Add(@{ nome = $alvo.nome; startType = "$($s.startType)"; status = "$($s.status)" })
+            } catch {
+                $antesServicos.Add(@{ nome = $alvo.nome; startType = $null; status = $null })
+            }
         }
     }
 
-    $anteriorTexto = ($antesServicos.ToArray() | ForEach-Object { "$($_.nome)=$($_.startType)" }) -join '; '
-    $novoTexto     = ($script:TmxUpdateServiceAlvos | ForEach-Object { "$($_.nome)=$($_.tipoInicio)" }) -join '; '
+    $anteriorTexto = if ($tocaServicos) { ($antesServicos.ToArray() | ForEach-Object { "$($_.nome)=$($_.startType)" }) -join '; ' } else { '(modo de teste: servicos nao lidos)' }
+    $novoTexto     = if ($tocaServicos) { ($script:TmxUpdateServiceAlvos | ForEach-Object { "$($_.nome)=$($_.tipoInicio)" }) -join '; ' } else { '(modo de teste: servicos nao tocados)' }
 
     $recServ = New-TmxCmdletRecord -TweakId $tweakId -Funcao 'Set-TmxUpdatePolicyDefault' `
         -Alvo 'servicos do Windows Update (BITS/wuauserv/UsoSvc)' `
@@ -205,11 +270,13 @@ function Set-TmxUpdatePolicyDefault {
     $registros.Add($recServ)
 
     $svcFalhas = New-Object 'System.Collections.Generic.List[string]'
-    foreach ($alvo in $script:TmxUpdateServiceAlvos) {
-        try {
-            Set-TmxServiceState -Nome $alvo.nome -StartType $alvo.tipoInicio
-        } catch {
-            $svcFalhas.Add("$($alvo.nome): $($_.Exception.Message)")
+    if ($tocaServicos) {
+        foreach ($alvo in $script:TmxUpdateServiceAlvos) {
+            try {
+                Set-TmxServiceState -Nome $alvo.nome -StartType $alvo.tipoInicio
+            } catch {
+                $svcFalhas.Add("$($alvo.nome): $($_.Exception.Message)")
+            }
         }
     }
 
@@ -239,6 +306,10 @@ function Undo-TmxUpdatePolicyDefault {
         cada remocao gerou seu proprio registro 'registry' com reversao
         'restaurarValorAnterior', e Undo-TweakMaxing ja os reverte um a um -
         esta funcao NAO mexe em registro nenhum.
+    .NOTES
+        Estado.servicos vem vazio (@()) quando Set-TmxUpdatePolicyDefault
+        rodou no modo de teste (Test-TmxUpdateServicosReais = $false): o
+        caminho abaixo ja cobre isso como "nada a restaurar", sem lancar.
     #>
     [CmdletBinding()]
     param($Estado)
@@ -269,11 +340,14 @@ function Test-TmxUpdatePause {
     <#
     .SYNOPSIS
         'aplicado' quando PauseUpdatesExpiryTime existe e esta no futuro.
+    .PARAMETER Parametros
+        Opcional. Quando presente (endurecimento futuro do Engine) e tiver
+        'registryRoot', vale sobre o fallback de $sync.testMode.
     #>
     [CmdletBinding()]
-    param($Tweak, $Profile, [string] $RegistryRoot)
+    param($Tweak, $Profile, $Parametros, [string] $RegistryRoot)
 
-    if (-not $RegistryRoot) { $RegistryRoot = Get-TmxUpdateDefaultRegistryRoot }
+    $RegistryRoot = Resolve-TmxUpdateTestRegistryRoot -Parametros $Parametros -RegistryRoot $RegistryRoot
 
     $p   = Join-Path $RegistryRoot $script:TmxUpdatePauseSubPath
     $val = Get-TmxRegistryValue -Path $p -Name 'PauseUpdatesExpiryTime'
