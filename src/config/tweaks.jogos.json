@@ -1,0 +1,2183 @@
+{
+  "versao": 1,
+  "descricao": "Catalogo de tweaks de jogos (fonte: CS2Tuner). Tier: MEDIDO (efeito reprodutivel), TECNICO (mecanismo plausivel, ganho pequeno/dependente), FOLCLORE (nunca selecionado automaticamente).",
+  "tweaks": [
+    {
+      "id": "JOG-001",
+      "origem": {
+        "cs2tuner": "PWR-001"
+      },
+      "nome": "Ativar plano de energia Desempenho Maximo (Ultimate Performance)",
+      "descricao": "Remove os estados de economia que atrasam a subida de clock e a resposta a interrupcoes.",
+      "categoria": "Jogos / Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": [
+          "os.isLaptop == true :: em notebook derruba autonomia e o boost por orcamento termico"
+        ]
+      },
+      "porque": "Remove os estados de economia que atrasam a subida de clock e a resposta a interrupcoes.",
+      "evidencia": "Efeito reprodutivel em frametime 1% low e em latencia de DPC sob carga variavel. Ganho nao quantificado em FPS medio.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxUltimatePowerPlan",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "JOG-002",
+      "origem": {
+        "cs2tuner": "PWR-002"
+      },
+      "nome": "Estado minimo do processador em 100%",
+      "descricao": "Evita que o CPU desca para P-states baixos entre frames e precise subir de novo a cada rajada de trabalho.",
+      "categoria": "Jogos / Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": [
+          "os.isLaptop == true :: em notebook o orcamento termico derruba o boost quando o minimo e 100%"
+        ]
+      },
+      "porque": "Evita que o CPU desca para P-states baixos entre frames e precise subir de novo a cada rajada de trabalho.",
+      "evidencia": "Reduz variancia de frametime em medicao; efeito em FPS medio pequeno. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "powercfg",
+          "subgrupo": "54533251-82be-4824-96c1-47b60b740d00",
+          "configuracao": "893dee8e-2bef-41e0-89c6-b55d0929964c",
+          "valor": 100,
+          "descricao": "Processor performance minimum state"
+        }
+      ]
+    },
+    {
+      "id": "JOG-003",
+      "origem": {
+        "cs2tuner": "PWR-003"
+      },
+      "nome": "PCI Express: Link State Power Management desligado",
+      "descricao": "ASPM coloca links PCIe (GPU, NVMe, placa de rede) em estados de baixa energia; sair deles custa microssegundos a cada vez.",
+      "categoria": "Jogos / Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "ASPM coloca links PCIe (GPU, NVMe, placa de rede) em estados de baixa energia; sair deles custa microssegundos a cada vez.",
+      "evidencia": "Latencia de saida de L1 e mensuravel e documentada pela especificacao PCIe. Impacto em jogo depende do hardware; ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "powercfg",
+          "subgrupo": "501a4d13-42af-4429-9fd1-a8218c268e20",
+          "configuracao": "ee12f906-d277-404b-b6da-e5fa1a576df5",
+          "valor": 0,
+          "descricao": "PCI Express Link State Power Management"
+        }
+      ]
+    },
+    {
+      "id": "JOG-004",
+      "origem": {
+        "cs2tuner": "PWR-004"
+      },
+      "nome": "Desativar suspensao seletiva de USB",
+      "descricao": "A suspensao seletiva pode introduzir latencia ao religar a porta do mouse apos periodos de inatividade.",
+      "categoria": "Jogos / Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "A suspensao seletiva pode introduzir latencia ao religar a porta do mouse apos periodos de inatividade.",
+      "evidencia": "Efeito observavel em medicao de polling rate apos idle. Ganho nao quantificado em FPS.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "powercfg",
+          "subgrupo": "2a737441-1930-4402-8d77-b2bebba308a3",
+          "configuracao": "48e6b7a6-50f5-4782-a5d4-53bb8f07e226",
+          "valor": 0,
+          "descricao": "USB selective suspend"
+        }
+      ]
+    },
+    {
+      "id": "JOG-005",
+      "origem": {
+        "cs2tuner": "PWR-005"
+      },
+      "nome": "Desativar core parking (nucleos minimos 100%)",
+      "descricao": "Impede o agendador de estacionar nucleos, evitando a latencia de despertar quando o jogo espalha threads.",
+      "categoria": "Jogos / Energia",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": [
+          "os.isLaptop == true :: em notebook aumenta consumo sem ganho"
+        ]
+      },
+      "porque": "Impede o agendador de estacionar nucleos, evitando a latencia de despertar quando o jogo espalha threads.",
+      "evidencia": "Mecanismo documentado; em CPUs modernos o Windows ja estaciona pouco. Ganho pequeno e dependente do hardware, nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "powercfg",
+          "subgrupo": "54533251-82be-4824-96c1-47b60b740d00",
+          "configuracao": "0cc5b647-c1df-4637-891a-dec35c318583",
+          "valor": 100,
+          "descricao": "Processor performance core parking min cores"
+        }
+      ]
+    },
+    {
+      "id": "JOG-006",
+      "origem": {
+        "cs2tuner": "PWR-006"
+      },
+      "nome": "Desativar Inicializacao Rapida (hiberboot)",
+      "descricao": "Nao e latencia: com hiberboot o kernel e os drivers nao reiniciam de verdade, e estados obsoletos sobrevivem ao 'desligar'.",
+      "categoria": "Jogos / Energia",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Nao e latencia: com hiberboot o kernel e os drivers nao reiniciam de verdade, e estados obsoletos sobrevivem ao 'desligar'.",
+      "evidencia": "Comportamento documentado do hiberboot. Nenhum efeito em FPS; o beneficio e diagnostico e consistencia.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Power",
+          "name": "HiberbootEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-007",
+      "origem": {
+        "cs2tuner": "PWR-007"
+      },
+      "nome": "Adaptador de rede: nao permitir que o Windows desligue o dispositivo",
+      "descricao": "Com o gerenciamento de energia ativo a placa pode entrar em estado de baixa energia e perder pacotes ao acordar.",
+      "categoria": "Jogos / Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "network.adaptadorAtivo.nome exists"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Com o gerenciamento de energia ativo a placa pode entrar em estado de baixa energia e perder pacotes ao acordar.",
+      "evidencia": "Perda/atraso de pacotes apos idle e reprodutivel em captura. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxNicPower",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "JOG-008",
+      "origem": {
+        "cs2tuner": "CPU-001"
+      },
+      "nome": "Win32PrioritySeparation = 0x26 (quantum curto, foreground 3:1)",
+      "descricao": "Quantum curto com boost fixo para o processo em primeiro plano reduz o tempo que o jogo espera por CPU.",
+      "categoria": "Jogos / CPU",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Quantum curto com boost fixo para o processo em primeiro plano reduz o tempo que o jogo espera por CPU.",
+      "evidencia": "Mecanismo documentado do agendador. Diferenca medida e pequena em CPUs com folga; nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\PriorityControl",
+          "name": "Win32PrioritySeparation",
+          "value": 38,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-009",
+      "origem": {
+        "cs2tuner": "CPU-002"
+      },
+      "nome": "Desativar VBS / HVCI (Integridade de Memoria)",
+      "descricao": "Com VBS o Windows roda sobre o Hyper-V; cada transicao de privilegio e cada acesso a memoria custam mais. HVCI adiciona verificacao de codigo em kernel.",
+      "categoria": "Jogos / CPU",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "VBS/HVCI protege contra malware em kernel e roubo de credenciais (Credential Guard).",
+        "tradeoff": "Desativar recupera desempenho, mas remove uma camada real de seguranca. Reative se instalar drivers de origem duvidosa ou usar o PC para trabalho sensivel.",
+        "frase": "ACEITO DESATIVAR VBS"
+      },
+      "condicoes": {
+        "requer": [
+          "os.vbsAtivo == true :: VBS ja esta inativo"
+        ],
+        "bloqueiaSe": [
+          "os.isVM == true"
+        ]
+      },
+      "porque": "Com VBS o Windows roda sobre o Hyper-V; cada transicao de privilegio e cada acesso a memoria custam mais. HVCI adiciona verificacao de codigo em kernel.",
+      "evidencia": "Diferenca reprodutivel em benchmarks e em 1% low, maior em CPUs mais antigos. Custo real de seguranca: protecao contra drivers maliciosos e roubo de credenciais e reduzida.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard",
+          "name": "EnableVirtualizationBasedSecurity",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\DeviceGuard\\Scenarios\\HypervisorEnforcedCodeIntegrity",
+          "name": "Enabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-010",
+      "origem": {
+        "cs2tuner": "CPU-003"
+      },
+      "nome": "Corrigir limite de nucleos do msconfig (remover numproc)",
+      "descricao": "Erro comum: marcar 'Numero de processadores' no msconfig limita o CPU permanentemente. O correto e nao ter a opcao.",
+      "categoria": "Jogos / CPU",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "os.bcd.disponivel == true :: leitura do BCD exige elevacao",
+          "os.bcd.numproc exists :: nenhum limite de nucleos configurado"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Erro comum: marcar 'Numero de processadores' no msconfig limita o CPU permanentemente. O correto e nao ter a opcao.",
+      "evidencia": "Com numproc menor que o total de threads, a perda e direta e reprodutivel.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "bcdedit",
+          "acao": "deletevalue",
+          "opcao": "numproc"
+        }
+      ]
+    },
+    {
+      "id": "JOG-011",
+      "origem": {
+        "cs2tuner": "CPU-004"
+      },
+      "nome": "Remover useplatformclock forcado (deixar o Windows escolher o TSC)",
+      "descricao": "Forcar HPET e folclore prejudicial: o HPET e mais lento de ler que o TSC invariante que o Windows ja escolhe sozinho.",
+      "categoria": "Jogos / CPU",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "os.bcd.disponivel == true :: leitura do BCD exige elevacao",
+          "os.bcd.useplatformclock == Yes :: useplatformclock nao esta forcado"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Forcar HPET e folclore prejudicial: o HPET e mais lento de ler que o TSC invariante que o Windows ja escolhe sozinho.",
+      "evidencia": "Custo de leitura do HPET vs TSC e mensuravel (centenas de ns vs dezenas). Remover a opcao devolve o padrao.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "bcdedit",
+          "acao": "deletevalue",
+          "opcao": "useplatformclock"
+        }
+      ]
+    },
+    {
+      "id": "JOG-012",
+      "origem": {
+        "cs2tuner": "CPU-005"
+      },
+      "nome": "disabledynamictick yes",
+      "descricao": "Mantem o tick do timer constante em vez de deixa-lo parar em idle; timers ficam mais previsiveis.",
+      "categoria": "Jogos / CPU",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "os.bcd.disponivel == true :: leitura do BCD exige elevacao"
+        ],
+        "bloqueiaSe": [
+          "os.isLaptop == true :: tick dinamico economiza bateria em notebook"
+        ]
+      },
+      "porque": "Mantem o tick do timer constante em vez de deixa-lo parar em idle; timers ficam mais previsiveis.",
+      "evidencia": "Mecanismo documentado. Medir antes/depois com o bench de jitter; ganho nao quantificado e possivelmente nulo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "bcdedit",
+          "acao": "set",
+          "opcao": "disabledynamictick",
+          "valor": "yes"
+        }
+      ]
+    },
+    {
+      "id": "JOG-013",
+      "origem": {
+        "cs2tuner": "CPU-006"
+      },
+      "nome": "Modo MSI + DevicePriority alta para a GPU",
+      "descricao": "Interrupcoes por mensagem (MSI) evitam o compartilhamento de linhas IRQ; prioridade alta reduz a espera da interrupcao da GPU.",
+      "categoria": "Jogos / CPU",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [
+        "desktop"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "gpu.vendor != Outro"
+        ],
+        "bloqueiaSe": [
+          "os.isVM == true"
+        ]
+      },
+      "porque": "Interrupcoes por mensagem (MSI) evitam o compartilhamento de linhas IRQ; prioridade alta reduz a espera da interrupcao da GPU.",
+      "evidencia": "GPUs modernas ja usam MSI por padrao; o ganho e a prioridade, e e pequeno. So aplicado se o driver declara suporte (chave MessageSignaledInterruptProperties); backup .reg obrigatorio da chave do dispositivo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxGpuMsi",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "JOG-014",
+      "origem": {
+        "cs2tuner": "GPU-001"
+      },
+      "nome": "Desativar Game DVR e gravacao em segundo plano",
+      "descricao": "A gravacao em segundo plano mantem um encoder ativo e um hook de captura no jogo.",
+      "categoria": "Jogos / GPU",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "A gravacao em segundo plano mantem um encoder ativo e um hook de captura no jogo.",
+      "evidencia": "Diferenca reprodutivel em 1% low quando a gravacao esta ativa. Ganho nao quantificado com ela ja desligada.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\System\\GameConfigStore",
+          "name": "GameDVR_Enabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\GameDVR",
+          "name": "AllowGameDVR",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\GameDVR",
+          "name": "AppCaptureEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-015",
+      "origem": {
+        "cs2tuner": "GPU-002"
+      },
+      "nome": "HAGS ligado (NVIDIA com Reflex e driver recente)",
+      "descricao": "Reflex funciona melhor com o agendamento de GPU acelerado por hardware; desligar HAGS aqui e o folclore do passado.",
+      "categoria": "Jogos / GPU",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "gpu.vendor == NVIDIA :: HAGS so e recomendado ligado em NVIDIA com Reflex",
+          "gpu.reflexProvavel == true :: GPU sem suporte a Reflex",
+          "gpu.dataDriver >= 2022-06-01 :: driver antigo: HAGS fica desligado (ver GPU-003)"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Reflex funciona melhor com o agendamento de GPU acelerado por hardware; desligar HAGS aqui e o folclore do passado.",
+      "evidencia": "Latencia de sistema medida com Reflex e menor com HAGS ligado em drivers recentes. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+          "name": "HwSchMode",
+          "value": 2,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-016",
+      "origem": {
+        "cs2tuner": "GPU-003"
+      },
+      "nome": "HAGS desligado (driver antigo)",
+      "descricao": "Drivers antigos tiveram regressoes de stutter com HAGS ligado; a solucao certa e atualizar o driver, esta e a paliativa.",
+      "categoria": "Jogos / GPU",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "gpu.dataDriver < 2022-06-01 :: driver recente: HAGS fica ligado (ver GPU-002)",
+          "gpu.hagsAtivo == true :: HAGS ja esta desligado"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Drivers antigos tiveram regressoes de stutter com HAGS ligado; a solucao certa e atualizar o driver, esta e a paliativa.",
+      "evidencia": "Regressoes documentadas em drivers 2020-2021. Atualizar o driver e a recomendacao principal do guia.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+          "name": "HwSchMode",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-017",
+      "origem": {
+        "cs2tuner": "GPU-004"
+      },
+      "nome": "Desativar MPO (OverlayTestMode=5)",
+      "descricao": "Multi-Plane Overlay causou stutter e flicker em algumas combinacoes NVIDIA + monitor; desligar e um paliativo, nao uma otimizacao.",
+      "categoria": "Jogos / GPU",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "gpu.vendor == NVIDIA :: paliativo conhecido apenas para NVIDIA"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Multi-Plane Overlay causou stutter e flicker em algumas combinacoes NVIDIA + monitor; desligar e um paliativo, nao uma otimizacao.",
+      "evidencia": "Relatos consistentes e reconhecimento da NVIDIA. So faz sentido se voce ve stutter/flicker; por isso nao entra em preset.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm",
+          "name": "OverlayTestMode",
+          "value": 5,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-018",
+      "origem": {
+        "cs2tuner": "GPU-005"
+      },
+      "nome": "Otimizacoes de tela cheia (FSO) para cs2.exe: entenda antes de mexer",
+      "descricao": "No Windows 11 moderno, FSO habilita o flip model e e o que permite Reflex e VRR funcionarem em tela cheia. Desativar 'por garantia' e contraproducente.",
+      "categoria": "Jogos / GPU",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "storage.cs2Path exists :: cs2.exe nao localizado"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "No Windows 11 moderno, FSO habilita o flip model e e o que permite Reflex e VRR funcionarem em tela cheia. Desativar 'por garantia' e contraproducente.",
+      "evidencia": "Documentacao do DXGI flip model; medicoes com PresentMon mostram modo de apresentacao pior com FSO desligado em Win11.",
+      "folclore": null,
+      "instrucoes": "Nao desative 'Otimizacoes de tela cheia' nas propriedades do cs2.exe. Se ja desativou (aba Compatibilidade), reative. Verifique com PresentMon que o modo de apresentacao e 'Hardware: Independent Flip'.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-019",
+      "origem": {
+        "cs2tuner": "NET-001"
+      },
+      "nome": "Interrupt Moderation desligado no adaptador Ethernet",
+      "descricao": "A moderacao agrupa interrupcoes para poupar CPU; cada pacote espera pelo grupo. Desligar troca CPU por latencia.",
+      "categoria": "Jogos / Rede",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "network.adaptadorAtivo.tipo == Ethernet :: adaptador ativo nao e Ethernet"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "A moderacao agrupa interrupcoes para poupar CPU; cada pacote espera pelo grupo. Desligar troca CPU por latencia.",
+      "evidencia": "Diferenca em latencia de recepcao e mensuravel com captura; custo de CPU tambem. Ganho nao quantificado em jogo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "netadapter",
+          "chaves": [
+            "*InterruptModeration"
+          ],
+          "valorRegistro": "0",
+          "valorExibicao": "Disabled",
+          "aplicarTodas": false
+        }
+      ]
+    },
+    {
+      "id": "JOG-020",
+      "origem": {
+        "cs2tuner": "NET-002"
+      },
+      "nome": "Energy Efficient Ethernet / Green Ethernet desligados",
+      "descricao": "EEE coloca o link em baixa energia entre rajadas; a saida desse estado causa micro-stutter de rede.",
+      "categoria": "Jogos / Rede",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "network.adaptadorAtivo.tipo == Ethernet :: adaptador ativo nao e Ethernet"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "EEE coloca o link em baixa energia entre rajadas; a saida desse estado causa micro-stutter de rede.",
+      "evidencia": "Micro-pausas reprodutiveis em ping continuo com EEE ativo em varios controladores Realtek/Intel.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "netadapter",
+          "chaves": [
+            "*EEE",
+            "EEELinkAdvertisement",
+            "EnableGreenEthernet",
+            "*GreenEthernet",
+            "GreenEthernet",
+            "AdvancedEEE",
+            "EEE"
+          ],
+          "valorRegistro": "0",
+          "valorExibicao": "Disabled",
+          "aplicarTodas": true
+        }
+      ]
+    },
+    {
+      "id": "JOG-021",
+      "origem": {
+        "cs2tuner": "NET-003"
+      },
+      "nome": "Flow Control desligado",
+      "descricao": "Quadros PAUSE segurar o link inteiro por causa de um buffer cheio; para trafego UDP de jogo, descartar e melhor que pausar.",
+      "categoria": "Jogos / Rede",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "network.adaptadorAtivo.tipo == Ethernet :: adaptador ativo nao e Ethernet"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Quadros PAUSE segurar o link inteiro por causa de um buffer cheio; para trafego UDP de jogo, descartar e melhor que pausar.",
+      "evidencia": "Comportamento do 802.3x documentado; efeito depende do switch/roteador. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "netadapter",
+          "chaves": [
+            "*FlowControl"
+          ],
+          "valorRegistro": "0",
+          "valorExibicao": "Disabled",
+          "aplicarTodas": false
+        }
+      ]
+    },
+    {
+      "id": "JOG-022",
+      "origem": {
+        "cs2tuner": "NET-004"
+      },
+      "nome": "Receive Side Scaling ligado",
+      "descricao": "Distribui o processamento de recepcao entre nucleos em vez de concentrar em um, que pode ser o mesmo do jogo.",
+      "categoria": "Jogos / Rede",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "network.adaptadorAtivo.tipo == Ethernet :: adaptador ativo nao e Ethernet"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Distribui o processamento de recepcao entre nucleos em vez de concentrar em um, que pode ser o mesmo do jogo.",
+      "evidencia": "Padrao ja ligado na maioria; garante que nao foi desligado por outro 'otimizador'.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "netadapter",
+          "chaves": [
+            "*RSS"
+          ],
+          "valorRegistro": "1",
+          "valorExibicao": "Enabled",
+          "aplicarTodas": false
+        }
+      ]
+    },
+    {
+      "id": "JOG-023",
+      "origem": {
+        "cs2tuner": "NET-005"
+      },
+      "nome": "NetworkThrottlingIndex = 0xFFFFFFFF (desativar throttling multimidia)",
+      "descricao": "O MMCSS limita pacotes por milissegundo quando ha audio/video em reproducao; desligar remove o teto.",
+      "categoria": "Jogos / Rede",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "O MMCSS limita pacotes por milissegundo quando ha audio/video em reproducao; desligar remove o teto.",
+      "evidencia": "Mecanismo documentado pela Microsoft; o teto padrao (10 pacotes/ms) raramente e atingido por um jogo. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+          "name": "NetworkThrottlingIndex",
+          "value": 4294967295,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-024",
+      "origem": {
+        "cs2tuner": "NET-006"
+      },
+      "nome": "SystemResponsiveness = 10 (MMCSS)",
+      "descricao": "Reserva menos CPU para tarefas de baixa prioridade quando ha multimidia. Nao usar 0: pode fazer o audio engasgar.",
+      "categoria": "Jogos / Rede",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Reserva menos CPU para tarefas de baixa prioridade quando ha multimidia. Nao usar 0: pode fazer o audio engasgar.",
+      "evidencia": "Mecanismo documentado. O valor 0, comum em guias, causa starvation de audio em medicao; 10 e o compromisso.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Multimedia\\SystemProfile",
+          "name": "SystemResponsiveness",
+          "value": 10,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-025",
+      "origem": {
+        "cs2tuner": "NET-007"
+      },
+      "nome": "Voce esta no Wi-Fi: use cabo",
+      "descricao": "Wi-Fi tem jitter de ordem de grandeza maior que Ethernet por natureza (meio compartilhado, retransmissoes). Nenhum tweak de software compensa isso.",
+      "categoria": "Jogos / Rede",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "network.adaptadorAtivo.tipo == WiFi :: ja esta no cabo"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Wi-Fi tem jitter de ordem de grandeza maior que Ethernet por natureza (meio compartilhado, retransmissoes). Nenhum tweak de software compensa isso.",
+      "evidencia": "Jitter e perda medidos em ping continuo sao consistentemente piores em Wi-Fi. E o maior ganho real de rede disponivel.",
+      "folclore": null,
+      "instrucoes": "Conecte um cabo Ethernet do roteador ao PC. Se a distancia for problema, um par de adaptadores powerline ou um cabo longo ainda batem qualquer Wi-Fi para jogo.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-026",
+      "origem": {
+        "cs2tuner": "NET-F01"
+      },
+      "nome": "TcpAckFrequency / TCPNoDelay (desativar Nagle)",
+      "descricao": "Nagle agrupa pequenos segmentos TCP. CS2 usa UDP para o jogo.",
+      "categoria": "Jogos / Rede",
+      "tier": "FOLCLORE",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Nagle agrupa pequenos segmentos TCP. CS2 usa UDP para o jogo.",
+      "evidencia": "Nao ha caminho pelo qual uma opcao TCP altere pacotes UDP. Efeito em jogo: nenhum.",
+      "folclore": {
+        "oQueE": "Chaves por interface que desligam o algoritmo de Nagle e o ACK atrasado no TCP.",
+        "porqueCircula": "Ajudou em jogos antigos que usavam TCP (e em alguns MMOs). O conselho sobreviveu ao protocolo.",
+        "porqueNaoRecomendamos": "O trafego de partida do CS2 e UDP; Nagle nao o toca. A unica coisa afetada seria a Steam e o navegador."
+      },
+      "instrucoes": "Nao aplicar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-027",
+      "origem": {
+        "cs2tuner": "NET-F02"
+      },
+      "nome": "Desativar TCP autotuning (netsh autotuninglevel=disabled)",
+      "descricao": "Trava a janela de recepcao TCP em 64 KB.",
+      "categoria": "Jogos / Rede",
+      "tier": "FOLCLORE",
+      "risco": "medio",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Trava a janela de recepcao TCP em 64 KB.",
+      "evidencia": "Reduz throughput de downloads e streaming de forma mensuravel; nao muda latencia UDP.",
+      "folclore": {
+        "oQueE": "Desabilitar o ajuste automatico da janela de recepcao TCP.",
+        "porqueCircula": "Era workaround para roteadores antigos que quebravam com window scaling.",
+        "porqueNaoRecomendamos": "Prejudica throughput sem ganhar latencia. Nao existe trade-off favoravel aqui."
+      },
+      "instrucoes": "Nao aplicar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-028",
+      "origem": {
+        "cs2tuner": "NET-F03"
+      },
+      "nome": "Politica de QoS / DSCP para cs2.exe",
+      "descricao": "Marca os pacotes do jogo com prioridade DSCP.",
+      "categoria": "Jogos / Rede",
+      "tier": "FOLCLORE",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Marca os pacotes do jogo com prioridade DSCP.",
+      "evidencia": "A marcacao so tem efeito se cada salto a honrar; roteadores domesticos e ISPs normalmente zeram ou ignoram.",
+      "folclore": {
+        "oQueE": "Politica de QoS do Windows que marca DSCP 46 (EF) nos pacotes do executavel.",
+        "porqueCircula": "Funciona em redes corporativas com QoS configurado ponta a ponta, e os guias copiam de la.",
+        "porqueNaoRecomendamos": "Em casa a marcacao morre no roteador. Se voce quer priorizar o jogo, faca QoS no proprio roteador."
+      },
+      "instrucoes": "Nao aplicar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-029",
+      "origem": {
+        "cs2tuner": "INP-001"
+      },
+      "nome": "Aceleracao do mouse desligada (Aprimorar precisao do ponteiro)",
+      "descricao": "Com aceleracao, a mesma distancia fisica vira distancias diferentes na tela conforme a velocidade. Mira consistente exige mapeamento 1:1.",
+      "categoria": "Jogos / Entrada",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Com aceleracao, a mesma distancia fisica vira distancias diferentes na tela conforme a velocidade. Mira consistente exige mapeamento 1:1.",
+      "evidencia": "Efeito direto e determinista no mapeamento de entrada. (O CS2 usa raw input e ignora isso em jogo, mas menus e outros jogos nao.)",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SystemParametersInfo",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseSpeed",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold1",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold2",
+          "value": "0",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "JOG-030",
+      "origem": {
+        "cs2tuner": "INP-002"
+      },
+      "nome": "Velocidade do ponteiro em 6/11 (1:1)",
+      "descricao": "6/11 e o unico ponto sem multiplicador: cada contagem do sensor vira exatamente um pixel.",
+      "categoria": "Jogos / Entrada",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "6/11 e o unico ponto sem multiplicador: cada contagem do sensor vira exatamente um pixel.",
+      "evidencia": "Tabela de multiplicadores do Windows e publica; qualquer outro valor descarta ou duplica contagens.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SystemParametersInfo",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseSensitivity",
+          "value": "10",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "JOG-031",
+      "origem": {
+        "cs2tuner": "INP-003"
+      },
+      "nome": "Filtragem de teclas, teclas de aderencia e alternancia desligadas (com atalhos)",
+      "descricao": "Filtragem de teclas adiciona atraso deliberado a cada tecla; o atalho de 5x Shift ativa aderencia no meio da partida.",
+      "categoria": "Jogos / Entrada",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Filtragem de teclas adiciona atraso deliberado a cada tecla; o atalho de 5x Shift ativa aderencia no meio da partida.",
+      "evidencia": "Atraso da filtragem e configuravel e direto. Desativar o atalho evita ativacao acidental.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility\\Keyboard Response",
+          "name": "Flags",
+          "value": "122",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility\\StickyKeys",
+          "name": "Flags",
+          "value": "506",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility\\ToggleKeys",
+          "name": "Flags",
+          "value": "58",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "JOG-032",
+      "origem": {
+        "cs2tuner": "INP-004"
+      },
+      "nome": "Porta USB do mouse: use um root hub dedicado",
+      "descricao": "Um hub compartilhado com teclado, webcam ou headset divide a banda de polling e pode perder relatorios em 4-8 kHz.",
+      "categoria": "Jogos / Entrada",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "input.mouse.portaUsb exists :: porta do mouse nao identificada"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Um hub compartilhado com teclado, webcam ou headset divide a banda de polling e pode perder relatorios em 4-8 kHz.",
+      "evidencia": "Queda de polling efetivo em hub compartilhado e reprodutivel com mouses de alta taxa.",
+      "folclore": null,
+      "instrucoes": "Conecte o mouse direto na placa-mae (traseira), de preferencia numa porta que nao compartilhe hub com teclado/headset. Use a medicao de polling do CS2Tuner antes e depois para confirmar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-033",
+      "origem": {
+        "cs2tuner": "INP-F01"
+      },
+      "nome": "MouseDataQueueSize / KeyboardDataQueueSize",
+      "descricao": "Tamanho da fila de dados dos drivers de classe de mouse/teclado.",
+      "categoria": "Jogos / Entrada",
+      "tier": "FOLCLORE",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Tamanho da fila de dados dos drivers de classe de mouse/teclado.",
+      "evidencia": "O padrao (100) nunca enche em uso normal; a fila e drenada a cada interrupcao. Nao ha medicao que mostre efeito.",
+      "folclore": {
+        "oQueE": "Reduzir o tamanho da fila do mouclass/kbdclass (ex.: para 20) 'para reduzir latencia'.",
+        "porqueCircula": "Soa plausivel: fila menor, menos espera. Mas a fila so importa se encher, e nao enche.",
+        "porqueNaoRecomendamos": "Sem efeito medivel. Se algo, uma fila pequena demais pode descartar eventos em picos."
+      },
+      "instrucoes": "Nao aplicar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-034",
+      "origem": {
+        "cs2tuner": "SVC-001"
+      },
+      "nome": "SysMain (Superfetch) desativado",
+      "descricao": "Em SSD/NVMe o pre-carregamento do SysMain e inutil e gera I/O e CPU em segundo plano.",
+      "categoria": "Jogos / Servicos",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "storage.discoSistema.tipo != Desconhecido :: tipo do disco de sistema nao identificado"
+        ],
+        "bloqueiaSe": [
+          "storage.discoSistema.tipo == HDD :: em HDD o SysMain e o que segura o desempenho"
+        ]
+      },
+      "porque": "Em SSD/NVMe o pre-carregamento do SysMain e inutil e gera I/O e CPU em segundo plano.",
+      "evidencia": "Picos de disco/CPU atribuiveis ao SysMain sao observaveis no Monitor de Recursos em SSD. Em HDD o efeito e o oposto.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "service",
+          "nome": "SysMain",
+          "tipoInicio": "Disabled",
+          "parar": true
+        }
+      ]
+    },
+    {
+      "id": "JOG-035",
+      "origem": {
+        "cs2tuner": "SVC-002"
+      },
+      "nome": "Otimizacao de Entrega: sem upload P2P",
+      "descricao": "O Windows serve atualizacoes a outros PCs pela sua conexao, incluindo durante a partida.",
+      "categoria": "Jogos / Servicos",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "O Windows serve atualizacoes a outros PCs pela sua conexao, incluindo durante a partida.",
+      "evidencia": "Upload em segundo plano e visivel no monitor de rede; saturar o upload e a causa classica de ping alto.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization",
+          "name": "DODownloadMode",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-036",
+      "origem": {
+        "cs2tuner": "SVC-003"
+      },
+      "nome": "Manutencao automatica e desfragmentacao fora do horario de uso",
+      "descricao": "A manutencao automatica (indexacao, otimizacao de disco, limpeza) pode disparar no meio do jogo se o PC estiver ocioso o suficiente.",
+      "categoria": "Jogos / Servicos",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "A manutencao automatica (indexacao, otimizacao de disco, limpeza) pode disparar no meio do jogo se o PC estiver ocioso o suficiente.",
+      "evidencia": "Tarefas de manutencao aparecem como picos de I/O em telemetria; move-las para 04:00 tira-as do horario de jogo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Schedule\\Maintenance",
+          "name": "Activation Boundary",
+          "value": "2000-01-01T04:00:00",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "JOG-037",
+      "origem": {
+        "cs2tuner": "SVC-004"
+      },
+      "nome": "Auditoria de programas de inicializacao",
+      "descricao": "Cada item de inicializacao e um processo residente. A lista e sua para decidir; o CS2Tuner nao desativa nada sozinho.",
+      "categoria": "Jogos / Servicos",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "offenders.inicializacao exists"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Cada item de inicializacao e um processo residente. A lista e sua para decidir; o CS2Tuner nao desativa nada sozinho.",
+      "evidencia": "Processos residentes competem por CPU e geram interrupcoes. O efeito de cada um varia; a auditoria e o que permite medir.",
+      "folclore": null,
+      "instrucoes": "Revise a lista de inicializacao no relatorio. Desative em Gerenciador de Tarefas > Inicializacao o que voce nao usa. Itens marcados como 'software problematico' tem prioridade.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-038",
+      "origem": {
+        "cs2tuner": "SVC-005"
+      },
+      "nome": "Exclusao do Defender para a pasta do CS2",
+      "descricao": "Evita que a protecao em tempo real escaneie os arquivos do jogo a cada leitura (carregamento de mapa, shaders).",
+      "categoria": "Jogos / Servicos",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "A pasta do CS2 deixara de ser verificada pelo Defender.",
+        "tradeoff": "Qualquer arquivo colocado nessa pasta (por um mod, um cheat, um malware) nao sera escaneado. A protecao em tempo real do resto do sistema continua.",
+        "frase": "ACEITO EXCLUSAO DO DEFENDER"
+      },
+      "condicoes": {
+        "requer": [
+          "storage.cs2Path exists :: cs2.exe nao localizado"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Evita que a protecao em tempo real escaneie os arquivos do jogo a cada leitura (carregamento de mapa, shaders).",
+      "evidencia": "Tempo de carregamento e I/O reduzem de forma mensuravel com a exclusao; efeito em FPS durante a partida e pequeno.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxDefenderExclusion",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "JOG-039",
+      "origem": {
+        "cs2tuner": "SVC-F01"
+      },
+      "nome": "Desativar 40+ servicos do Windows em lote",
+      "descricao": "Listas de 'servicos inuteis' copiadas entre guias.",
+      "categoria": "Jogos / Servicos",
+      "tier": "FOLCLORE",
+      "risco": "alto",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Listas de 'servicos inuteis' copiadas entre guias.",
+      "evidencia": "Servicos ociosos nao consomem CPU; desativar dezenas deles nao muda FPS de forma mensuravel e quebra Windows Update, Bluetooth, impressao e seguranca.",
+      "folclore": {
+        "oQueE": "Scripts que desativam dezenas de servicos (Windows Update, Diagnostico, Bluetooth, Impressao, SmartScreen...).",
+        "porqueCircula": "Da a sensacao de 'sistema limpo' e o Gerenciador de Tarefas fica mais curto.",
+        "porqueNaoRecomendamos": "Um servico parado nao usa CPU. Os poucos que usam (SysMain, Otimizacao de Entrega) estao tratados individualmente. O resto so quebra coisas."
+      },
+      "instrucoes": "Nao aplicar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-040",
+      "origem": {
+        "cs2tuner": "STO-001"
+      },
+      "nome": "Garantir TRIM ativo no SSD/NVMe",
+      "descricao": "Sem TRIM o SSD nao sabe quais blocos estao livres; a escrita degrada com o tempo e os stutters de I/O aparecem.",
+      "categoria": "Jogos / Armazenamento",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "storage.discoSistema.tipo != HDD :: disco de sistema e HDD, TRIM nao se aplica",
+          "storage.discoSistema.tipo != Desconhecido :: tipo do disco nao identificado",
+          "storage.discoSistema.trimAtivo == false :: TRIM ja esta ativo"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Sem TRIM o SSD nao sabe quais blocos estao livres; a escrita degrada com o tempo e os stutters de I/O aparecem.",
+      "evidencia": "Degradacao de escrita sem TRIM e amplamente medida. Ferramentas de 'tweak' antigas desligavam isso por engano.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxTrim",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "JOG-041",
+      "origem": {
+        "cs2tuner": "STO-002"
+      },
+      "nome": "Windows nao reconhece o disco como SSD (risco de desfragmentar)",
+      "descricao": "Se o tipo de midia esta como 'Unspecified', a otimizacao agendada pode tratar o SSD como HDD e desfragmentar.",
+      "categoria": "Jogos / Armazenamento",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "storage.discoSistema.midia == Unspecified :: Windows ja classifica o disco corretamente"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Se o tipo de midia esta como 'Unspecified', a otimizacao agendada pode tratar o SSD como HDD e desfragmentar.",
+      "evidencia": "Comportamento documentado do Otimizar Unidades: a acao depende do MediaType detectado.",
+      "folclore": null,
+      "instrucoes": "Execute 'winsat formal' num prompt elevado para o Windows reclassificar o disco, depois confira em Otimizar Unidades que aparece 'Unidade de estado solido'.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-042",
+      "origem": {
+        "cs2tuner": "STO-003"
+      },
+      "nome": "Espaco livre abaixo de 15% no disco do sistema",
+      "descricao": "SSD cheio tem menos blocos para wear-leveling e escrita fica lenta; o arquivo de paginacao e os shaders do CS2 precisam de espaco.",
+      "categoria": "Jogos / Armazenamento",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "storage.discoSistema.espacoLivrePct < 15 :: espaco livre adequado"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "SSD cheio tem menos blocos para wear-leveling e escrita fica lenta; o arquivo de paginacao e os shaders do CS2 precisam de espaco.",
+      "evidencia": "Queda de desempenho de escrita em SSD acima de ~85-90% de uso e documentada pelos fabricantes.",
+      "folclore": null,
+      "instrucoes": "Libere espaco ate ter pelo menos 15% livre: Limpeza de Disco (arquivos de sistema), pasta Downloads, jogos que nao joga mais.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-043",
+      "origem": {
+        "cs2tuner": "STO-004"
+      },
+      "nome": "Arquivo de paginacao com tamanho fixo no disco mais rapido",
+      "descricao": "Tamanho fixo evita que o Windows redimensione o pagefile durante o jogo (pausa de I/O). Nunca desativar: o CS2 e drivers alocam memoria virtual alem da RAM.",
+      "categoria": "Jogos / Armazenamento",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [
+        "desktop"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [
+          "storage.discoSistema.tipo != Desconhecido",
+          "memory.capacidadeGB >= 16 :: com menos de 16 GB o pagefile dinamico e mais seguro"
+        ],
+        "bloqueiaSe": []
+      },
+      "porque": "Tamanho fixo evita que o Windows redimensione o pagefile durante o jogo (pausa de I/O). Nunca desativar: o CS2 e drivers alocam memoria virtual alem da RAM.",
+      "evidencia": "Redimensionamento do pagefile e visivel como pausa de I/O em telemetria; frequencia baixa. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxPagefile",
+          "parametros": {
+            "tamanhoMB": 16384
+          }
+        }
+      ]
+    },
+    {
+      "id": "JOG-044",
+      "origem": {
+        "cs2tuner": "STO-F01"
+      },
+      "nome": "Desativar liberacao do buffer de cache de gravacao",
+      "descricao": "Opcao 'Desativar liberacao do buffer de cache de gravacao do Windows' nas propriedades do disco.",
+      "categoria": "Jogos / Armazenamento",
+      "tier": "FOLCLORE",
+      "risco": "alto",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Opcao 'Desativar liberacao do buffer de cache de gravacao do Windows' nas propriedades do disco.",
+      "evidencia": "Ganho de escrita em benchmark sintetico; nenhum efeito em jogo. Risco real e documentado de corrupcao em queda de energia.",
+      "folclore": {
+        "oQueE": "Fazer o Windows nao pedir ao disco que persista o cache de escrita (FUA/flush).",
+        "porqueCircula": "Melhora numeros de CrystalDiskMark, e as pessoas confundem com desempenho real.",
+        "porqueNaoRecomendamos": "Um jogo nao escreve o suficiente para isso importar, e uma queda de energia pode corromper o sistema de arquivos. Nao implementamos."
+      },
+      "instrucoes": "Nao aplicar.",
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "JOG-045",
+      "origem": {
+        "cs2tuner": "VIS-001"
+      },
+      "nome": "Efeitos visuais: melhor desempenho (mantendo suavizacao de fontes)",
+      "descricao": "Animacoes e sombras do shell rodam no DWM e competem com o jogo pela GPU ao alternar janelas (alt-tab, overlays).",
+      "categoria": "Jogos / Visual",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Animacoes e sombras do shell rodam no DWM e competem com o jogo pela GPU ao alternar janelas (alt-tab, overlays).",
+      "evidencia": "Uso de GPU do DWM e mensuravel; em jogo em tela cheia exclusiva o efeito e pequeno. Ganho nao quantificado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SettingChange",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects",
+          "name": "VisualFXSetting",
+          "value": 3,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "UserPreferencesMask",
+          "value": [
+            144,
+            18,
+            3,
+            128,
+            16,
+            0,
+            0,
+            0
+          ],
+          "valueType": "Binary"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "DragFullWindows",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "FontSmoothing",
+          "value": "2",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop\\WindowMetrics",
+          "name": "MinAnimate",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "TaskbarAnimations",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ListviewAlphaSelect",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ListviewShadow",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\DWM",
+          "name": "EnableAeroPeek",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\DWM",
+          "name": "AlwaysHibernateThumbnails",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-046",
+      "origem": {
+        "cs2tuner": "VIS-002"
+      },
+      "nome": "Transparencia desligada",
+      "descricao": "Efeitos de acrilico/blur sao renderizados continuamente pelo DWM.",
+      "categoria": "Jogos / Visual",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Efeitos de acrilico/blur sao renderizados continuamente pelo DWM.",
+      "evidencia": "Uso de GPU do DWM cai de forma mensuravel com transparencia desligada. Efeito em jogo tela cheia: pequeno.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SettingChange",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+          "name": "EnableTransparency",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "JOG-047",
+      "origem": {
+        "cs2tuner": "VIS-003"
+      },
+      "nome": "Assistente de Foco durante jogos em tela cheia",
+      "descricao": "Notificacoes em tela cheia forcam o DWM a compor por cima do jogo e podem tirar o foco.",
+      "categoria": "Jogos / Visual",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "minimo",
+        "desktop",
+        "notebook"
+      ],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Notificacoes em tela cheia forcam o DWM a compor por cima do jogo e podem tirar o foco.",
+      "evidencia": "Perda de foco por notificacao e reprodutivel. A configuracao vive em blobs binarios do CloudStore, por isso e manual.",
+      "folclore": null,
+      "instrucoes": "Configuracoes > Sistema > Foco (Win11) ou Assistente de Foco (Win10): ative 'Ao jogar um jogo' em modo Somente alarmes.",
+      "posAplicar": null,
+      "acoes": []
+    }
+  ]
+}

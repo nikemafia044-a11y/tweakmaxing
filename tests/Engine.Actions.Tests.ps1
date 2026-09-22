@@ -809,16 +809,16 @@ Describe 'Invoke-TmxPlan' -Tag 'Engine' {
     }
 
     It 'posAplicar chama Send-TmxSettingChange quando o comando existe' {
-        $global:TmxT_PosAplicar = 0
-        function global:Send-TmxSettingChange { $global:TmxT_PosAplicar++ }
-        try {
-            $t = New-TmxTweakTeste -Id 'POS-001' -Acoes @((New-TmxAcaoRegistro -Sub 'P' -Nome 'Pos' -Valor 3)) -PosAplicar 'SettingChange'
-            $plano = New-TmxPlanoTeste -Tweaks @($t)
-            (Invoke-TmxPlan -Plan $plano -Profile $script:Perfil).aplicados | Should -Be 1
-            $global:TmxT_PosAplicar | Should -Be 1
-        } finally {
-            Remove-Item -LiteralPath 'Function:\Send-TmxSettingChange' -Force -ErrorAction SilentlyContinue
-        }
+        # Send-TmxSettingChange agora e uma funcao real do modulo (src/functions/tweaks/Native.ps1,
+        # Task 7): um stub global nao a sombreia dentro do modulo, entao o comando precisa
+        # ser mockado no ModuleName, nao redefinido como funcao global.
+        Mock Send-TmxSettingChange -ModuleName TweakMaxing { $true }
+
+        $t = New-TmxTweakTeste -Id 'POS-001' -Acoes @((New-TmxAcaoRegistro -Sub 'P' -Nome 'Pos' -Valor 3)) -PosAplicar 'SettingChange'
+        $plano = New-TmxPlanoTeste -Tweaks @($t)
+        (Invoke-TmxPlan -Plan $plano -Profile $script:Perfil).aplicados | Should -Be 1
+
+        Should -Invoke Send-TmxSettingChange -ModuleName TweakMaxing -Times 1 -Exactly
     }
 
     It 'falha parcial: registros das acoes que passaram e depois preenchido' {
