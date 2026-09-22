@@ -76,9 +76,57 @@ if ($Headless -or $Undo) {
         Write-Warning "Catalogo indisponivel ($($_.Exception.Message)). Seguindo com catalogo vazio."
     }
 
+    # --- Aplicacao real -----------------------------------------------------
+    # Sem janela nao ha pool de jobs: a sessao e aberta nesta mesma thread, o
+    # que faz o $script:TmxRun ficar visivel para o Engine logo abaixo.
     if (-not $DryRun) {
-        Write-Host 'Modo headless de aplicacao real sera habilitado na Task 9.' -ForegroundColor Yellow
-        exit (Complete-TmxRun 3)
+        $sessao = Start-TmxSession
+        if (-not $sessao.ok) {
+            Write-Host ''
+            Write-Host "Abortado: $($sessao.mensagem)" -ForegroundColor Red
+            Write-Host 'Nada foi alterado.' -ForegroundColor Red
+            exit (Complete-TmxRun 2)
+        }
+
+        Write-Host ''
+        Write-Host "Sessao $($sessao.session.runId): $($sessao.mensagem)"
+        Write-Host "Para reverter: $($sessao.session.undoCommand)"
+
+        if ($catalogo.Count -eq 0) {
+            Write-Host 'Catalogo vazio: nenhum tweak para aplicar.' -ForegroundColor Yellow
+            exit (Complete-TmxRun 1)
+        }
+
+        try {
+            $plano    = Resolve-TmxPlan -Catalog $catalogo -Profile $perfil -Preset $Preset
+            $execucao = Invoke-TmxPlan -Plan $plano -Profile $perfil
+        } catch {
+            Write-Host "Nao foi possivel aplicar o preset '$Preset': $($_.Exception.Message)" -ForegroundColor Red
+            exit (Complete-TmxRun 1)
+        }
+
+        $aplicados = @($execucao.itens)
+        Write-Host ''
+        Write-Host "Preset '$Preset' aplicado:"
+        if ($aplicados.Count -gt 0) {
+            $aplicados |
+                Select-Object @{ n = 'id'; e = { $_.id } },
+                              @{ n = 'tier'; e = { $_.tier } },
+                              @{ n = 'status'; e = { $_.status } },
+                              @{ n = 'detalhe'; e = { $_.detalhe } } |
+                Format-Table -AutoSize | Out-Host
+        } else {
+            Write-Host '  (nenhum tweak selecionado)'
+        }
+
+        Write-Host ("Resultado: {0} aplicados, {1} ja aplicados, {2} pulados, {3} falhas (de {4} itens)." -f `
+            $execucao.aplicados, $execucao.jaAplicados, $execucao.pulados, $execucao.falhas, $aplicados.Count)
+        if ($execucao.requerReboot) {
+            Write-Host 'Reinicie o Windows para que tudo valha.' -ForegroundColor Yellow
+        }
+        Write-Host "Para reverter: $($sessao.session.undoCommand)"
+
+        exit (Complete-TmxRun ([int]($execucao.falhas -gt 0)))
     }
 
     # A casca nao pode morrer por causa do catalogo: um tweaks.json quebrado

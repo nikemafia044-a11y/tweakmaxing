@@ -5,8 +5,8 @@
 function Register-TmxShellActions {
     <#
     .SYNOPSIS
-        Registra shell.ping, shell.version, shell.openUrl, session.status,
-        log.tail e shell.async.echo.
+        Registra shell.ping, shell.version, shell.openUrl, log.tail e
+        shell.async.echo. As acoes session.* moram em Actions.Session.ps1.
     #>
     [CmdletBinding()]
     param()
@@ -33,35 +33,6 @@ function Register-TmxShellActions {
         if ($url -notmatch '^https://') { throw 'apenas URLs https' }
         Start-Process $url
         @{ aberto = $true; url = $url }
-    }
-
-    Register-TmxBridgeAction -Name 'session.status' -Handler {
-        param($payload)
-        $s = $sync.session
-
-        $estado = 'nenhum'
-        $seq    = $null
-        $runId  = $null
-        $runPath = $null
-        $undo   = $null
-
-        if ($s) {
-            if ($s.restorePoint) {
-                if ($s.restorePoint.estado) { $estado = "$($s.restorePoint.estado)" }
-                $seq = $s.restorePoint.seq
-            }
-            if ($s.runId)   { $runId = "$($s.runId)" }
-            if ($s.runPath) { $runPath = "$($s.runPath)" }
-            if ($s.undoCommand) { $undo = "$($s.undoCommand)" }
-        }
-
-        @{
-            restorePoint = @{ estado = $estado; seq = $seq }
-            runId        = $runId
-            runPath      = $runPath
-            undoCommand  = $undo
-            elevado      = [bool](Test-TmxElevation)
-        }
     }
 
     Register-TmxBridgeAction -Name 'log.tail' -Handler {

@@ -56,6 +56,8 @@ Describe 'Ponte JSON' -Tag 'Bridge' {
     BeforeEach {
         New-TmxBridgeTestSync | Out-Null
         Register-TmxShellActions
+        # session.* saiu da casca para Actions.Session.ps1 (Task 9).
+        Register-TmxSessionActions
     }
 
     Context 'Contrato do pedido' {

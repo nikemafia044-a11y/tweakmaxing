@@ -1,6 +1,6 @@
 /* app.js - casca da interface.
  *
- * Expõe window.tmx = { bridge, modal, toast, tabs, status }.
+ * Expõe window.tmx = { bridge, modal, toast, tabs, status, session }.
  * As abas (tasks 9-13) registram window.tmxTabs.<nome> = { init() {} } e são
  * inicializadas na primeira vez que ficam visíveis.
  *
@@ -181,14 +181,14 @@
 
   var TEXTO_RP = {
     nenhum: 'Nenhum ponto de restauração',
-    criando: 'Criando ponto...',
-    pulado: 'Ponto pulado'
+    criando: 'Criando ponto…',
+    pulado: 'Ponto pulado (sem proteção)'
   };
 
   function textoPonto(rp) {
     if (!rp || !rp.estado) { return TEXTO_RP.nenhum; }
     if (rp.estado === 'criado') { return 'Ponto #' + (rp.seq === null || rp.seq === undefined ? '?' : rp.seq) + ' criado'; }
-    if (rp.estado === 'falhou') { return 'Falhou: ' + (rp.detalhe || 'ponto de restauração'); }
+    if (rp.estado === 'falhou') { return 'Falhou: ' + (rp.mensagem || rp.detalhe || 'ponto de restauração'); }
     return TEXTO_RP[rp.estado] || TEXTO_RP.nenhum;
   }
 
@@ -198,9 +198,7 @@
     aplicar: function (s) {
       status.ultimo = s || {};
       document.getElementById('st-rp').textContent = textoPonto(status.ultimo.restorePoint);
-      document.getElementById('st-run').textContent = status.ultimo.runId
-        ? ('Sessão ' + status.ultimo.runId)
-        : 'Sem sessão';
+      document.getElementById('st-run').textContent = status.ultimo.runId || 'Sem sessão';
 
       var undo = status.ultimo.undoCommand || '';
       document.getElementById('st-undo-texto').textContent = undo || 'Nada a reverter';
@@ -222,6 +220,257 @@
     return pedaco;
   }
 
+  /* ---------------- sessão: pasta da execução + ponto de restauração ----------------
+   * tmx.session.ensure() é a porta por onde toda aba passa antes de alterar
+   * qualquer coisa: resolve true só quando existe sessão pronta (ponto criado
+   * ou pulado com a frase digitada), e false quando o usuário desistiu.
+   */
+
+  var EXPLICACAO_PONTO =
+    '<p>Antes de alterar qualquer coisa o TweakMaxing abre uma <strong>sessão</strong>: ' +
+    'uma pasta com o registro de tudo que for mexido (é dela que o Undo vive) e um ' +
+    '<strong>ponto de restauração</strong> do próprio Windows.</p>' +
+    '<p>A criação do ponto leva de alguns segundos a poucos minutos. Nada é aplicado ' +
+    'no sistema enquanto ele não existir.</p>';
+
+  function escaparHtml(t) {
+    return String(t === null || t === undefined ? '' : t)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function copiar_texto(texto) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(texto).then(function () {
+        toast('Comando copiado', 'ok');
+      }).catch(function () { copiarPorTextarea(texto); });
+      return;
+    }
+    copiarPorTextarea(texto);
+  }
+
+  function copiarPorTextarea(texto) {
+    // O WebView2 nega navigator.clipboard sem gesto reconhecido; o textarea
+    // fora da tela + execCommand continua funcionando.
+    var ta = document.createElement('textarea');
+    ta.value = texto;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    document.body.appendChild(ta);
+    ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    toast(ok ? 'Comando copiado' : 'Não foi possível copiar', ok ? 'ok' : 'erro');
+  }
+
+  function pintarProgresso(texto, pct) {
+    var el = document.getElementById('modal-progresso');
+    if (!el) { return; }
+    var t = texto || '';
+    if (typeof pct === 'number' && t) { t += ' (' + pct + '%)'; }
+    el.textContent = t;
+  }
+
+  function travarBotoesModal() {
+    var botoes = document.querySelectorAll('#modal-buttons button');
+    for (var i = 0; i < botoes.length; i++) { botoes[i].disabled = true; }
+  }
+
+  function destravarBotoesModal() {
+    var botoes = document.querySelectorAll('#modal-buttons button');
+    for (var i = 0; i < botoes.length; i++) { botoes[i].disabled = false; }
+  }
+
+  /* Dispara session.start e resolve com o payload do job.done correspondente.
+     Rejeita quando a própria chamada falha (ex.: frase incorreta), caso em que
+     nenhum job chegou a existir. */
+  function abrirSessao(payload) {
+    return new Promise(function (resolve, reject) {
+      var jobId = null;
+      var fechado = false;
+
+      function soltar() {
+        bridge.off('job.progress', aoProgredir);
+        bridge.off('job.done', aoTerminar);
+      }
+      function aoProgredir(p) {
+        if (!p || (jobId && p.jobId !== jobId)) { return; }
+        pintarProgresso(p.status || 'Trabalhando…', p.pct);
+      }
+      function aoTerminar(p) {
+        if (fechado || !p || (jobId && p.jobId !== jobId)) { return; }
+        fechado = true;
+        soltar();
+        resolve(p);
+      }
+
+      bridge.on('job.progress', aoProgredir);
+      bridge.on('job.done', aoTerminar);
+
+      bridge.call('session.start', payload).then(function (r) {
+        jobId = (r && r.jobId) || null;
+      }).catch(function (e) {
+        if (fechado) { return; }
+        fechado = true;
+        soltar();
+        reject(e);
+      });
+    });
+  }
+
+  function modalCriarPonto(fim) {
+    modal.open({
+      titulo: 'Ponto de restauração',
+      html: EXPLICACAO_PONTO + '<p id="modal-progresso" class="sessao-progresso"></p>',
+      botoes: [
+        {
+          rotulo: 'Criar ponto e continuar',
+          classe: 'btn-primary',
+          mantemAberto: true,
+          onClick: function () {
+            travarBotoesModal();
+            pintarProgresso('Criando ponto de restauração…', 0);
+            abrirSessao({ skip: false }).then(function (p) {
+              if (p && p.ok) {
+                status.refresh();
+                modal.close();
+                toast('Sessão aberta com ponto de restauração', 'ok');
+                fim(true);
+                return;
+              }
+              modalPontoFalhou((p && p.error && p.error.message) || 'não foi possível criar o ponto', fim);
+            }).catch(function (e) {
+              modalPontoFalhou(e.message, fim);
+            });
+          }
+        },
+        { rotulo: 'Cancelar', onClick: function () { fim(false); } }
+      ]
+    });
+  }
+
+  function modalPontoFalhou(mensagem, fim) {
+    status.refresh();
+    modal.open({
+      titulo: 'O ponto de restauração falhou',
+      html: '<p class="sessao-erro">' + escaparHtml(mensagem) + '</p>' +
+            '<p>Nada foi alterado no sistema. Você pode fechar e resolver o motivo ' +
+            '(Proteção do Sistema desligada, disco cheio, política de grupo) ou ' +
+            'prosseguir assumindo o risco.</p>',
+      botoes: [
+        { rotulo: 'Fechar', onClick: function () { fim(false); } },
+        {
+          rotulo: 'Prosseguir sem ponto',
+          classe: 'btn-danger',
+          mantemAberto: true,
+          onClick: function () { modalPularPonto(fim); }
+        }
+      ]
+    });
+  }
+
+  function modalPularPonto(fim) {
+    bridge.call('session.skipPhrase').then(function (r) {
+      var frase = (r && r.frase) || '';
+      modal.open({
+        titulo: 'Prosseguir sem ponto de restauração',
+        html: '<p>Sem ponto de restauração você perde a rede de segurança do próprio ' +
+              'Windows. Os ajustes continuam reversíveis pelo Undo, mas nada mais ' +
+              'protege o sistema se algo externo der errado.</p>' +
+              '<p>Para confirmar, digite exatamente:</p>' +
+              '<p class="sessao-frase">' + escaparHtml(frase) + '</p>' +
+              '<input type="text" id="modal-frase" class="campo" autocomplete="off" spellcheck="false" ' +
+              'aria-label="Frase de confirmação">' +
+              '<p id="modal-progresso" class="sessao-progresso"></p>',
+        botoes: [
+          {
+            rotulo: 'Confirmar',
+            classe: 'btn-danger',
+            mantemAberto: true,
+            onClick: function () {
+              var campo = document.getElementById('modal-frase');
+              var digitado = campo ? campo.value : '';
+              travarBotoesModal();
+              pintarProgresso('Abrindo a sessão sem ponto…', 0);
+              abrirSessao({ skip: true, frase: digitado }).then(function (p) {
+                if (p && p.ok) {
+                  status.refresh();
+                  modal.close();
+                  toast('Sessão aberta SEM ponto de restauração', 'aviso');
+                  fim(true);
+                  return;
+                }
+                destravarBotoesModal();
+                pintarProgresso('', null);
+                toast((p && p.error && p.error.message) || 'não foi possível abrir a sessão', 'erro');
+              }).catch(function (e) {
+                // Frase errada: a ponte recusa antes de criar job, o modal fica.
+                destravarBotoesModal();
+                pintarProgresso('', null);
+                toast(e.message, 'erro');
+              });
+            }
+          },
+          { rotulo: 'Cancelar', onClick: function () { fim(false); } }
+        ]
+      });
+      var campo = document.getElementById('modal-frase');
+      if (campo) { campo.focus(); }
+    }).catch(function (e) {
+      toast(e.message, 'erro');
+      fim(false);
+    });
+  }
+
+  var session = {
+    ensure: function () {
+      return bridge.call('session.status').then(function (s) {
+        status.aplicar(s);
+        if (s && s.pronto) { return true; }
+
+        return new Promise(function (resolve) {
+          var terminado = false;
+          function fim(valor) {
+            if (terminado) { return; }
+            terminado = true;
+            document.removeEventListener('keydown', aoEscapar);
+            resolve(!!valor);
+          }
+          function aoEscapar(e) {
+            // O Escape fecha o modal: a promessa não pode ficar pendurada.
+            if (e.key === 'Escape') { fim(false); }
+          }
+          document.addEventListener('keydown', aoEscapar);
+          modalCriarPonto(fim);
+        });
+      }).catch(function (e) {
+        toast('Não foi possível consultar a sessão: ' + e.message, 'erro');
+        return false;
+      });
+    }
+  };
+
+  function montarBotaoSessaoDev() {
+    if (document.getElementById('st-session-start')) { return; }
+    var rodape = document.getElementById('status');
+    if (!rodape) { return; }
+
+    var cel = document.createElement('span');
+    cel.className = 'cel';
+
+    var botao = document.createElement('button');
+    botao.type = 'button';
+    botao.id = 'st-session-start';
+    botao.className = 'btn btn-mini';
+    botao.textContent = 'Iniciar sessão';
+    botao.addEventListener('click', function () { session.ensure(); });
+
+    cel.appendChild(botao);
+    rodape.insertBefore(cel, document.getElementById('st-job'));
+  }
+
   /* ---------------- arranque ---------------- */
 
   function iniciar() {
@@ -234,9 +483,7 @@
       copiar.addEventListener('click', function () {
         var texto = document.getElementById('st-undo-texto').textContent;
         if (!texto) { return; }
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-          navigator.clipboard.writeText(texto).then(function () { toast('Comando copiado', 'ok'); });
-        }
+        copiar_texto(texto);
       });
     }
 
@@ -260,6 +507,9 @@
       document.getElementById('versao').textContent = v.version || '';
       document.body.dataset.testmode = v.testMode ? '1' : '0';
       document.body.dataset.elevado = v.elevado ? '1' : '0';
+      // Controle de desenvolvimento: só no modo de teste, para a suite de GUI
+      // disparar o fluxo da sessão sem depender de uma aba.
+      if (v.testMode) { montarBotaoSessaoDev(); }
     }).catch(function (e) {
       document.getElementById('versao').textContent = '—';
       console.warn('shell.version falhou:', e.message);
@@ -268,7 +518,7 @@
     status.refresh();
   }
 
-  window.tmx = { bridge: bridge, modal: modal, toast: toast, tabs: tabs, status: status };
+  window.tmx = { bridge: bridge, modal: modal, toast: toast, tabs: tabs, status: status, session: session };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciar);

@@ -287,6 +287,47 @@ footer#status .cel {
   margin-top: 18px;
 }
 
+/* ---------- modal da sessão / ponto de restauração ---------- */
+
+.modal-box p { margin: 0 0 10px; }
+
+.campo {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  font: inherit;
+}
+
+.sessao-frase {
+  padding: 10px 12px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  user-select: all;
+}
+
+.sessao-erro {
+  padding: 10px 12px;
+  border-left: 3px solid var(--danger);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--danger);
+}
+
+.sessao-progresso {
+  min-height: 18px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.sessao-progresso:empty { margin: 0; }
+
 /* ---------- foco visível em tudo que recebe teclado ---------- */
 
 :focus-visible {
