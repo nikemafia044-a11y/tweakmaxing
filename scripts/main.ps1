@@ -10,7 +10,18 @@
     os erros dela e fecha o que ficou aberto. Modelado em
     reference/winutil/scripts/main.ps1, sem o que nao usamos.
 
-    Codigos de saida: 0 sucesso, 1 falha, 2 abortado, 3 nao implementado ainda.
+    Codigos de saida (o que o processo de fato devolve hoje):
+      0  sucesso - simulacao concluida (-DryRun), preset aplicado sem falhas,
+         reversao sem falhas, ou a janela abriu e fechou sem erro.
+      1  falha - -Headless sem -Preset; catalogo vazio ou indisponivel na
+         aplicacao real; o plano nao pode ser montado/aplicado; pelo menos um
+         tweak (ou um registro da reversao) falhou; a thread da interface
+         terminou com erro.
+      2  abortado ANTES de alterar qualquer coisa - Start-TmxSession recusou
+         (sem ponto de restauracao, por exemplo) ou estourou. Nada foi escrito
+         no sistema: e o unico codigo que garante isso.
+      3  nao e emitido por este script. Fica reservado; nao escreva
+         verificacao de "nao implementado" contra ele.
 #>
 param(
     [switch] $Headless,

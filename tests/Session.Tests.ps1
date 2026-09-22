@@ -38,7 +38,8 @@ Describe 'Sessao' -Tag 'Session' {
             param([Parameter(Mandatory)] [string] $Nome)
             # ,@(...): sem a virgula um unico evento sai desenrolado e
             # ([pscustomobject]).Count e $null no PS 5.1 (nao 1).
-            ,@($sync.uiEvents | Where-Object { $_.event -eq $Nome })
+            # .ToArray(): ver a nota em Wait-TmxTestEvent, logo abaixo.
+            ,@(@($sync.uiEvents.ToArray()) | Where-Object { $_.event -eq $Nome })
         }
 
         function Wait-TmxTestEvent {
@@ -48,7 +49,11 @@ Describe 'Sessao' -Tag 'Session' {
             )
             $limite = (Get-Date).AddSeconds($TimeoutSeconds)
             while ((Get-Date) -lt $limite) {
-                $achado = @($sync.uiEvents | Where-Object { $_.event -eq $Nome })
+                # .ToArray() (metodo sincronizado do wrapper) e nao o pipeline
+                # direto: o job escreve em $sync.uiEvents de outra runspace e
+                # enumerar a lista enquanto ela cresce lanca "Colecao foi
+                # modificada".
+                $achado = @(@($sync.uiEvents.ToArray()) | Where-Object { $_.event -eq $Nome })
                 if ($achado.Count -gt 0) { return $achado[0] }
                 Start-Sleep -Milliseconds 100
             }

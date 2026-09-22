@@ -85,8 +85,32 @@ try {
     $rp = Invoke-AB 'get' 'text' '#st-rp'
     Assert-Tmx -Nome 'status diz que nao ha ponto de restauracao' -Condicao ($rp -like '*Nenhum ponto*') -Detalhe "obtido: '$rp'"
 
-    $job = Invoke-AB 'get' 'text' '#st-job'
-    Assert-Tmx -Nome 'status do trabalho comeca ocioso' -Condicao ($job -like '*Ocioso*') -Detalhe "obtido: '$job'"
+    # A aba Ajustes ja pediu o catalogo na abertura da janela, e esse job leva
+    # alguns segundos (+4 s ate a celula voltar a 'Ocioso'). Espera a casca
+    # assentar em vez de ler a celula no meio do trabalho - so assim o teste
+    # verifica o estado de repouso, e nao o relogio da maquina.
+    $job = ''
+    $fimJob = (Get-Date).AddSeconds(45)
+    while ((Get-Date) -lt $fimJob) {
+        $job = Invoke-AB 'get' 'text' '#st-job'
+        if ($job -like '*Ocioso*') { break }
+        Start-Sleep -Milliseconds 500
+    }
+    Assert-Tmx -Nome 'status do trabalho volta a ocioso depois da carga inicial' -Condicao ($job -like '*Ocioso*') -Detalhe "obtido: '$job'"
+
+    # A janela nao pode sair de app.tweakmaxing: NavigationStarting cancela
+    # qualquer outro destino. Se a navegacao passasse, a ponte
+    # window.chrome.webview ficaria exposta a uma origem remota.
+    Invoke-AB 'eval' "location.href='https://example.com'" | Out-Null
+    Start-Sleep -Seconds 2
+    $urlDepois = Invoke-AB 'get' 'url'
+    Assert-Tmx -Nome 'navegacao externa e bloqueada (continua em app.tweakmaxing)' `
+               -Condicao ("$urlDepois" -like '*app.tweakmaxing*') -Detalhe "obtido: '$urlDepois'"
+
+    # A pagina tem que continuar viva depois do cancelamento.
+    $logoDepois = Invoke-AB 'get' 'text' 'header .logo'
+    Assert-Tmx -Nome 'a interface segue de pe apos a navegacao bloqueada' `
+               -Condicao ($logoDepois -like '*TweakMaxing*') -Detalhe "obtido: '$logoDepois'"
 
     # Volta para a aba padrao antes do print.
     Invoke-AB 'click' 'nav [data-tab=ajustes]' | Out-Null

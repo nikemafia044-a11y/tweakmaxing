@@ -160,6 +160,20 @@ function Test-TmxScheduledTaskExists {
     [bool]$t
 }
 
+function Get-TmxScheduledTaskDescription {
+    <#
+    .SYNOPSIS
+        Descricao registrada de uma tarefa agendada ('' quando nao existe).
+    #>
+    param(
+        [Parameter(Mandatory)] [string] $Nome,
+        [string] $Caminho = '\'
+    )
+    $t = Get-ScheduledTask -TaskName $Nome -TaskPath $Caminho -ErrorAction SilentlyContinue
+    if ($null -eq $t) { return '' }
+    "$($t.Description)"
+}
+
 function Register-TmxScheduledTaskWrapper {
     <#
     .SYNOPSIS

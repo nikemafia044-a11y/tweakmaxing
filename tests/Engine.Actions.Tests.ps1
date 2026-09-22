@@ -1,4 +1,4 @@
-﻿# Testes do engine de acoes (src/Engine/Actions.ps1 + Apply.ps1).
+# Testes do engine de acoes (src/Engine/Actions.ps1 + Apply.ps1).
 #
 # Registro e testado de verdade em HKCU:\Software\TweakMaxing_Tests\Engine\Actions;
 # servico, tarefa agendada, appx, recurso do Windows, powercfg, netadapter e
@@ -139,6 +139,23 @@ BeforeAll {
         "fake restaurado para $($Estado.valor)"
     }
 
+    # Par Set-/Test- em que a funcao de VERIFICACAO tambem declara
+    # -Parametros: e o caso que Test-TmxAction passou a atender.
+    function global:Set-TmxFakeP {
+        param($Tweak, $Profile, $Parametros)
+        [pscustomobject]@{ ok = $true; detalhe = 'fakep aplicado'; naoAplicavel = $false; naoSuportado = $false; registro = $null }
+    }
+    function global:Test-TmxFakeP {
+        param($Tweak, $Profile, $Parametros)
+        $global:TmxT_FakePParametros = $Parametros
+        [pscustomobject]@{
+            aplicado = ("$($Parametros.raiz)" -eq 'raiz-de-teste')
+            atual    = "$($Parametros.raiz)"
+            esperado = 'raiz-de-teste'
+            detalhe  = "fakep raiz = $($Parametros.raiz)"
+        }
+    }
+
     function global:Set-TmxFalha {
         param($Tweak, $Profile, $Parametros)
         [pscustomobject]@{ ok = $false; detalhe = 'falhou de proposito'; naoAplicavel = $false; naoSuportado = $false; registro = $null }
@@ -152,7 +169,7 @@ BeforeAll {
 
 AfterAll {
     Remove-Item -LiteralPath 'HKCU:\Software\TweakMaxing_Tests\Engine\Actions' -Recurse -Force -ErrorAction SilentlyContinue
-    foreach ($fn in 'Set-TmxFake', 'Test-TmxFake', 'Undo-TmxFake', 'Set-TmxFalha', 'Test-TmxFalha') {
+    foreach ($fn in 'Set-TmxFake', 'Test-TmxFake', 'Undo-TmxFake', 'Set-TmxFakeP', 'Test-TmxFakeP', 'Set-TmxFalha', 'Test-TmxFalha') {
         Remove-Item -LiteralPath "Function:\$fn" -Force -ErrorAction SilentlyContinue
     }
     Remove-TmxTestHome
@@ -689,6 +706,35 @@ Describe 'Invoke-TmxAction funcao' -Tag 'Engine' {
 
         Undo-TweakMaxing -Latest 6> $null | Out-Null
         $global:TmxT_FakeValor | Should -Be 'antigo'
+    }
+
+    It 'Test-Tmx* que declara -Parametros recebe os parametros da acao' {
+        # Simetria com Invoke-TmxAction: sem isso a funcao Test- olhava para o
+        # alvo PADRAO enquanto a Set- escrevia no alvo dos parametros, e a
+        # pos-verificacao de Invoke-TmxPlan reportava 'falha' para uma escrita
+        # que tinha dado certo.
+        $global:TmxT_FakePParametros = $null
+        $a = [pscustomobject]@{ tipo = 'funcao'; nome = 'Set-TmxFakeP'; parametros = [pscustomobject]@{ raiz = 'raiz-de-teste' } }
+        $t = New-TmxTweakTeste -Id 'FUN-003' -Acoes @($a)
+
+        $r = Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil
+
+        "$($global:TmxT_FakePParametros.raiz)" | Should -Be 'raiz-de-teste'
+        $r.aplicado | Should -BeTrue
+        $r.atual    | Should -Be 'raiz-de-teste'
+    }
+
+    It 'Test-Tmx* sem -Parametros continua sendo chamada com -Tweak/-Profile' {
+        # Test-TmxFake declara so -Tweak/-Profile: passar -Parametros para ela
+        # seria um erro de binding, nao um recurso.
+        $global:TmxT_FakeValor = 'novo'
+        $a = [pscustomobject]@{ tipo = 'funcao'; nome = 'Set-TmxFake'; parametros = [pscustomobject]@{ valor = 'novo' } }
+        $t = New-TmxTweakTeste -Id 'FUN-004' -Acoes @($a)
+
+        $r = Test-TmxAction -Action $a -Tweak $t -Profile $script:Perfil
+
+        $r.aplicado | Should -BeTrue
+        $r.detalhe  | Should -Be 'fake = novo'
     }
 
     It 'funcao Set-Tmx* inexistente -> naoSuportado' {

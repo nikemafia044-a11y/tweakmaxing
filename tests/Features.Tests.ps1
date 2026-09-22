@@ -223,6 +223,48 @@ Describe 'Configurar' -Tag 'Features' {
     }
 
     # -----------------------------------------------------------------------
+    Context 'Validacao do catalogo de recursos' {
+
+        It 'ignora entrada do feature.json com nome de recurso invalido' {
+            # O nome vai direto para -FeatureName do DISM: nada de espaco,
+            # aspas, barra ou qualquer coisa fora de [A-Za-z0-9._-].
+            $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('tmxfeat_{0}.json' -f ([guid]::NewGuid().ToString('N')))
+            try {
+                @{ recursos = @(
+                    @{ id = 'WPFFeatureBom'; nome = 'Bom - Enable'; descricao = 'ok'; controle = 'toggle'; feature = @('Recurso.Bom') }
+                    @{ id = 'WPFFeatureRuim'; nome = 'Ruim - Enable'; descricao = 'ok'; controle = 'toggle'; feature = @('Recurso Ruim; rm -rf') }
+                ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $tmp -Encoding UTF8
+
+                $cat = @(Get-TmxFeatureCatalog -Path $tmp -IncluirTeste $false)
+
+                @($cat).Count | Should -Be 1
+                $cat[0].winutilId | Should -Be 'WPFFeatureBom'
+            } finally {
+                Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            }
+        }
+
+        It 'lanca quando um tweak transitorio nao passa no Test-TmxCatalog' {
+            # A descricao do feature.json entra no tweak como veio do arquivo.
+            # Test-TmxStringField reprova qualquer campo de texto com
+            # Invoke-Expression/iex/scriptblock, e aqui isso tem que virar erro
+            # em vez de um tweak malformado chegando ao Engine.
+            $tmp = Join-Path ([System.IO.Path]::GetTempPath()) ('tmxfeat_{0}.json' -f ([guid]::NewGuid().ToString('N')))
+            try {
+                @{ recursos = @(
+                    @{ id = 'WPFFeatureRuim2'; nome = 'Ruim2 - Enable'
+                       descricao = 'Roda Invoke-Expression no seu computador.'
+                       controle = 'toggle'; feature = @('Recurso.Ruim2') }
+                ) } | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath $tmp -Encoding UTF8
+
+                { Get-TmxFeatureCatalog -Path $tmp -IncluirTeste $false } |
+                    Should -Throw -ExpectedMessage '*catalogo de recursos invalido*'
+            } finally {
+                Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+            }
+        }
+    }
+
     Context 'Paineis legados' {
 
         BeforeAll {
@@ -647,6 +689,181 @@ Describe 'Configurar' -Tag 'Features' {
             $undo.ok | Should -BeTrue
             $undo.result.revertidos | Should -BeGreaterOrEqual 2
             (Get-TmxTestRegValue -Path $script:TmxChaveTeste -Name 'Recurso') | Should -BeNullOrEmpty
+        }
+    }
+}
+
+Describe 'Recursos: ida e volta das funcoes customizadas' -Tag 'Features' {
+
+    # Set-/Undo-TmxLegacyRecovery e Set-/Undo-TmxRegBackupTask sao as duas
+    # entradas de feature.json que NAO passam pelo DISM: escrevem no BCD e no
+    # Agendador. Aqui os dois trios rodam do inicio ao fim (aplicar ->
+    # Undo-TweakMaxing) com todos os wrappers mockados, e o state.json e lido
+    # DE DENTRO do mock para provar que o registro de reversao ja existia
+    # antes de a escrita acontecer.
+
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_Helpers.ps1')
+        Import-TmxTestModule
+        New-TmxTestHome | Out-Null
+        $script:ChaveRegBackup = 'HKCU:\Software\TweakMaxing_Tests\Features\RegBackup'
+    }
+
+    AfterAll {
+        Remove-TmxTestKey -SubKey 'Features'
+        Remove-TmxTestHome
+        Stop-TmxLogger
+        Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
+        Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
+    }
+
+    BeforeEach {
+        Remove-TmxTestKey -SubKey 'Features\RegBackup'
+        $s = [Hashtable]::Synchronized(@{})
+        $s.testMode = $true
+        $global:sync = $s
+
+        $script:run = New-TmxRun
+        $global:TmxT_StatePath     = $script:run.StatePath
+        $global:TmxT_EstadoNoMock  = $null
+        $global:TmxT_Bcd           = New-Object System.Collections.ArrayList
+        $global:TmxT_Tarefas       = New-Object System.Collections.ArrayList
+        $global:TmxT_TarefaExiste  = $false
+    }
+
+    AfterEach {
+        foreach ($n in 'TmxT_StatePath', 'TmxT_EstadoNoMock', 'TmxT_Bcd', 'TmxT_Tarefas', 'TmxT_TarefaExiste') {
+            Remove-Variable -Name $n -Scope Global -ErrorAction SilentlyContinue
+        }
+    }
+
+    Context 'Menu de recuperacao legado (BCD)' {
+
+        BeforeEach {
+            Mock -ModuleName TweakMaxing -CommandName Backup-TmxBcd -MockWith { 'bcd-backup.bcd' }
+            Mock -ModuleName TweakMaxing -CommandName Invoke-TmxBcdedit -MockWith {
+                $null = $global:TmxT_Bcd.Add(($Arguments -join ' '))
+                if ($null -eq $global:TmxT_EstadoNoMock) {
+                    $global:TmxT_EstadoNoMock = Get-Content -LiteralPath $global:TmxT_StatePath -Raw -Encoding UTF8
+                }
+                [pscustomobject]@{ codigo = 0; saida = '' }
+            }
+        }
+
+        It 'opcao ausente: aplica legacy e a reversao usa /deletevalue' {
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxBcdValue -MockWith { $null }
+
+            $r = Set-TmxLegacyRecovery -Tweak ([pscustomobject]@{ id = 'REC-L01' }) -Profile $null -Parametros @{ modo = 'legacy' }
+
+            $r.ok | Should -BeTrue
+            $r.registro.detalhe.estado.existiaAntes | Should -BeFalse
+            ($global:TmxT_Bcd -join '|') | Should -Match '/set \{current\} bootmenupolicy legacy'
+
+            # persistiu ANTES de chamar o bcdedit
+            $global:TmxT_EstadoNoMock | Should -Match 'Set-TmxLegacyRecovery'
+
+            Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+            ($global:TmxT_Bcd -join '|') | Should -Match '/deletevalue \{current\} bootmenupolicy'
+        }
+
+        It 'opcao presente: a reversao devolve o valor anterior com /set' {
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxBcdValue -MockWith { 'standard' }
+
+            $r = Set-TmxLegacyRecovery -Tweak ([pscustomobject]@{ id = 'REC-L02' }) -Profile $null -Parametros @{ modo = 'legacy' }
+
+            $r.ok | Should -BeTrue
+            $r.registro.detalhe.estado.existiaAntes | Should -BeTrue
+
+            Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+            ($global:TmxT_Bcd -join '|') | Should -Match '/set \{current\} bootmenupolicy standard'
+            ($global:TmxT_Bcd -join '|') | Should -Not -Match '/deletevalue'
+        }
+
+        It 'ja no modo pedido: naoAplicavel e o bcdedit nao e chamado para escrever' {
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxBcdValue -MockWith { 'legacy' }
+
+            $r = Set-TmxLegacyRecovery -Tweak ([pscustomobject]@{ id = 'REC-L03' }) -Profile $null -Parametros @{ modo = 'legacy' }
+
+            $r.naoAplicavel | Should -BeTrue
+            $global:TmxT_Bcd.Count | Should -Be 0
+            @(Get-TmxState).Count  | Should -Be 0
+        }
+    }
+
+    Context 'Backup diario do registro (tarefa agendada)' {
+
+        BeforeEach {
+            Mock -ModuleName TweakMaxing -CommandName Test-TmxScheduledTaskExists -MockWith { [bool]$global:TmxT_TarefaExiste }
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxScheduledTaskDescription -MockWith { 'Backup periodico do registro (TweakMaxing)' }
+            Mock -ModuleName TweakMaxing -CommandName Register-TmxScheduledTaskWrapper -MockWith {
+                $null = $global:TmxT_Tarefas.Add("criar $Nome")
+                $global:TmxT_TarefaExiste = $true
+                if ($null -eq $global:TmxT_EstadoNoMock) {
+                    $global:TmxT_EstadoNoMock = Get-Content -LiteralPath $global:TmxT_StatePath -Raw -Encoding UTF8
+                }
+                $Nome
+            }
+            Mock -ModuleName TweakMaxing -CommandName Unregister-TmxScheduledTaskWrapper -MockWith {
+                $null = $global:TmxT_Tarefas.Add("remover $Nome")
+                $global:TmxT_TarefaExiste = $false
+                $Nome
+            }
+        }
+
+        It 'liga gravando os dois valores e criando a tarefa; a reversao desfaz os dois lados' {
+            $r = Set-TmxRegBackupTask -Tweak ([pscustomobject]@{ id = 'REC-R01' }) -Profile $null `
+                    -Parametros @{ modo = 'ligar'; caminhoRegistro = $script:ChaveRegBackup }
+
+            $r.ok | Should -BeTrue
+            (Get-ItemProperty -Path $script:ChaveRegBackup -Name 'EnablePeriodicBackup').EnablePeriodicBackup | Should -Be 1
+            (Get-ItemProperty -Path $script:ChaveRegBackup -Name 'BackupCount').BackupCount | Should -Be 2
+            ($global:TmxT_Tarefas -join '|') | Should -Match 'criar AutoRegBackup'
+
+            # o registro da tarefa ja estava no state.json antes de ela ser criada
+            $global:TmxT_EstadoNoMock | Should -Match 'Set-TmxRegBackupTask'
+
+            Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+
+            ($global:TmxT_Tarefas -join '|') | Should -Match 'remover AutoRegBackup'
+            Test-Path -LiteralPath $script:ChaveRegBackup | Should -BeFalse
+        }
+
+        It 'recusa sobrescrever uma AutoRegBackup que nao e nossa' {
+            $global:TmxT_TarefaExiste = $true
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxScheduledTaskDescription -MockWith { 'Backup do registro do Fabricante X' }
+
+            $r = Set-TmxRegBackupTask -Tweak ([pscustomobject]@{ id = 'REC-R02' }) -Profile $null `
+                    -Parametros @{ modo = 'ligar'; caminhoRegistro = $script:ChaveRegBackup }
+
+            $r.naoAplicavel | Should -BeTrue
+            $r.detalhe | Should -BeLike '*nao foi criada pelo TweakMaxing*'
+
+            # nada foi escrito: nem os valores de registro, nem a tarefa
+            Test-Path -LiteralPath $script:ChaveRegBackup | Should -BeFalse
+            @(Get-TmxState).Count | Should -Be 0
+            Should -Invoke -ModuleName TweakMaxing -CommandName Register-TmxScheduledTaskWrapper -Times 0 -Exactly
+        }
+
+        It 'aceita quando a tarefa existente carrega o nosso marcador' {
+            $global:TmxT_TarefaExiste = $true
+
+            $r = Set-TmxRegBackupTask -Tweak ([pscustomobject]@{ id = 'REC-R03' }) -Profile $null `
+                    -Parametros @{ modo = 'ligar'; caminhoRegistro = $script:ChaveRegBackup }
+
+            $r.ok | Should -BeTrue
+            $r.naoAplicavel | Should -Not -BeTrue
+            ($global:TmxT_Tarefas -join '|') | Should -Match 'criar AutoRegBackup'
+        }
+
+        It 'agendador ilegivel conta como tarefa de terceiro: recusa' {
+            $global:TmxT_TarefaExiste = $true
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxScheduledTaskDescription -MockWith { throw 'acesso negado' }
+
+            $r = Set-TmxRegBackupTask -Tweak ([pscustomobject]@{ id = 'REC-R04' }) -Profile $null `
+                    -Parametros @{ modo = 'ligar'; caminhoRegistro = $script:ChaveRegBackup }
+
+            $r.naoAplicavel | Should -BeTrue
+            Test-Path -LiteralPath $script:ChaveRegBackup | Should -BeFalse
         }
     }
 }

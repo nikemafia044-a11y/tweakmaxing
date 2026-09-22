@@ -1,6 +1,6 @@
 /* app.js - casca da interface.
  *
- * Expõe window.tmx = { bridge, modal, toast, tabs, status, session }.
+ * Expõe window.tmx = { bridge, modal, toast, tabs, status, session, esc }.
  * As abas (tasks 9-13) registram window.tmxTabs.<nome> = { init() {} } e são
  * inicializadas na primeira vez que ficam visíveis.
  *
@@ -113,6 +113,18 @@
   /* ---------------- modal ---------------- */
 
   var modal = {
+    /* open({ titulo, html, botoes })
+     *
+     * ATENÇÃO — `html` é injetado com innerHTML, sem sanitização: aceita
+     * HTML CONFIÁVEL APENAS, isto é, marcação escrita aqui no código da
+     * interface. Todo texto que vem de fora (nome, descrição, detalhe ou
+     * erro do catálogo, saída de um job, mensagem do PowerShell) tem que
+     * passar por tmx.esc() antes de entrar nessa string.
+     *
+     *   modal.open({ html: '<p>' + tmx.esc(item.detalhe) + '</p>' });
+     *
+     * `titulo` e o rótulo dos botões vão por textContent e já são seguros.
+     */
     open: function (opcoes) {
       var raiz = document.getElementById('modal');
       if (!raiz) { return; }
@@ -171,8 +183,17 @@
 
       var mod = window.tmxTabs[nome];
       if (mod && typeof mod.init === 'function' && !iniciadas[nome]) {
-        iniciadas[nome] = true;
-        try { mod.init(); } catch (e) { console.error(e); toast('Falha ao abrir a aba ' + nome, 'erro'); }
+        // A marca só entra DEPOIS de init() voltar sem erro: marcar antes
+        // deixava uma aba que falhou na primeira abertura (ponte fora do ar,
+        // catálogo quebrado) vazia para sempre, porque a segunda visita já
+        // encontrava iniciadas[nome] === true e não tentava de novo.
+        try {
+          mod.init();
+          iniciadas[nome] = true;
+        } catch (e) {
+          console.error(e);
+          toast('Falha ao abrir a aba ' + nome, 'erro');
+        }
       }
     }
   };
@@ -577,7 +598,12 @@
     status.refresh();
   }
 
-  window.tmx = { bridge: bridge, modal: modal, toast: toast, tabs: tabs, status: status, session: session };
+  // esc: o escapador que modal.open({html}) exige para qualquer texto vindo
+  // do catálogo, de um job ou de uma mensagem de erro do PowerShell.
+  window.tmx = {
+    bridge: bridge, modal: modal, toast: toast, tabs: tabs,
+    status: status, session: session, esc: escaparHtml
+  };
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', iniciar);

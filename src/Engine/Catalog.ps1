@@ -157,7 +157,8 @@ function Test-TmxCatalog {
     # "20% mais FPS" etc; permite metricas de fato como "1% low", "85-90% de uso").
     # 'a' com acento montado via [char]0x00E1 (nao como literal): este arquivo nao tem BOM
     # e o parser do PowerShell 5.1 sem BOM le UTF-8 como codepage ANSI, corrompendo o
-    # literal acentuado embutido na string do regex ('mais r[aá]pid' virava 'mais r[aÃ¡]pid').
+    # literal acentuado embutido na string do regex (o 'a' acentuado de 'mais rapido'
+    # virava dois caracteres Latin-1 e o padrao parava de casar).
     $promessa = '(?i)(ganh|melhor|reduz|aument|cai|queda|mais r[a' + [char]0x00E1 + ']pid|menos lat)\w*.{0,25}?\d+\s*%|\d+\s*%\s*(de ganho|a mais|a menos|mais|menos|melhor)'
 
     foreach ($t in $Catalog) {

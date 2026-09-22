@@ -16,6 +16,18 @@ $script:TmxFeatureBcdOpcao   = 'bootmenupolicy'
 $script:TmxRegBackupTarefa   = 'AutoRegBackup'
 $script:TmxRegBackupChave    = 'HKLM:\SYSTEM\CurrentControlSet\Control\Session Manager\Configuration Manager'
 
+# Marcador na descricao da tarefa agendada: e como Set-TmxRegBackupTask
+# reconhece uma AutoRegBackup criada por NOS. Sem ele, uma tarefa de mesmo
+# nome feita por outra ferramenta (ou pelo proprio usuario) seria substituida
+# por Register-ScheduledTask -Force e nao teria como voltar.
+$script:TmxRegBackupMarcador = 'TweakMaxing'
+
+# Nome de recurso opcional que pode chegar ao DISM. O feature.json e gerado
+# pelo conversor a partir do WinUtil (texto de terceiros): sem esta validacao
+# um nome com espaco, aspas ou '/' entraria direto em
+# Enable-WindowsOptionalFeature -FeatureName.
+$script:TmxFeatureNomeRegex  = '^[A-Za-z0-9._-]+$'
+
 # Entradas de feature.json que NAO vem de DISM: a acao real e uma funcao
 # nomeada com o trio Set-/Undo-/Test-Tmx<X> definido mais abaixo neste arquivo.
 # 'desligarWinutilId' marca a entrada gemea "- Disable" que e absorvida pelo
@@ -229,6 +241,14 @@ function Get-TmxFeatureCatalog {
         $recursos = @(@($e.feature) | Where-Object { "$_" })
         $custom   = $script:TmxFeatureFuncoes[$wid]
 
+        # Nome de recurso invalido nao vira tweak: o feature.json vem de fora
+        # e o destino dele e -FeatureName do DISM.
+        $ruins = @($recursos | Where-Object { "$_" -notmatch $script:TmxFeatureNomeRegex })
+        if ($ruins.Count -gt 0) {
+            Write-TmxLog -Level WARN -Message 'Entrada de feature.json ignorada: nome de recurso invalido' -Data @{ id = $wid; recursos = ($ruins -join ', ') }
+            continue
+        }
+
         if ($null -eq $custom -and ($recursos.Count -eq 0 -or "$($e.controle)" -ne 'toggle')) { continue }
 
         $n++
@@ -263,9 +283,28 @@ function Get-TmxFeatureCatalog {
             -Evidencia "Estado lido do proprio Windows por Get-WindowsOptionalFeature; o valor anterior de cada recurso vai para o state.json antes da mudanca.$(if ($parcial) { ' ' + $parcial })"))
     }
 
+    # Os tweaks daqui sao montados em memoria a partir de um JSON GERADO
+    # (feature.json, saida do conversor sobre o WinUtil), nao revisados a mao
+    # como o catalogo de producao - e ainda assim sao aplicados pelo MESMO
+    # Invoke-TmxPlan. Entao passam pelo MESMO validador de schema, em tempo de
+    # execucao: lancar aqui e melhor do que a aba Configurar aplicar um tweak
+    # transitorio malformado.
+    #
+    # .ToArray(): @() sobre List generica vazia falha no PS 5.1.
+    $doArquivo = $lista.ToArray()
+    if ($doArquivo.Count -gt 0) {
+        $v = Test-TmxCatalog -Catalog $doArquivo
+        if (-not $v.ok) {
+            throw "catalogo de recursos invalido: $(@($v.erros) -join '; ')"
+        }
+    }
+
+    # REC-TST entra DEPOIS da validacao, de proposito: e escrito aqui no
+    # codigo (nao vem do feature.json, que e o que precisa ser conferido) e o
+    # id dele foge do formato CAT-NNN justamente para nunca colidir com um
+    # REC-NNN real. Validar aqui so reprovaria o proprio id.
     if ($IncluirTeste) { $lista.Add((Get-TmxFeatureTestTweak)) }
 
-    # .ToArray(): @() sobre List generica vazia falha no PS 5.1
     $lista.ToArray()
 }
 
@@ -434,10 +473,18 @@ function Set-TmxLegacyRecovery {
     [CmdletBinding()]
     param($Tweak, $Profile, $Parametros)
 
-    $modo  = Get-TmxLegacyRecoveryModo -Parametros $Parametros
-    $antes = Get-TmxBcdValue -Opcao $script:TmxFeatureBcdOpcao
-    if (-not $antes) { $antes = 'standard' }
+    $modo   = Get-TmxLegacyRecoveryModo -Parametros $Parametros
+    $bruto  = Get-TmxBcdValue -Opcao $script:TmxFeatureBcdOpcao
+    # O BCD pode simplesmente NAO ter a opcao: o Windows se comporta como
+    # 'standard' desde o 8. 'existiaAntes' guarda a diferenca entre "estava
+    # standard" e "nao estava la", porque a reversao das duas nao e a mesma
+    # (/set standard deixa uma opcao que nao existia; ver Undo-TmxLegacyRecovery).
+    $existia = [bool]$bruto
+    $antes   = if ($existia) { "$bruto" } else { 'standard' }
 
+    # Opcao ausente + modo 'standard' continua naoAplicavel: o Windows JA se
+    # comporta como standard, e gravar o valor so acrescentaria ao BCD uma
+    # entrada que a maquina nunca teve.
     if ("$antes" -ieq $modo) {
         return [pscustomobject]@{ ok = $true; naoAplicavel = $true; detalhe = "bootmenupolicy ja esta $antes" }
     }
@@ -446,7 +493,7 @@ function Set-TmxLegacyRecovery {
 
     $rec = New-TmxCmdletRecord -TweakId "$($Tweak.id)" -Funcao 'Set-TmxLegacyRecovery' `
             -Alvo "BCD {current} $($script:TmxFeatureBcdOpcao)" `
-            -Estado @{ anterior = "$antes" } -ValorAnterior "$antes" -ValorNovo $modo
+            -Estado @{ anterior = "$antes"; existiaAntes = $existia } -ValorAnterior "$antes" -ValorNovo $modo
 
     $r = Invoke-TmxBcdedit @('/set', '{current}', $script:TmxFeatureBcdOpcao, $modo)
     $ok = ($r.codigo -eq 0)
@@ -460,10 +507,31 @@ function Set-TmxLegacyRecovery {
 }
 
 function Undo-TmxLegacyRecovery {
+    <#
+    .SYNOPSIS
+        Devolve o bootmenupolicy ao que era antes de Set-TmxLegacyRecovery.
+    .NOTES
+        Quando a opcao NAO existia no BCD (estado.existiaAntes = $false), o
+        certo e /deletevalue, nao '/set standard': gravar 'standard' deixaria
+        no BCD uma entrada que o usuario nunca teve. Estados antigos, sem o
+        campo 'existiaAntes', caem no /set de sempre - e o comportamento que
+        eles descreviam quando foram gravados.
+    #>
     [CmdletBinding()]
     param($Estado)
 
     if (-not $Estado -or -not "$($Estado.anterior)") { throw 'sem estado: nao da para saber qual era o bootmenupolicy' }
+
+    $temCampo = [bool]($Estado.PSObject.Properties.Name -contains 'existiaAntes')
+    if (-not $temCampo -and $Estado -is [System.Collections.IDictionary]) {
+        $temCampo = $Estado.Contains('existiaAntes')
+    }
+    if ($temCampo -and -not [bool]$Estado.existiaAntes) {
+        $r = Invoke-TmxBcdedit @('/deletevalue', '{current}', $script:TmxFeatureBcdOpcao)
+        if ($r.codigo -ne 0) { throw "bcdedit falhou ($($r.codigo)): $($r.saida)" }
+        return "bootmenupolicy removido do BCD (nao existia antes)"
+    }
+
     $anterior = "$($Estado.anterior)"
     $r = Invoke-TmxBcdedit @('/set', '{current}', $script:TmxFeatureBcdOpcao, $anterior)
     if ($r.codigo -ne 0) { throw "bcdedit falhou ($($r.codigo)): $($r.saida)" }
@@ -479,6 +547,32 @@ function Get-TmxRegBackupModo {
     $m = "$(Get-TmxActionProp -Action $Parametros -Nome 'modo' -Padrao 'ligar')"
     if ($m -cnotin @('ligar', 'desligar')) { throw "parametro 'modo' invalido em Set-TmxRegBackupTask: '$m'" }
     $m
+}
+
+function Test-TmxRegBackupTaskNossa {
+    <#
+    .SYNOPSIS
+        A tarefa agendada com este nome foi criada pelo TweakMaxing?
+    .DESCRIPTION
+        Criterio: a descricao carrega o marcador $script:TmxRegBackupMarcador.
+        Tarefa inexistente conta como NOSSA ($true) - nao ha nada de terceiro
+        para preservar e quem chama ja sabe se ela existe.
+        Se o agendador nao puder ser lido, responde $false: na duvida, nao
+        sobrescreve.
+    .OUTPUTS
+        [bool]
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [string] $Nome)
+
+    try {
+        if (-not (Test-TmxScheduledTaskExists -Nome $Nome)) { return $true }
+        $desc = Get-TmxScheduledTaskDescription -Nome $Nome
+    } catch {
+        Write-TmxLog -Level WARN -Message "Descricao da tarefa '$Nome' nao pode ser lida: $($_.Exception.Message)"
+        return $false
+    }
+    [bool]("$desc" -like "*$($script:TmxRegBackupMarcador)*")
 }
 
 function Get-TmxRegBackupChave {
@@ -524,6 +618,16 @@ function Set-TmxRegBackupTask {
     $tweakId = "$($Tweak.id)"
     $existia = Test-TmxScheduledTaskExists -Nome $script:TmxRegBackupTarefa
 
+    # Ja existe uma AutoRegBackup que NAO e nossa: Register-ScheduledTask
+    # -Force a substituiria em silencio, e a reversao so saberia recriar a
+    # NOSSA versao. Recusa antes de escrever qualquer coisa (inclusive os
+    # dois valores de registro), para nao deixar a maquina meio alterada.
+    if ($existia -and -not (Test-TmxRegBackupTaskNossa -Nome $script:TmxRegBackupTarefa)) {
+        $detalhe = "a tarefa agendada $($script:TmxRegBackupTarefa) ja existe e nao foi criada pelo TweakMaxing (a descricao dela nao tem o marcador '$($script:TmxRegBackupMarcador)'); nada foi alterado"
+        Write-TmxLog -Level WARN -Message 'Tarefa AutoRegBackup de terceiro preservada' -Data @{ tweak = $tweakId; modo = $modo }
+        return [pscustomobject]@{ ok = $true; naoAplicavel = $true; detalhe = $detalhe; registros = @() }
+    }
+
     $registros = New-Object 'System.Collections.Generic.List[object]'
     $partes    = New-Object 'System.Collections.Generic.List[string]'
 
@@ -545,7 +649,7 @@ function Set-TmxRegBackupTask {
         if ($modo -eq 'ligar') {
             Register-TmxScheduledTaskWrapper -Nome $script:TmxRegBackupTarefa -Executar 'schtasks' `
                 -Argumentos @('/run', '/i', '/tn', '"\Microsoft\Windows\Registry\RegIdleBackup"') `
-                -Hora '00:30' -Descricao 'Backup periodico do registro (TweakMaxing)' -Usuario 'System' | Out-Null
+                -Hora '00:30' -Descricao "Backup periodico do registro ($($script:TmxRegBackupMarcador))" -Usuario 'System' | Out-Null
             $partes.Add("tarefa $($script:TmxRegBackupTarefa) criada")
         } elseif ($existia) {
             Unregister-TmxScheduledTaskWrapper -Nome $script:TmxRegBackupTarefa | Out-Null
@@ -576,7 +680,7 @@ function Undo-TmxRegBackupTask {
     if ($existiaAntes) {
         Register-TmxScheduledTaskWrapper -Nome $nome -Executar 'schtasks' `
             -Argumentos @('/run', '/i', '/tn', '"\Microsoft\Windows\Registry\RegIdleBackup"') `
-            -Hora '00:30' -Descricao 'Backup periodico do registro (restaurado pelo TweakMaxing)' -Usuario 'System' | Out-Null
+            -Hora '00:30' -Descricao "Backup periodico do registro (restaurado pelo $($script:TmxRegBackupMarcador))" -Usuario 'System' | Out-Null
         return "tarefa $nome recriada"
     }
     Unregister-TmxScheduledTaskWrapper -Nome $nome | Out-Null

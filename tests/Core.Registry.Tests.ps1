@@ -154,3 +154,75 @@ Describe 'Set-TmxRegistry' -Tag 'Registry' {
         (Get-TmxState).Count | Should -Be 0
     }
 }
+
+Describe 'Escrita sem execucao ativa' -Tag 'Registry' {
+
+    # A guarda de Core/Backup.ps1: sem New-TmxRun nao existe state.json, logo
+    # nao existe reversao - e sem reversao nada pode ser escrito no sistema.
+    # $script:TmxRun e zerado por dentro do modulo porque nao ha (nem deve
+    # haver) uma funcao publica para encerrar uma execucao.
+
+    BeforeEach {
+        Remove-TmxTestKey -SubKey $script:TestSubKey
+        New-Item -Path $script:TestRoot -Force | Out-Null
+        InModuleScope TweakMaxing {
+            $script:TmxRun          = $null
+            $script:TmxStateRecords = $null
+        }
+    }
+
+    AfterEach {
+        InModuleScope TweakMaxing {
+            $script:TmxRun          = $null
+            $script:TmxStateRecords = $null
+        }
+    }
+
+    It 'Set-TmxRegistry lanca e nao escreve nada' {
+        $key = "$script:TestRoot\SemRun"
+        New-Item -Path $key -Force | Out-Null
+
+        { Set-TmxRegistry -Path $key -Name 'V' -Value 1 -Type DWord -TweakId 'SR-1' } |
+            Should -Throw 'nenhuma execucao ativa: chame New-TmxRun antes de alterar o sistema'
+
+        # O valor nao foi criado: a guarda dispara ANTES da escrita.
+        (Get-Item -Path $key).GetValueNames() | Should -Not -Contain 'V'
+        @(Get-TmxState).Count | Should -Be 0
+    }
+
+    It 'Set-TmxRegistry -Remove lanca e nao remove nada' {
+        $key = "$script:TestRoot\SemRunRemove"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 9 -PropertyType DWord -Force | Out-Null
+
+        { Set-TmxRegistry -Path $key -Name 'V' -Remove -TweakId 'SR-2' } |
+            Should -Throw 'nenhuma execucao ativa: chame New-TmxRun antes de alterar o sistema'
+
+        (Get-ItemProperty -Path $key -Name 'V').V | Should -Be 9
+    }
+
+    It 'New-TmxStateRecord lanca' {
+        { New-TmxStateRecord -TweakId 'SR-3' -Tipo 'cmdlet' -Alvo 'alvo qualquer' } |
+            Should -Throw 'nenhuma execucao ativa: chame New-TmxRun antes de alterar o sistema'
+        @(Get-TmxState).Count | Should -Be 0
+    }
+
+    It 'New-TmxCmdletRecord lanca (passa por New-TmxStateRecord)' {
+        { New-TmxCmdletRecord -TweakId 'SR-4' -Funcao 'Set-TmxFake' -Alvo 'alvo' -Estado @{ a = 1 } } |
+            Should -Throw 'nenhuma execucao ativa: chame New-TmxRun antes de alterar o sistema'
+    }
+
+    It 'Save-TmxState lanca' {
+        { Save-TmxState } | Should -Throw 'nenhuma execucao ativa: chame New-TmxRun antes de alterar o sistema'
+    }
+
+    It 'New-TmxRun passa pela guarda e deixa o estado gravavel de novo' {
+        $run = New-TmxRun
+        Test-Path -LiteralPath $run.StatePath | Should -BeTrue
+
+        $key = "$script:TestRoot\ComRun"
+        $rec = Set-TmxRegistry -Path $key -Name 'V' -Value 3 -Type DWord -TweakId 'SR-5' -PassThru
+        $rec.status | Should -Be 'aplicado'
+        (Get-ItemProperty -Path $key -Name 'V').V | Should -Be 3
+    }
+}

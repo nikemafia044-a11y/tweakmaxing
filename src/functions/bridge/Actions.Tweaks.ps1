@@ -599,6 +599,22 @@ function Assert-TmxTweakTestModeIds {
     }
 }
 
+function Test-TmxTweakSessionPronta {
+    <#
+    .SYNOPSIS
+        A sessao esta pronta (pasta da execucao + ponto de restauracao)?
+    .DESCRIPTION
+        Mesma condicao de Assert-TmxTweakSession, sem lancar: serve a quem
+        precisa DECIDIR no meio de um laco (Invoke-TmxTweakApplyIds) em vez
+        de abortar o job inteiro.
+    .OUTPUTS
+        [bool]
+    #>
+    [CmdletBinding()]
+    param()
+    [bool]($null -ne $sync -and $null -ne $sync.session -and $sync.session.pronto)
+}
+
 function Assert-TmxTweakSession {
     <#
     .SYNOPSIS
@@ -607,7 +623,7 @@ function Assert-TmxTweakSession {
     [CmdletBinding()]
     param()
 
-    if ($null -eq $sync -or $null -eq $sync.session -or -not $sync.session.pronto) {
+    if (-not (Test-TmxTweakSessionPronta)) {
         throw 'sessao sem ponto de restauracao: abra a sessao antes de aplicar'
     }
 }
@@ -659,6 +675,14 @@ function Invoke-TmxTweakApplyIds {
         Um Invoke-TmxPlan por id (plano de um item so) em vez de um unico
         Invoke-TmxPlan com -Ids: e o que permite emitir job.progress a cada
         tweak e usar as acoes da opcao escolhida em um combobox.
+
+        A sessao e reconferida ANTES DE CADA id, nao so uma vez na entrada
+        (Assert-TmxTweakApplyReady, la na ponte). Uma lista longa leva
+        minutos, e nesse intervalo a sessao pode acabar - a janela fechou, o
+        usuario reverteu tudo, o run foi encerrado. A partir do id em que
+        isso for detectado nada mais e aplicado: o restante sai como
+        'pulado' com detalhe 'sessao encerrada' e a interface mostra
+        exatamente onde a fila parou.
     .OUTPUTS
         { itens[], aplicados, jaAplicados, falhas, pulados, requerReboot }
     #>
@@ -669,11 +693,32 @@ function Invoke-TmxTweakApplyIds {
     $itens = New-Object 'System.Collections.Generic.List[object]'
     $total = @($Ids).Count
     $i     = 0
+    $parou = $false
 
     foreach ($id in @($Ids)) {
         $i++
         $item = Get-TmxTweakPlanItem -Id "$id"
         if ($null -eq $item) { continue }
+
+        if (-not $parou -and -not (Test-TmxTweakSessionPronta)) {
+            $parou = $true
+            Write-TmxLog -Level WARN -Message 'Sessao encerrada no meio da aplicacao; ids restantes pulados' -Data @{ apartirDe = "$($item.id)" }
+        }
+        if ($parou) {
+            $itens.Add([pscustomobject]@{
+                id           = "$($item.id)"
+                nome         = "$($item.nome)"
+                tier         = "$($item.tier)"
+                status       = 'pulado'
+                detalhe      = 'sessao encerrada'
+                antes        = $null
+                depois       = $null
+                registros    = 0
+                requerReboot = $false
+                avisos       = @()
+            })
+            continue
+        }
 
         Send-TmxJobProgress -Pct ([int](($i - 1) / [math]::Max($total, 1) * 90)) -Status "Aplicando $($item.id) - $($item.nome)"
 
@@ -704,7 +749,7 @@ function Invoke-TmxTweakApplyIds {
         aplicados    = @($arr | Where-Object { "$($_.status)" -in @('aplicado', 'aplicadoNaoVerificado') }).Count
         jaAplicados  = @($arr | Where-Object { "$($_.status)" -eq 'jaAplicado' }).Count
         falhas       = @($arr | Where-Object { "$($_.status)" -eq 'falha' }).Count
-        pulados      = @($arr | Where-Object { "$($_.status)" -in @('semConsentimento', 'naoAplicavel', 'naoSuportado', 'simulado') }).Count
+        pulados      = @($arr | Where-Object { "$($_.status)" -in @('semConsentimento', 'naoAplicavel', 'naoSuportado', 'simulado', 'pulado') }).Count
         requerReboot = (@($arr | Where-Object { ("$($_.status)" -in @('aplicado', 'aplicadoNaoVerificado')) -and $_.requerReboot }).Count -gt 0)
     }
 }

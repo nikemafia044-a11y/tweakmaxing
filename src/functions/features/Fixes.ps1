@@ -198,7 +198,10 @@ function Invoke-TmxFixUpdate {
         $rr = Invoke-TmxRegsvr32 -Dll $dll
         if ($rr.codigo -ne 0) { $falhasDll.Add($dll) }
     }
-    $passos.Add((New-TmxFixStep -Nome 'reregistrar-dlls' -Ok $true `
+    # -Ok vem dos codigos de saida do regsvr32, nao fixo em $true: uma DLL que
+    # nao registra e informacao real sobre a maquina e tem que aparecer como
+    # passo falho no relatorio, nao virar 'ok' com um rodape explicativo.
+    $passos.Add((New-TmxFixStep -Nome 'reregistrar-dlls' -Ok ($falhasDll.Count -eq 0) `
         -Saida "$($script:TmxFixUpdateDlls.Count) DLL(s); sem registro: $(if ($falhasDll.Count -gt 0) { $falhasDll.ToArray() -join ', ' } else { 'nenhuma' })"))
 
     # 6. cliente WSUS (registro -> tem reversao)
@@ -244,7 +247,11 @@ function Invoke-TmxFixUpdate {
     Send-TmxFixProgress -Pct 96 -Status 'Forcando a procura por atualizacoes...'
     $r1 = Invoke-TmxWuauclt @('/resetauthorization', '/detectnow')
     $r2 = Invoke-TmxUsoClient @('StartScan')
-    $passos.Add((New-TmxFixStep -Nome 'forcar-deteccao' -Ok $true -Saida "wuauclt: $($r1.codigo); UsoClient: $($r2.codigo)"))
+    # Idem: os dois tem que sair 0. O wuauclt e deprecado desde o Windows 10 e
+    # devolve codigo != 0 em maquina recente - por isso este passo costuma
+    # aparecer falho mesmo com o UsoClient tendo feito o trabalho; o texto da
+    # saida traz os dois codigos justamente para distinguir os casos.
+    $passos.Add((New-TmxFixStep -Nome 'forcar-deteccao' -Ok (($r1.codigo -eq 0) -and ($r2.codigo -eq 0)) -Saida "wuauclt: $($r1.codigo); UsoClient: $($r2.codigo)"))
 
     Send-TmxFixProgress -Pct 100 -Status 'Concluido'
     New-TmxFixResult -Passos $passos.ToArray() -Detalhe 'Windows Update reconstruido. Reinicie o computador antes de procurar atualizacoes.'

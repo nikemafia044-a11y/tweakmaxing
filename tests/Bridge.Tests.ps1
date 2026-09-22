@@ -37,9 +37,13 @@ Describe 'Ponte JSON' -Tag 'Bridge' {
                 [Parameter(Mandatory)] [string] $Nome,
                 [int] $TimeoutSeconds = 5
             )
+            # .ToArray() (que o wrapper Synchronized do ArrayList executa sob
+            # lock) em vez de enumerar a lista direto: a runspace do job
+            # continua chamando .Add() enquanto esperamos, e um foreach/pipeline
+            # sobre a colecao viva estoura com "Colecao foi modificada".
             $limite = (Get-Date).AddSeconds($TimeoutSeconds)
             while ((Get-Date) -lt $limite) {
-                $achado = @($sync.uiEvents | Where-Object { $_.event -eq $Nome })
+                $achado = @(@($sync.uiEvents.ToArray()) | Where-Object { $_.event -eq $Nome })
                 if ($achado.Count -gt 0) { return $achado[0] }
                 Start-Sleep -Milliseconds 100
             }
@@ -280,6 +284,109 @@ Describe 'Ponte JSON' -Tag 'Bridge' {
             $pronto | Should -Not -BeNullOrEmpty
             $pronto.payload.ok | Should -BeFalse
             $pronto.payload.error.message | Should -Be 'falhou no job'
+        }
+    }
+}
+
+Describe 'Isolamento da runspace do pool' -Tag 'Bridge' {
+
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_Helpers.ps1')
+        Import-TmxTestModule
+    }
+
+    AfterAll {
+        Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
+        Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
+    }
+
+    BeforeEach {
+        $s = [Hashtable]::Synchronized(@{})
+        $s.activeJob = $null
+        $s.uiEvents  = [System.Collections.ArrayList]::Synchronized((New-Object System.Collections.ArrayList))
+        $global:sync = $s
+    }
+
+    It 'a InitialSessionState leva as constantes e nao o estado de execucao' {
+        # A runspace do pool tem que comecar SEM execucao ativa: um $TmxRun
+        # copiado da thread que montou a ISS faria a guarda de Core/Backup.ps1
+        # passar numa runspace que nao persiste nada.
+        $iss = New-TmxSessionState
+        $nomes = @($iss.Variables | ForEach-Object { "$($_.Name)" })
+
+        $nomes | Should -Contain 'TmxConditionRegex'
+        $nomes | Should -Contain 'TmxThrottleKeyPath'
+        $nomes | Should -Contain 'TmxSkipPhrase'
+
+        $nomes | Should -Not -Contain 'TmxRun'
+        $nomes | Should -Not -Contain 'TmxStateRecords'
+        $nomes | Should -Not -Contain 'TmxLog'
+        $nomes | Should -Not -Contain 'TmxPowerBackupFeito'
+        $nomes | Should -Not -Contain 'TmxEnumRoot'
+    }
+
+    It 'toda variavel de script Tmx* esta classificada' {
+        # A lista de permissao so protege se estiver completa: uma constante
+        # nova que ninguem classificou nao chega a runspace do pool e vira um
+        # $null dificil de diagnosticar la dentro. Aqui a omissao quebra o
+        # teste em vez de quebrar um job.
+        InModuleScope TweakMaxing {
+            $todas = @(Get-Variable -Scope Script -Name 'Tmx*' -ErrorAction SilentlyContinue | ForEach-Object { "$($_.Name)" })
+            $classificadas = @($script:TmxConstantesRunspace) + @($script:TmxMutaveisConhecidas)
+            $orfas = @($todas | Where-Object { $classificadas -notcontains $_ })
+            $orfas.Count | Should -Be 0 -Because "sem classificacao em Start-TmxJob.ps1: $($orfas -join ', ')"
+        }
+    }
+
+    It 'Get-TmxEnumRoot cai no padrao quando a variavel nao atravessou' {
+        # Corolario do teste acima: $script:TmxEnumRoot fica fora da ISS, entao
+        # quem le a raiz Enum tem que passar por Get-TmxEnumRoot.
+        InModuleScope TweakMaxing {
+            $anterior = $script:TmxEnumRoot
+            try {
+                $script:TmxEnumRoot = $null
+                Get-TmxEnumRoot | Should -Be 'HKLM:\SYSTEM\CurrentControlSet\Enum'
+            } finally {
+                $script:TmxEnumRoot = $anterior
+            }
+        }
+    }
+
+    Context 'Invoke-TmxJobBody' {
+
+        It 'zera o activeJob mesmo quando Send-TmxUiEvent lanca' {
+            # Se o job.started morresse fora do try/finally, $sync.activeJob
+            # ficaria preso e a ponte recusaria TODO trabalho seguinte com
+            # 'ja existe um trabalho em andamento' ate reiniciar o processo.
+            Mock -ModuleName TweakMaxing -CommandName Send-TmxUiEvent -MockWith { throw 'janela morreu' }
+
+            $sync.activeJob = @{ jobId = 'j1'; name = 'teste' }
+            { Invoke-TmxJobBody -JobId 'j1' -Name 'teste' -HandlerText 'param($p) 1' } | Should -Not -Throw
+            $sync.activeJob | Should -BeNullOrEmpty
+        }
+
+        It 'zera o activeJob e reporta job.done ok:false quando o handler lanca' {
+            $sync.activeJob = @{ jobId = 'j2'; name = 'teste' }
+            Invoke-TmxJobBody -JobId 'j2' -Name 'teste' -HandlerText 'param($p) throw ''boom'''
+
+            $sync.activeJob | Should -BeNullOrEmpty
+            $eventos = @($sync.uiEvents.ToArray())
+            @($eventos | Where-Object { $_.event -eq 'job.started' }).Count | Should -Be 1
+            $done = @($eventos | Where-Object { $_.event -eq 'job.done' })[0]
+            $done.payload.ok | Should -BeFalse
+            $done.payload.error.message | Should -Be 'boom'
+        }
+
+        It 'emite started e done com o resultado no caminho feliz' {
+            $sync.activeJob = @{ jobId = 'j3'; name = 'teste' }
+            Invoke-TmxJobBody -JobId 'j3' -Name 'teste' -Payload @{ n = 7 } -HandlerText 'param($p) @{ dobro = ([int]$p.n * 2) }'
+
+            $sync.activeJob | Should -BeNullOrEmpty
+            $eventos = @($sync.uiEvents.ToArray())
+            $eventos[0].event | Should -Be 'job.started'
+            $done = @($eventos | Where-Object { $_.event -eq 'job.done' })[0]
+            $done.payload.ok | Should -BeTrue
+            $done.payload.result.dobro | Should -Be 14
         }
     }
 }

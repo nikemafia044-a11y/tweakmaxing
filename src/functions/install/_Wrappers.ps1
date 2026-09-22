@@ -94,6 +94,7 @@ function Invoke-TmxProcessWithTimeout {
     )
 
     $arquivoTmp = [System.IO.Path]::GetTempFileName()
+    $processo   = $null
     try {
         $processo = Start-Process -FilePath $FilePath -ArgumentList $Arguments `
             -NoNewWindow -PassThru -RedirectStandardOutput $arquivoTmp -ErrorAction Stop
@@ -116,6 +117,13 @@ function Invoke-TmxProcessWithTimeout {
     } catch {
         [pscustomobject]@{ codigo = -1; saida = "$DescricaoErro nao pode ser executado: $($_.Exception.Message)" }
     } finally {
+        # -PassThru devolve um System.Diagnostics.Process com um handle nativo
+        # do SO preso a ele. Numa sessao que instala dezenas de apps, deixar o
+        # descarte para o GC significa dezenas de handles abertos ate a
+        # proxima coleta - inclusive os dos processos que estouraram o tempo.
+        if ($null -ne $processo) {
+            try { $processo.Dispose() } catch { Write-Verbose "Processo nao descartou limpo: $($_.Exception.Message)" }
+        }
         Remove-Item -LiteralPath $arquivoTmp -Force -ErrorAction SilentlyContinue
     }
 }
@@ -161,10 +169,16 @@ function Test-TmxPackageId {
         alfanumericos. O conjunto aceito cobre os dois formatos sem abrir
         espaco para separador de argumento, aspas ou qualquer coisa que nao
         faca sentido num --id de linha de comando.
+
+        O '-' e aceito DENTRO do id, mas nunca como primeiro caractere: um
+        '-something' seria entregue ao winget/choco na posicao de um valor e
+        lido como MAIS UMA OPCAO ('--id -Force' vira '--id' sem valor seguido
+        de '-Force'). O mesmo vale para '--...'.
     #>
     [CmdletBinding()]
     param([string] $Id)
     if ([string]::IsNullOrWhiteSpace($Id)) { return $false }
+    if ($Id.StartsWith('-')) { return $false }
     $Id -cmatch '^[A-Za-z0-9_.+:@-]+$'
 }
 

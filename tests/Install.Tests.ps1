@@ -564,7 +564,11 @@ Describe 'Ponte da aba Instalar' -Tag 'Install' {
             )
             $limite = (Get-Date).AddSeconds($TimeoutSeconds)
             while ((Get-Date) -lt $limite) {
-                $achado = @($sync.uiEvents | Where-Object { $_.event -eq $Nome })
+                # .ToArray() (metodo sincronizado do wrapper) e nao o pipeline
+                # direto: o job escreve em $sync.uiEvents de outra runspace e
+                # enumerar a lista enquanto ela cresce lanca "Colecao foi
+                # modificada".
+                $achado = @(@($sync.uiEvents.ToArray()) | Where-Object { $_.event -eq $Nome })
                 if ($achado.Count -gt 0) { return $achado[0] }
                 Start-Sleep -Milliseconds 100
             }
@@ -748,6 +752,65 @@ Describe 'Ponte da aba Instalar' -Tag 'Install' {
             $r = & $entry.handler ([pscustomobject]@{ consentido = $true })
             $r.ok | Should -BeTrue
             Should -Invoke -CommandName Install-TmxChoco -ModuleName TweakMaxing -Times 1
+        }
+    }
+}
+
+Describe 'Endurecimento dos wrappers de instalacao' -Tag 'Install' {
+
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_Helpers.ps1')
+        Import-TmxTestModule
+    }
+
+    AfterAll {
+        Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
+    }
+
+    Context 'Test-TmxPackageId' {
+
+        It 'recusa id que comeca com hifen' -ForEach @(
+            @{ alvo = '-Force' }
+            @{ alvo = '--id' }
+            @{ alvo = '-' }
+        ) {
+            # Um id assim iria para a linha de comando na posicao do VALOR de
+            # --id e seria lido como mais uma opcao pelo winget/choco.
+            Test-TmxPackageId -Id $alvo | Should -BeFalse
+        }
+
+        It 'continua aceitando hifen no meio do id' {
+            Test-TmxPackageId -Id 'Publisher.Produto-2024' | Should -BeTrue
+            Test-TmxPackageId -Id 'msstore:9MSSGKG348SP'    | Should -BeTrue
+        }
+    }
+
+    Context 'Invoke-TmxProcessWithTimeout' {
+
+        It 'descarta o objeto Process no fim' {
+            $script:processoFalso = [pscustomobject]@{ Id = 4242; ExitCode = 0; Descartado = $false }
+            $script:processoFalso | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param($ms) $true } -Force
+            $script:processoFalso | Add-Member -MemberType ScriptMethod -Name Dispose     -Value { $this.Descartado = $true } -Force
+
+            Mock -ModuleName TweakMaxing -CommandName Start-Process -MockWith { $script:processoFalso }
+
+            $r = Invoke-TmxProcessWithTimeout -FilePath 'fake.exe' -Arguments @('--x') -TimeoutSeconds 5
+            $r.codigo | Should -Be 0
+            $script:processoFalso.Descartado | Should -BeTrue
+        }
+
+        It 'descarta o Process tambem quando o tempo estoura' {
+            $script:processoFalso = [pscustomobject]@{ Id = 4243; ExitCode = 0; Descartado = $false }
+            $script:processoFalso | Add-Member -MemberType ScriptMethod -Name WaitForExit -Value { param($ms) $false } -Force
+            $script:processoFalso | Add-Member -MemberType ScriptMethod -Name Dispose     -Value { $this.Descartado = $true } -Force
+
+            Mock -ModuleName TweakMaxing -CommandName Start-Process       -MockWith { $script:processoFalso }
+            Mock -ModuleName TweakMaxing -CommandName Stop-TmxProcessTree -MockWith { }
+
+            $r = Invoke-TmxProcessWithTimeout -FilePath 'fake.exe' -Arguments @('--x') -TimeoutSeconds 1
+            $r.codigo | Should -Be -1
+            $r.saida  | Should -Be 'tempo esgotado'
+            $script:processoFalso.Descartado | Should -BeTrue
         }
     }
 }

@@ -473,6 +473,10 @@ function Register-TmxFeatureActions {
 
         $id = "$($payload.id)"
         if (-not $id) { throw 'id obrigatorio' }
+        # Mesma trava de features.apply: no modo de teste so REC-TST entra.
+        # Sem ela o modo de teste podia reverter um recurso real que outra
+        # coisa tivesse aplicado no mesmo run.
+        Assert-TmxFeatureTestMode -Id $id
         if ($null -eq $sync.session -or -not $sync.session.runId) { throw 'nenhuma execucao ativa para reverter' }
 
         $jobId = Start-TmxJob -Name 'features.undo' -Payload @{ id = $id; runId = "$($sync.session.runId)" } -Handler {

@@ -74,7 +74,12 @@ function Test-TmxAppxJaRemovido {
     #>
     param([string] $Mensagem)
     if (-not $Mensagem) { return $false }
-    [bool]($Mensagem -match '(?i)n[aã]o foi possivel localizar|n[aã]o encontrad|not found|is not installed|n[aã]o est[aá] instalado|0x80073CF1')
+    # \u00E3 / \u00E1 (escape do proprio regex do .NET) em vez do caractere
+    # acentuado literal: este arquivo nao tem BOM e o parser do PowerShell 5.1
+    # le arquivo sem BOM como codepage ANSI, corrompendo qualquer acento no
+    # fonte. A alternativa ([char]0x00E3 concatenado) deixaria o padrao
+    # ilegivel; dentro de um regex o escape e exatamente equivalente.
+    [bool]($Mensagem -match '(?i)n[a\u00E3]o foi possivel localizar|n[a\u00E3]o encontrad|not found|is not installed|n[a\u00E3]o est[a\u00E1] instalado|0x80073CF1')
 }
 
 function Get-TmxRegistryCurrentValue {
@@ -713,7 +718,18 @@ function Test-TmxAction {
                     $out.detalhe = "sem funcao de verificacao ($teste)"
                     break
                 }
-                $r = & $teste -Tweak $Tweak -Profile $Profile
+                # Simetria com Invoke-TmxAction: a funcao Set- recebe os
+                # 'parametros' da acao, e a Test- correspondente precisa dos
+                # mesmos para olhar no MESMO lugar (a raiz de registro de
+                # teste, por exemplo). Passa so quando a Test- declara o
+                # parametro - as que so aceitam -Tweak/-Profile continuam
+                # sendo chamadas como antes.
+                $cmdTeste = Get-Command -Name $teste -CommandType Function -ErrorAction SilentlyContinue
+                $r = if ($null -ne $cmdTeste -and $cmdTeste.Parameters.ContainsKey('Parametros')) {
+                    & $teste -Tweak $Tweak -Profile $Profile -Parametros (Get-TmxActionProp -Action $Action -Nome 'parametros' -Padrao $null)
+                } else {
+                    & $teste -Tweak $Tweak -Profile $Profile
+                }
                 if ($r -is [bool]) {
                     $out.aplicado = $r
                 } else {

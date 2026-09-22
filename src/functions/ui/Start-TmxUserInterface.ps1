@@ -77,6 +77,33 @@ function Install-TmxWebView2Runtime {
     Test-TmxWebView2Runtime
 }
 
+function Test-TmxUiNavegacaoPermitida {
+    <#
+    .SYNOPSIS
+        $true so para o host virtual da propria interface
+        (https://app.tweakmaxing/...). Qualquer outra coisa e recusada.
+    .DESCRIPTION
+        Comparacao pelo objeto [uri], nao por -like em texto: 'https://
+        app.tweakmaxing.exemplo.com/x' e 'https://app.tweakmaxing@mau.com/x'
+        passariam num prefixo textual ingenuo e nao sao o nosso host.
+        about:blank entra na lista porque o WebView2 o usa como pagina
+        inicial antes do primeiro Navigate.
+    .OUTPUTS
+        [bool]
+    #>
+    [CmdletBinding()]
+    param([string] $Uri)
+
+    if (-not $Uri) { return $false }
+    if ($Uri -ieq 'about:blank') { return $true }
+    try {
+        $u = [uri]$Uri
+    } catch {
+        return $false
+    }
+    ($u.Scheme -ieq 'https' -and $u.Host -ieq 'app.tweakmaxing')
+}
+
 function Start-TmxUserInterface {
     <#
     .SYNOPSIS
@@ -186,6 +213,40 @@ function Start-TmxUserInterface {
         $core.SetVirtualHostNameToFolderMapping(
             'app.tweakmaxing', $webRoot,
             [Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind]::Allow)
+
+        # A janela so navega para o host virtual. Um link externo que escape
+        # da UI (ou um <a href> injetado por conteudo de catalogo) levaria a
+        # pagina inteira para fora de app.tweakmaxing - e com ela a ponte
+        # window.chrome.webview, que passaria a existir para uma origem
+        # remota. Aqui a navegacao e simplesmente cancelada.
+        $core.add_NavigationStarting({
+            param($remetenteNav, $eventoNav)
+            $destino = "$($eventoNav.Uri)"
+            if (-not (Test-TmxUiNavegacaoPermitida -Uri $destino)) {
+                $eventoNav.Cancel = $true
+                Write-TmxLog -Level WARN -Message 'Navegacao bloqueada na janela' -Data @{ uri = $destino }
+            }
+        }.GetNewClosure())
+
+        # window.open / target=_blank: o WebView2 abriria uma segunda janela
+        # SEM nenhuma das restricoes acima. Handled = $true mata essa janela;
+        # um destino https vai para o navegador do usuario pela mesma regra
+        # de shell.openUrl (lista de permissao: so https).
+        $core.add_NewWindowRequested({
+            param($remetenteNw, $eventoNw)
+            $eventoNw.Handled = $true
+            $destino = "$($eventoNw.Uri)"
+            if ($destino -match '^https://') {
+                try {
+                    Start-Process $destino
+                    Write-TmxLog -Level INFO -Message 'Link aberto no navegador padrao' -Data @{ uri = $destino }
+                } catch {
+                    Write-TmxLog -Level WARN -Message "Link nao pode ser aberto: $($_.Exception.Message)" -Data @{ uri = $destino }
+                }
+            } else {
+                Write-TmxLog -Level WARN -Message 'Nova janela recusada' -Data @{ uri = $destino }
+            }
+        }.GetNewClosure())
 
         $core.add_WebMessageReceived({
             param($remetente2, $evento2)

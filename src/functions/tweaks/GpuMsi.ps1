@@ -13,7 +13,27 @@
 # Undo-TmxGpuMsi so existe para completar o trio Set-/Undo-/Test- exigido pelo
 # validador do catalogo (Test-TmxAcaoList em Engine/Catalog.ps1).
 
-$script:TmxEnumRoot = 'HKLM:\SYSTEM\CurrentControlSet\Enum'
+# Padrao de producao. Mutavel apenas por Set-TmxEnumRoot (hook de teste), o
+# que a tira da lista de constantes copiadas para uma runspace nova
+# (New-TmxSessionState): dentro do pool ela chega $null e Get-TmxEnumRoot
+# devolve este mesmo padrao.
+$script:TmxEnumRootPadrao = 'HKLM:\SYSTEM\CurrentControlSet\Enum'
+$script:TmxEnumRoot       = $script:TmxEnumRootPadrao
+
+function Get-TmxEnumRoot {
+    <#
+    .SYNOPSIS
+        Raiz Enum em uso: a redirecionada por Set-TmxEnumRoot, ou o padrao.
+    .NOTES
+        Nunca leia $script:TmxEnumRoot direto: numa runspace do pool (onde as
+        funcoes chegam sem as variaveis de escopo de script mutaveis) ele e
+        $null, e um Join-Path com $null lanca.
+    #>
+    [CmdletBinding()]
+    param()
+    if ($script:TmxEnumRoot) { return $script:TmxEnumRoot }
+    $script:TmxEnumRootPadrao
+}
 
 function Set-TmxEnumRoot {
     <#
@@ -40,7 +60,7 @@ function Get-TmxGpuDeviceKey {
     $gpu = @($Profile.gpu.adaptadores | Where-Object { -not $_.integrada -and $_.pnpId }) | Select-Object -First 1
     if (-not $gpu) { $gpu = @($Profile.gpu.adaptadores | Where-Object { $_.pnpId }) | Select-Object -First 1 }
     if (-not $gpu) { return $null }
-    $key = Join-Path $script:TmxEnumRoot $gpu.pnpId
+    $key = Join-Path (Get-TmxEnumRoot) $gpu.pnpId
     [pscustomobject]@{
         modelo    = $gpu.modelo
         pnpId     = $gpu.pnpId

@@ -14,6 +14,9 @@
 $script:TmxRun          = $null
 $script:TmxStateRecords = $null
 
+# Mensagem unica da guarda "estado antes da escrita" (ver Assert-TmxRunAtivo).
+$script:TmxSemRunMsg = 'nenhuma execucao ativa: chame New-TmxRun antes de alterar o sistema'
+
 function Get-TmxHomePath {
     if ($env:TWEAKMAXING_HOME) { return $env:TWEAKMAXING_HOME }
     Join-Path $env:LOCALAPPDATA 'TweakMaxing'
@@ -61,6 +64,23 @@ function Get-TmxRun {
     $script:TmxRun
 }
 
+function Assert-TmxRunAtivo {
+    <#
+    .SYNOPSIS
+        Guarda de "estado antes da escrita": sem execucao ativa nao existe
+        state.json para onde mandar o valor anterior, logo nao pode existir
+        escrita no sistema.
+    .NOTES
+        Antes esta situacao era um no-op silencioso (Add-TmxStateRecord
+        acumulava em memoria e Save-TmxState voltava sem gravar), o que
+        deixava uma escrita real acontecer sem nenhum registro de reversao.
+        Agora lanca. Quem precisa escrever cria a execucao com New-TmxRun.
+    #>
+    [CmdletBinding()]
+    param()
+    if ($null -eq $script:TmxRun) { throw $script:TmxSemRunMsg }
+}
+
 function Add-TmxStateRecord {
     <#
     .SYNOPSIS
@@ -71,11 +91,17 @@ function Add-TmxStateRecord {
         Ganha um 'seq' 1-based (posicao na lista) se ainda nao tiver: e a
         chave usada por Save-TmxStateFile para mesclar mudancas de status sem
         sobrescrever registros concorrentes de outro processo/escritor.
+
+        LANCA sem execucao ativa (ver Assert-TmxRunAtivo): o registro nao e
+        anexado a memoria e nada e gravado. Como todo escritor do sistema
+        (Set-TmxRegistry, New-TmxStateRecord, New-TmxCmdletRecord) passa por
+        aqui ANTES de tocar na maquina, a guarda impede a escrita em si.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] $Record
     )
+    Assert-TmxRunAtivo
     if ($null -eq $script:TmxStateRecords) {
         $script:TmxStateRecords = New-Object 'System.Collections.Generic.List[object]'
     }
@@ -158,10 +184,13 @@ function Save-TmxState {
         Save-TmxStateFile de um Undo-TweakMaxing rodando em outro processo).
         O estrangeiro e anexado ao payload gravado, mas NAO e trazido para
         $script:TmxStateRecords - este processo continua sem conhece-lo.
+
+        LANCA sem execucao ativa. New-TmxRun nao e excecao: ele ja publicou
+        $script:TmxRun antes de chamar esta funcao, entao a guarda passa.
     #>
     [CmdletBinding()]
     param()
-    if (-not $script:TmxRun) { return }
+    Assert-TmxRunAtivo
 
     # .ToArray() em atribuicao DIRETA: @() sobre List generica vazia falha no PS 5.1,
     # e um array vazio saindo de "if {}" como expressao e desenrolado para $null pelo pipeline.

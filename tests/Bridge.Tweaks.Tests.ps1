@@ -337,3 +337,99 @@ Describe 'Ajustes (ponte)' -Tag 'Tweaks' {
         }
     }
 }
+
+Describe 'Aplicacao em lote com a sessao caindo no meio' -Tag 'Tweaks' {
+
+    # Assert-TmxTweakApplyReady confere a sessao UMA vez, antes do job. Uma
+    # lista longa leva minutos, e nesse intervalo a janela pode fechar ou o
+    # usuario reverter tudo: daquele ponto em diante nada mais pode ser
+    # escrito. Aqui o segundo id tem que sair 'pulado', nao aplicado.
+
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_Helpers.ps1')
+        Import-TmxTestModule
+
+        function New-TmxLoteItem {
+            param([string] $Id, [string] $Nome)
+            [pscustomobject]@{
+                id          = $Id
+                nome        = $Nome
+                tier        = 'MEDIDO'
+                consentido  = $true
+                selecionado = $true
+                tweak       = [pscustomobject]@{ id = $Id; nome = $Nome; controle = 'checkbox'; acoes = @(); opcoes = @() }
+            }
+        }
+    }
+
+    AfterAll {
+        Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
+        Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
+    }
+
+    BeforeEach {
+        $s = [Hashtable]::Synchronized(@{})
+        $s.testMode  = $true
+        $s.activeJob = $null
+        $s.session   = @{ runId = 'run-de-teste'; pronto = $true }
+        $s.tweaks    = @{
+            catalog     = @()
+            profile     = @{}
+            preset      = 'desktop'
+            carregadoEm = (Get-Date)
+            plan        = [pscustomobject]@{
+                itens = @((New-TmxLoteItem -Id 'TST-001' -Nome 'um'), (New-TmxLoteItem -Id 'TST-002' -Nome 'dois'))
+            }
+        }
+        $global:sync = $s
+    }
+
+    It 'para no ponto da queda e marca os ids restantes como pulado' {
+        Mock -ModuleName TweakMaxing -CommandName Send-TmxJobProgress          -MockWith { }
+        Mock -ModuleName TweakMaxing -CommandName Get-TmxTweakEffectiveActions -MockWith { @() }
+        Mock -ModuleName TweakMaxing -CommandName New-TmxTweakVariant          -MockWith { $Tweak }
+        Mock -ModuleName TweakMaxing -CommandName New-TmxTweakSingleItemPlan   -MockWith { [pscustomobject]@{ itens = @() } }
+        Mock -ModuleName TweakMaxing -CommandName Invoke-TmxPlan -MockWith {
+            # a sessao acaba enquanto o primeiro id e aplicado
+            $sync.session.pronto = $false
+            [pscustomobject]@{ itens = @([pscustomobject]@{
+                id = 'TST-001'; nome = 'um'; tier = 'MEDIDO'; status = 'aplicado'
+                detalhe = 'ok'; antes = '0'; depois = '1'; registros = 1; requerReboot = $false; avisos = @()
+            }) }
+        }
+
+        $r = Invoke-TmxTweakApplyIds -Ids @('TST-001', 'TST-002')
+
+        @($r.itens).Count   | Should -Be 2
+        $r.itens[0].id      | Should -Be 'TST-001'
+        $r.itens[0].status  | Should -Be 'aplicado'
+        $r.itens[1].id      | Should -Be 'TST-002'
+        $r.itens[1].status  | Should -Be 'pulado'
+        $r.itens[1].detalhe | Should -Be 'sessao encerrada'
+
+        $r.aplicados | Should -Be 1
+        $r.pulados   | Should -Be 1
+
+        # O segundo id nunca chegou ao Engine.
+        Should -Invoke -ModuleName TweakMaxing -CommandName Invoke-TmxPlan -Times 1 -Exactly
+    }
+
+    It 'com a sessao de pe aplica os dois ids' {
+        Mock -ModuleName TweakMaxing -CommandName Send-TmxJobProgress          -MockWith { }
+        Mock -ModuleName TweakMaxing -CommandName Get-TmxTweakEffectiveActions -MockWith { @() }
+        Mock -ModuleName TweakMaxing -CommandName New-TmxTweakVariant          -MockWith { $Tweak }
+        Mock -ModuleName TweakMaxing -CommandName New-TmxTweakSingleItemPlan   -MockWith { [pscustomobject]@{ itens = @() } }
+        Mock -ModuleName TweakMaxing -CommandName Invoke-TmxPlan -MockWith {
+            [pscustomobject]@{ itens = @([pscustomobject]@{
+                id = 'X'; nome = 'x'; tier = 'MEDIDO'; status = 'aplicado'
+                detalhe = 'ok'; antes = '0'; depois = '1'; registros = 1; requerReboot = $false; avisos = @()
+            }) }
+        }
+
+        $r = Invoke-TmxTweakApplyIds -Ids @('TST-001', 'TST-002')
+
+        $r.aplicados | Should -Be 2
+        $r.pulados   | Should -Be 0
+        Should -Invoke -ModuleName TweakMaxing -CommandName Invoke-TmxPlan -Times 2 -Exactly
+    }
+}
