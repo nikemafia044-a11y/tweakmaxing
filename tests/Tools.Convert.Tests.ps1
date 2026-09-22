@@ -246,3 +246,169 @@ Describe 'Convert-WinUtilCatalog saida valida contra o schema' -Tag 'Convert' {
         $r.total | Should -Be 67
     }
 }
+
+Describe 'Convert-WinUtilCatalog serializador' -Tag 'Convert' {
+
+    BeforeAll {
+        # -SomenteDefinicoes carrega as funcoes do conversor sem converter nada.
+        # O script liga Set-StrictMode; desligamos logo em seguida para nao
+        # contaminar o resto do arquivo de teste.
+        . $script:Conversor -Reference 'ignorado' -Out 'ignorado' -SomenteDefinicoes
+        Set-StrictMode -Off
+
+        function script:ConvertFrom-TmxJsonValor {
+            # Le de volta um valor JSON solto, para provar o round-trip.
+            param([Parameter(Mandatory)] [string] $Json)
+            (ConvertFrom-Json "{ `"v`": $Json }").v
+        }
+    }
+
+    It 'escapa barra invertida e aspas' {
+        ConvertTo-TmxJsonString -Texto 'a\b'  | Should -Be '"a\\b"'
+        ConvertTo-TmxJsonString -Texto 'a"b'  | Should -Be '"a\"b"'
+        ConvertTo-TmxJsonString -Texto 'C:\Windows\System32' | Should -Be '"C:\\Windows\\System32"'
+    }
+
+    It 'escapa os brancos de controle com a forma curta' {
+        ConvertTo-TmxJsonString -Texto "a`nb" | Should -Be '"a\nb"'
+        ConvertTo-TmxJsonString -Texto "a`tb" | Should -Be '"a\tb"'
+        ConvertTo-TmxJsonString -Texto "a`rb" | Should -Be '"a\rb"'
+        ConvertTo-TmxJsonString -Texto "a`bb" | Should -Be '"a\bb"'
+        ConvertTo-TmxJsonString -Texto "a`fb" | Should -Be '"a\fb"'
+    }
+
+    It 'escapa caractere de controle abaixo de 0x20 na forma \u' {
+        ConvertTo-TmxJsonString -Texto ("a" + [char]0x01 + "b") | Should -Be '"a\u0001b"'
+        ConvertTo-TmxJsonString -Texto ("a" + [char]0x1F + "b") | Should -Be '"a\u001fb"'
+    }
+
+    It 'mantem acento e unicode literais, sem virar sequencia \u' {
+        # Os acentuados sao montados por codigo de proposito: este arquivo nao tem
+        # BOM, e o parser do PS 5.1 leria um literal acentuado embutido usando a
+        # codepage ANSI, corrompendo justamente o que o teste quer provar.
+        $acentuado = 'Hist' + [char]0x00F3 + 'rico de a' + [char]0x00E7 + [char]0x00F5 + 'es n' + [char]0x00E3 + 'o lidas'
+        $r = ConvertTo-TmxJsonString -Texto $acentuado
+        $r | Should -Be ('"' + $acentuado + '"')
+        $r | Should -Not -Match '\\u00'
+
+        # Grego e par substituto (emoji) tambem passam inteiros.
+        $amplo = [char]0x03BB + [char]0xD83D + [char]0xDE80
+        ConvertTo-TmxJsonString -Texto $amplo | Should -Be ('"' + $amplo + '"')
+        $r | Should -Not -Match '\\u00'
+    }
+
+    It 'o que ele escreve volta identico pelo ConvertFrom-Json' {
+        foreach ($original in @(
+            'a\b',
+            'a"b',
+            "linha1`nlinha2`tfim",
+            ("controle" + [char]0x01 + "fim"),
+            ('Hist' + [char]0x00F3 + 'rico de a' + [char]0x00E7 + [char]0x00F5 + 'es n' + [char]0x00E3 + 'o lidas'),
+            'C:\Program Files (x86)\Microsoft\Edge'
+        )) {
+            $json = ConvertTo-TmxJsonString -Texto $original
+            ConvertFrom-TmxJsonValor -Json $json | Should -Be $original -Because "round-trip de '$original'"
+        }
+    }
+
+    It 'serializa objeto e array vazios de forma compacta' {
+        ConvertTo-TmxJsonText -Valor ([ordered]@{}) | Should -Be '{}'
+        ConvertTo-TmxJsonText -Valor @()             | Should -Be '[]'
+        ConvertTo-TmxJsonText -Valor $null           | Should -Be 'null'
+        ConvertTo-TmxJsonText -Valor $true           | Should -Be 'true'
+        ConvertTo-TmxJsonText -Valor $false          | Should -Be 'false'
+    }
+
+    It 'preserva a ordem das chaves em vez de alfabetizar' {
+        $o = [ordered]@{ zeta = 1; alfa = 2; meio = 3 }
+        $texto = ConvertTo-TmxJsonText -Valor $o
+        $texto.IndexOf('zeta') | Should -BeLessThan $texto.IndexOf('alfa')
+        $texto.IndexOf('alfa') | Should -BeLessThan $texto.IndexOf('meio')
+    }
+
+    It 'indenta com 2 espacos por nivel' {
+        $texto = ConvertTo-TmxJsonText -Valor ([ordered]@{ a = [ordered]@{ b = 1 } })
+        $texto | Should -Match "(?m)^  `"a`": \{"
+        $texto | Should -Match "(?m)^    `"b`": 1"
+    }
+}
+
+Describe 'Convert-WinUtilCatalog conversao de valor de registro' -Tag 'Convert' {
+
+    BeforeAll {
+        . $script:Conversor -Reference 'ignorado' -Out 'ignorado' -SomenteDefinicoes
+        Set-StrictMode -Off
+    }
+
+    It 'converte decimal e hexadecimal de DWord para numero' {
+        ConvertTo-TmxValorRegistro -Bruto '0'    -Tipo 'DWord' | Should -Be 0
+        ConvertTo-TmxValorRegistro -Bruto '5'    -Tipo 'DWord' | Should -Be 5
+        ConvertTo-TmxValorRegistro -Bruto '32'   -Tipo 'DWord' | Should -Be 32
+        ConvertTo-TmxValorRegistro -Bruto '0x20' -Tipo 'DWord' | Should -Be 32
+    }
+
+    It 'preserva o sinal negativo que ja vem escrito assim' {
+        ConvertTo-TmxValorRegistro -Bruto '-1' -Tipo 'DWord' | Should -Be -1
+    }
+
+    It 'mantem DWord acima de Int32.MaxValue como numero NAO assinado no catalogo' {
+        # Decisao deliberada: o catalogo e legivel, entao guarda 4294967295.
+        ConvertTo-TmxValorRegistro -Bruto '4294967295' -Tipo 'DWord' | Should -Be 4294967295
+        ConvertTo-TmxValorRegistro -Bruto '0xffffffff' -Tipo 'DWord' | Should -Be 4294967295
+        (ConvertTo-TmxValorRegistro -Bruto '0xffffffff' -Tipo 'DWord') | Should -BeGreaterThan ([int]::MaxValue)
+    }
+
+    It 'quem converte para o int32 negativo do provider e o Engine, uma vez so' {
+        # Prova o contrato documentado em ConvertTo-TmxValorRegistro: o valor sem
+        # sinal do catalogo vira -1 ao passar pelo Engine, e so la.
+        $doCatalogo = ConvertTo-TmxValorRegistro -Bruto '0xffffffff' -Tipo 'DWord'
+        ConvertTo-TmxRegistryValue -Value $doCatalogo -Type 'DWord' | Should -Be -1
+        ConvertTo-TmxRegistryValue -Value 32 -Type 'DWord'          | Should -Be 32
+    }
+
+    It 'QWord tambem vira numero' {
+        ConvertTo-TmxValorRegistro -Bruto '1' -Tipo 'QWord' | Should -Be 1
+    }
+
+    It 'String continua texto, inclusive quando parece numero' {
+        ConvertTo-TmxValorRegistro -Bruto 'Deny'      -Tipo 'String' | Should -BeOfType [string]
+        ConvertTo-TmxValorRegistro -Bruto '2'         -Tipo 'String' | Should -Be '2'
+        (ConvertTo-TmxValorRegistro -Bruto '2'        -Tipo 'String') | Should -BeOfType [string]
+        ConvertTo-TmxValorRegistro -Bruto 'show:home' -Tipo 'String' | Should -Be 'show:home'
+    }
+
+    It 'falha alto em vez de gravar lixo quando o DWord nao e numerico' {
+        { ConvertTo-TmxValorRegistro -Bruto 'NotSpecified' -Tipo 'DWord' } |
+            Should -Throw -ExpectedMessage '*nao e numerico*'
+    }
+}
+
+Describe 'Convert-WinUtilCatalog distribuicao editorial' -Tag 'Convert' {
+
+    It 'mantem a distribuicao de tier acordada' {
+        @($script:Tweaks | Where-Object { $_.tier -eq 'MEDIDO' }).Count   | Should -Be 42
+        @($script:Tweaks | Where-Object { $_.tier -eq 'TECNICO' }).Count  | Should -Be 21
+        @($script:Tweaks | Where-Object { $_.tier -eq 'FOLCLORE' }).Count | Should -Be 4
+    }
+
+    It 'mantem a distribuicao de reversibilidade acordada' {
+        @($script:Tweaks | Where-Object { $_.reversivel -eq 'total' }).Count   | Should -Be 58
+        @($script:Tweaks | Where-Object { $_.reversivel -eq 'parcial' }).Count | Should -Be 7
+        @($script:Tweaks | Where-Object { $_.reversivel -eq 'nenhuma' }).Count | Should -Be 2
+    }
+
+    It 'bloqueio de instalador de periferico e parcial, e a evidencia diz por que' {
+        foreach ($wpf in 'WPFTweaksRazerBlock', 'WPFTweaksLogiBlock') {
+            $t = $script:Tweaks | Where-Object { $_.origem.winutil -eq $wpf }
+            $t.reversivel | Should -Be 'parcial' -Because "$wpf esvazia a pasta do instalador sem copia de seguranca"
+            $t.evidencia  | Should -Match '(?i)parcial'
+        }
+    }
+
+    It 'todo tweak parcial explica na evidencia o que nao volta' {
+        foreach ($t in @($script:Tweaks | Where-Object { $_.reversivel -eq 'parcial' })) {
+            "$($t.evidencia)" | Should -Not -BeNullOrEmpty -Because "$($t.id) e parcial"
+            "$($t.evidencia)".Length | Should -BeGreaterThan 80 -Because "$($t.id) precisa dizer o que nao volta"
+        }
+    }
+}

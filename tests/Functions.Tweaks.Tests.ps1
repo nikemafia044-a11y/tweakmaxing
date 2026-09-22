@@ -951,3 +951,334 @@ Describe 'Set-TmxExplorerAutoDiscovery' -Tag 'Tweaks' {
         { Undo-TmxExplorerAutoDiscovery -Estado $null } | Should -Throw -ExpectedMessage '*sem estado*'
     }
 }
+
+Describe 'Set-TmxRemoveOneDrive' -Tag 'Tweaks' {
+
+    BeforeEach {
+        $script:run = New-TmxRun
+        $global:TmxT_StatePath = $script:run.StatePath
+        Reset-TmxCaptura
+
+        $script:OneDriveOriginal = $env:OneDrive
+        $env:OneDrive = 'C:\Users\teste\OneDrive'
+        $global:TmxT_OneDrivePresente = $true
+        $global:TmxT_ProcessoLanca    = $false
+
+        Mock Test-TmxItemPath -ModuleName TweakMaxing {
+            if ($Path -like '*Microsoft\OneDrive') { return $global:TmxT_OneDrivePresente }
+            $true
+        }
+        Mock Get-TmxServiceState -ModuleName TweakMaxing { [pscustomobject]@{ startType = 'Automatic'; status = 'Running' } }
+        Mock Set-TmxServiceState -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'servico'; nome = $Nome; tipo = $StartType })
+        }
+        Mock Invoke-TmxIcacls -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'icacls'; args = @($Arguments) })
+            [pscustomobject]@{ saida = ''; codigo = 0 }
+        }
+        Mock Invoke-TmxProcess -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'setup'; exe = $FilePath; args = @($ArgumentList) })
+            if ($global:TmxT_ProcessoLanca) { throw 'OneDriveSetup.exe morreu no meio' }
+            $global:TmxT_OneDrivePresente = $false
+            [pscustomobject]@{ codigo = 0 }
+        }
+        Mock Stop-TmxProcessByName -ModuleName TweakMaxing { }
+        Mock Remove-TmxItemPath -ModuleName TweakMaxing { }
+        Mock Invoke-TmxWinget -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'winget'; args = @($Arguments) })
+            [pscustomobject]@{ saida = ''; codigo = 0 }
+        }
+    }
+
+    AfterEach {
+        $env:OneDrive = $script:OneDriveOriginal
+    }
+
+    It 'persiste a pasta e a marca de deny no disco ANTES de negar a exclusao' {
+        $r = Set-TmxRemoveOneDrive -Tweak (New-TmxTweakFake -Id 'APM-003') -Profile $script:Perfil -Parametros $null
+        $r.ok | Should -BeTrue
+
+        # O primeiro wrapper chamado e o icacls /deny; o state.json lido de dentro
+        # dele ja tem que conter a pasta e a marca.
+        $global:TmxT_Chamadas[0].alvo | Should -Be 'icacls'
+        $global:TmxT_Chamadas[0].args | Should -Contain '/deny'
+        $global:TmxT_StateNoWrapper   | Should -Match 'C:\\\\Users\\\\teste\\\\OneDrive'
+        $global:TmxT_StateNoWrapper   | Should -Match '"denyAplicado":\s*true'
+    }
+
+    It 'devolve a permissao removendo a ACE de negacao, nao concedendo uma nova' {
+        Set-TmxRemoveOneDrive -Tweak (New-TmxTweakFake -Id 'APM-003') -Profile $script:Perfil -Parametros $null | Out-Null
+
+        $icacls = @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'icacls' })
+        $icacls.Count        | Should -Be 2
+        $icacls[1].args      | Should -Contain '/remove:d'
+        @($icacls | Where-Object { $_.args -contains '/grant' }).Count | Should -Be 0
+    }
+
+    It 'crash entre o deny e a devolucao da permissao deixa o estado no disco para o Undo' {
+        $global:TmxT_ProcessoLanca = $true
+
+        $r = Set-TmxRemoveOneDrive -Tweak (New-TmxTweakFake -Id 'APM-003') -Profile $script:Perfil -Parametros $null
+        $r.ok | Should -BeFalse
+
+        $recs = @(Get-TmxRegistrosDoDisco $script:run.StatePath)
+        $recs.Count                          | Should -Be 1
+        $recs[0].status                      | Should -Be 'falha'
+        $recs[0].detalhe.estado.denyAplicado | Should -BeTrue
+        $recs[0].detalhe.estado.pasta        | Should -Be 'C:\Users\teste\OneDrive'
+
+        # A permissao NAO foi devolvida pelo Set (ele morreu antes).
+        @($global:TmxT_Chamadas | Where-Object { $_.args -contains '/remove:d' }).Count | Should -Be 0
+
+        # E o Undo, com o estado que sobrou no disco, limpa a ACE.
+        Reset-TmxCaptura
+        Undo-TmxRemoveOneDrive -Estado $recs[0].detalhe.estado | Out-Null
+        $global:TmxT_Chamadas[0].alvo | Should -Be 'icacls'
+        $global:TmxT_Chamadas[0].args | Should -Be @('C:\Users\teste\OneDrive', '/remove:d', '*S-1-5-32-544')
+    }
+
+    It 'Undo limpa a ACL antes do winget, que depende de rede e pode falhar' {
+        Undo-TmxRemoveOneDrive -Estado @{ pasta = 'C:\Users\teste\OneDrive'; servicoAnterior = 'Automatic'; pacoteWinget = 'Microsoft.OneDrive' } | Out-Null
+
+        $ordem = @($global:TmxT_Chamadas | ForEach-Object { $_.alvo })
+        $ordem[0] | Should -Be 'icacls'
+        $ordem[1] | Should -Be 'winget'
+        $ordem[2] | Should -Be 'servico'
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'servico' })[0].tipo | Should -Be 'Automatic'
+    }
+
+    It 'marca naoAplicavel quando o OneDriveSetup.exe nao existe' {
+        Mock Test-TmxItemPath -ModuleName TweakMaxing { $false }
+        $r = Set-TmxRemoveOneDrive -Tweak (New-TmxTweakFake -Id 'APM-003') -Profile $script:Perfil -Parametros $null
+        $r.naoAplicavel            | Should -BeTrue
+        $global:TmxT_Chamadas.Count | Should -Be 0
+    }
+
+    It 'Test acompanha a presenca da pasta do aplicativo' {
+        $t = New-TmxTweakFake -Id 'APM-003'
+        (Test-TmxRemoveOneDrive -Tweak $t -Profile $script:Perfil).aplicado | Should -BeFalse
+        Set-TmxRemoveOneDrive -Tweak $t -Profile $script:Perfil -Parametros $null | Out-Null
+        (Test-TmxRemoveOneDrive -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
+    }
+}
+
+Describe 'Set-TmxWindowsAI' -Tag 'Tweaks' {
+
+    BeforeEach {
+        $script:run = New-TmxRun
+        $global:TmxT_StatePath = $script:run.StatePath
+        Reset-TmxCaptura
+
+        $global:TmxT_AiPacotes = @{
+            'Microsoft.Copilot'              = @([pscustomobject]@{ PackageFullName = 'Microsoft.Copilot_1.0_x64__8wekyb3d8bbwe' })
+            'MicrosoftWindows.Client.CoreAI' = @([pscustomobject]@{ PackageFullName = 'MicrosoftWindows.Client.CoreAI_1.0_x64__cw5n1h2txyewy' })
+            'Microsoft.MicrosoftOfficeHub'   = @()
+        }
+        $global:TmxT_AiServico = 'Automatic'
+        $global:TmxT_AiRecurso = 'Enabled'
+
+        Mock Get-TmxAppx -ModuleName TweakMaxing {
+            if ($global:TmxT_AiPacotes.ContainsKey($Pacote)) { return $global:TmxT_AiPacotes[$Pacote] }
+            @()
+        }
+        Mock Remove-TmxAppx -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'appx'; pacote = $PackageFullName })
+            foreach ($k in @($global:TmxT_AiPacotes.Keys)) {
+                $global:TmxT_AiPacotes[$k] = @($global:TmxT_AiPacotes[$k] | Where-Object { $_.PackageFullName -ne $PackageFullName })
+            }
+        }
+        Mock Remove-TmxProvisionedAppx -ModuleName TweakMaxing { }
+        Mock Get-TmxServiceState -ModuleName TweakMaxing { [pscustomobject]@{ startType = $global:TmxT_AiServico; status = 'Running' } }
+        Mock Set-TmxServiceState -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'servico'; nome = $Nome; tipo = $StartType })
+            $global:TmxT_AiServico = $StartType
+        }
+        Mock Get-TmxWindowsFeature -ModuleName TweakMaxing { $global:TmxT_AiRecurso }
+        Mock Disable-TmxWindowsFeature -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'recurso'; nome = $Nome; estado = 'Disabled' })
+            $global:TmxT_AiRecurso = 'Disabled'
+        }
+        Mock Enable-TmxWindowsFeature -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'recurso'; nome = $Nome; estado = 'Enabled' })
+            $global:TmxT_AiRecurso = 'Enabled'
+        }
+        Mock Install-TmxStoreApp -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'store'; storeId = $StoreId })
+            0
+        }
+    }
+
+    It 'registra pacotes, servico e recurso no disco antes de remover qualquer coisa' {
+        $r = Set-TmxWindowsAI -Tweak (New-TmxTweakFake -Id 'APM-004') -Profile $script:Perfil -Parametros $null
+        $r.ok | Should -BeTrue
+
+        $global:TmxT_Chamadas[0].alvo | Should -Be 'appx'
+        $global:TmxT_StateNoWrapper   | Should -Match 'Microsoft\.Copilot_1\.0_x64__8wekyb3d8bbwe'
+        $global:TmxT_StateNoWrapper   | Should -Match '"servicoAnterior":\s*"Automatic"'
+        $global:TmxT_StateNoWrapper   | Should -Match '"recursoAnterior":\s*"Enabled"'
+    }
+
+    It 'desliga o servico e o recurso opcional alem de remover os pacotes' {
+        Set-TmxWindowsAI -Tweak (New-TmxTweakFake -Id 'APM-004') -Profile $script:Perfil -Parametros $null | Out-Null
+
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'appx' }).Count | Should -Be 2
+        $servico = @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'servico' })
+        $servico[0].nome | Should -Be 'WSAIFabricSvc'
+        $servico[0].tipo | Should -Be 'Disabled'
+        $recurso = @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'recurso' })
+        $recurso[0].nome   | Should -Be 'Recall'
+        $recurso[0].estado | Should -Be 'Disabled'
+    }
+
+    It 'nao mexe no recurso opcional quando ele ja estava desligado' {
+        $global:TmxT_AiRecurso = 'Disabled'
+        Set-TmxWindowsAI -Tweak (New-TmxTweakFake -Id 'APM-004') -Profile $script:Perfil -Parametros $null | Out-Null
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'recurso' }).Count | Should -Be 0
+    }
+
+    It 'Test fica verdadeiro quando nao sobra pacote e o servico esta desativado' {
+        $t = New-TmxTweakFake -Id 'APM-004'
+        (Test-TmxWindowsAI -Tweak $t -Profile $script:Perfil).aplicado | Should -BeFalse
+        Set-TmxWindowsAI -Tweak $t -Profile $script:Perfil -Parametros $null | Out-Null
+        (Test-TmxWindowsAI -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
+    }
+
+    It 'Undo reinstala o que tem StoreId e diz em voz alta o que nao consegue trazer de volta' {
+        $estado = @{
+            pacotes = @(
+                @{ pacote = 'Microsoft.Copilot';              storeId = '9NHT9RB2F4HD'; packageFullName = 'Microsoft.Copilot_1.0_x64__8wekyb3d8bbwe' },
+                @{ pacote = 'MicrosoftWindows.Client.CoreAI'; storeId = $null;          packageFullName = 'MicrosoftWindows.Client.CoreAI_1.0_x64__cw5n1h2txyewy' }
+            )
+            servico         = 'WSAIFabricSvc'
+            servicoAnterior = 'Automatic'
+            recurso         = 'Recall'
+            recursoAnterior = 'Enabled'
+        }
+
+        $msg = Undo-TmxWindowsAI -Estado $estado
+
+        # O que tem StoreId volta pela Store...
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'store' })[0].storeId | Should -Be '9NHT9RB2F4HD'
+        # ...e o que nao tem e declarado como pendencia manual, em vez de silenciado.
+        $msg | Should -Match 'MicrosoftWindows\.Client\.CoreAI'
+        $msg | Should -Match 'sem StoreId'
+
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'servico' })[0].tipo   | Should -Be 'Automatic'
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'recurso' })[0].estado | Should -Be 'Enabled'
+    }
+
+    It 'Undo nao reativa o recurso opcional que ja estava desligado antes do tweak' {
+        Undo-TmxWindowsAI -Estado @{
+            pacotes = @(); servico = 'WSAIFabricSvc'; servicoAnterior = 'Automatic'
+            recurso = 'Recall'; recursoAnterior = 'Disabled'
+        } | Out-Null
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'recurso' }).Count | Should -Be 0
+    }
+}
+
+Describe 'Set-TmxLogiBlock' -Tag 'Tweaks' {
+
+    BeforeEach {
+        $script:run = New-TmxRun
+        $global:TmxT_StatePath = $script:run.StatePath
+        Reset-TmxCaptura
+        $global:TmxT_Acl = 'Everyone:(F)'
+        $global:TmxT_PastaExiste = $true
+
+        Mock Test-TmxItemPath -ModuleName TweakMaxing { $global:TmxT_PastaExiste }
+        Mock Remove-TmxItemPath -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'limpar'; path = $Path })
+        }
+        Mock New-TmxDirectory -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'criar'; path = $Path })
+            $Path
+        }
+        Mock Stop-TmxProcessByName -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'parar'; nomes = @($Nome) })
+        }
+        Mock Invoke-TmxIcacls -ModuleName TweakMaxing {
+            if ($Arguments.Count -gt 1) {
+                Add-TmxChamada ([pscustomobject]@{ alvo = 'icacls'; args = @($Arguments) })
+                if ($Arguments -contains '/deny')     { $global:TmxT_Acl = 'Everyone:(DENY)(W)' }
+                if ($Arguments -contains '/remove:d') { $global:TmxT_Acl = 'Everyone:(F)' }
+            }
+            [pscustomobject]@{ saida = $global:TmxT_Acl; codigo = 0 }
+        }
+    }
+
+    It 'para o processo do assistente antes de mexer na pasta' {
+        $r = Set-TmxLogiBlock -Tweak (New-TmxTweakFake -Id 'SIS-009') -Profile $script:Perfil -Parametros $null
+        $r.ok | Should -BeTrue
+
+        $global:TmxT_Chamadas[0].alvo  | Should -Be 'parar'
+        $global:TmxT_Chamadas[0].nomes | Should -Contain 'logi_download_assistant'
+        $global:TmxT_StateNoWrapper    | Should -Match '"funcao":\s*"Set-TmxLogiBlock"'
+        $global:TmxT_StateNoWrapper    | Should -Match 'LogiDownloadAssistant'
+    }
+
+    It 'esvazia a pasta existente e entao nega a escrita' {
+        Set-TmxLogiBlock -Tweak (New-TmxTweakFake -Id 'SIS-009') -Profile $script:Perfil -Parametros $null | Out-Null
+        $ordem = @($global:TmxT_Chamadas | ForEach-Object { $_.alvo })
+        $ordem | Should -Be @('parar', 'limpar', 'icacls')
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'icacls' })[0].args | Should -Contain '/deny'
+    }
+
+    It 'cria a pasta quando ela ainda nao existe, para ter onde negar a escrita' {
+        $global:TmxT_PastaExiste = $false
+        Set-TmxLogiBlock -Tweak (New-TmxTweakFake -Id 'SIS-009') -Profile $script:Perfil -Parametros $null | Out-Null
+        @($global:TmxT_Chamadas | ForEach-Object { $_.alvo }) | Should -Be @('parar', 'criar', 'icacls')
+    }
+
+    It 'Test detecta a negacao e Undo a remove' {
+        $t = New-TmxTweakFake -Id 'SIS-009'
+        (Test-TmxLogiBlock -Tweak $t -Profile $script:Perfil).aplicado | Should -BeFalse
+        Set-TmxLogiBlock -Tweak $t -Profile $script:Perfil -Parametros $null | Out-Null
+        (Test-TmxLogiBlock -Tweak $t -Profile $script:Perfil).aplicado | Should -BeTrue
+
+        Undo-TmxLogiBlock -Estado @{ pasta = 'C:\Program Files\LogiDownloadAssistant' } | Out-Null
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'icacls' })[-1].args | Should -Contain '/remove:d'
+        (Test-TmxLogiBlock -Tweak $t -Profile $script:Perfil).aplicado | Should -BeFalse
+    }
+
+    It 'Undo nao falha quando a pasta ja nao existe' {
+        $global:TmxT_PastaExiste = $false
+        Undo-TmxLogiBlock -Estado @{ pasta = 'C:\Program Files\LogiDownloadAssistant' } | Should -Match 'nada a liberar'
+    }
+}
+
+Describe 'Set-TmxRemoveEdge cria o arquivo isca por wrapper' -Tag 'Tweaks' {
+
+    BeforeEach {
+        $script:run = New-TmxRun
+        $global:TmxT_StatePath = $script:run.StatePath
+        Reset-TmxCaptura
+        $global:TmxT_StubExiste = $false
+
+        Mock Get-TmxEdgeSetupPath -ModuleName TweakMaxing { 'C:\Program Files (x86)\Microsoft\Edge\Application\120.0\Installer\setup.exe' }
+        Mock Test-TmxItemPath -ModuleName TweakMaxing { $global:TmxT_StubExiste }
+        Mock New-TmxEmptyFile -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'stub'; path = $Path })
+            $global:TmxT_StubExiste = $true
+            $Path
+        }
+        Mock Invoke-TmxProcess -ModuleName TweakMaxing {
+            Add-TmxChamada ([pscustomobject]@{ alvo = 'setup'; args = @($ArgumentList) })
+            [pscustomobject]@{ codigo = 0 }
+        }
+    }
+
+    It 'cria o stub pelo wrapper antes de chamar o desinstalador' {
+        $r = Set-TmxRemoveEdge -Tweak (New-TmxTweakFake -Id 'APM-002') -Profile $script:Perfil -Parametros $null
+        $r.ok | Should -BeTrue
+
+        $global:TmxT_Chamadas[0].alvo | Should -Be 'stub'
+        $global:TmxT_Chamadas[0].path | Should -Match 'MicrosoftEdge\.exe$'
+        $global:TmxT_Chamadas[1].alvo | Should -Be 'setup'
+    }
+
+    It 'nao recria o stub quando ele ja existe' {
+        $global:TmxT_StubExiste = $true
+        Set-TmxRemoveEdge -Tweak (New-TmxTweakFake -Id 'APM-002') -Profile $script:Perfil -Parametros $null | Out-Null
+        @($global:TmxT_Chamadas | Where-Object { $_.alvo -eq 'stub' }).Count | Should -Be 0
+    }
+}

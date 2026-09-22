@@ -134,6 +134,22 @@ function New-TmxDirectory {
     $Path
 }
 
+function New-TmxEmptyFile {
+    <#
+    .SYNOPSIS
+        Cria um arquivo vazio, criando os diretorios do caminho se preciso.
+    .NOTES
+        Nao sobrescreve: New-Item -Force sobre arquivo TRUNCA o que existir. O
+        unico uso hoje e o arquivo isca que destrava o desinstalador do Edge,
+        dentro de SystemApps; truncar um binario de sistema por engano seria um
+        estrago que nenhum undo desfaz.
+    #>
+    param([Parameter(Mandatory)] [string] $Path)
+    if (Test-Path -LiteralPath $Path) { return $Path }
+    New-Item -ItemType File -Path $Path -Force -ErrorAction Stop | Out-Null
+    $Path
+}
+
 function Remove-TmxItemPath {
     <#
     .SYNOPSIS
@@ -165,11 +181,20 @@ function Get-TmxFileText {
 }
 
 function Add-TmxFileText {
+    <#
+    .SYNOPSIS
+        Anexa texto a um arquivo em ASCII.
+    .NOTES
+        -Encoding ASCII e explicito de proposito. O unico consumidor e o arquivo
+        hosts, que o resolvedor do Windows le como texto de byte unico: anexar em
+        UTF-16 (o default de Add-Content em algumas configuracoes) ou deixar um
+        BOM no meio do arquivo corrompe o hosts inteiro, nao so a linha nova.
+    #>
     param(
         [Parameter(Mandatory)] [string] $Path,
         [Parameter(Mandatory)] [string] $Texto
     )
-    Add-Content -LiteralPath $Path -Value $Texto -ErrorAction Stop
+    Add-Content -LiteralPath $Path -Value $Texto -Encoding ASCII -ErrorAction Stop
 }
 
 function Invoke-TmxWebRequestText {

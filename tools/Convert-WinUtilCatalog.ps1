@@ -26,6 +26,11 @@
 .PARAMETER OverlayApplications
     Arquivo de overlay dos aplicativos (opcional). Padrao: <Out>/overlay/applications.overrides.json.
 
+.PARAMETER SomenteDefinicoes
+    Define as funcoes auxiliares e retorna sem converter nada. Existe para os
+    testes poderem exercitar o serializador e a conversao de valor isoladamente
+    (dot-source do script com este switch). Nao use em linha de comando.
+
 .EXAMPLE
     .\tools\Convert-WinUtilCatalog.ps1 -Reference reference\winutil -Out src\config
 #>
@@ -34,7 +39,8 @@ param(
     [Parameter(Mandatory)] [string] $Reference,
     [Parameter(Mandatory)] [string] $Out,
     [string] $Overlay,
-    [string] $OverlayApplications
+    [string] $OverlayApplications,
+    [switch] $SomenteDefinicoes
 )
 
 Set-StrictMode -Version Latest
@@ -243,7 +249,20 @@ function New-TmxAcaoRegistry {
 }
 
 function ConvertTo-TmxValorRegistro {
-    # Valor bruto do WinUtil (sempre texto) -> numero para DWord/QWord, texto no resto.
+    <#
+    .SYNOPSIS
+        Valor bruto do WinUtil (que e sempre texto) -> numero para DWord/QWord,
+        texto para o resto.
+    .NOTES
+        DWord acima de [int]::MaxValue sai NAO ASSINADO no JSON: '0xffffffff'
+        vira 4294967295, nao -1. Duas razoes:
+          1. o catalogo tambem e documentacao legivel, e ninguem escreve uma
+             mascara de bits cheia como '-1' num arquivo de configuracao;
+          2. a conversao para o int32 negativo que o provider de registro exige
+             ja acontece no lugar certo: ConvertTo-TmxRegistryValue, em
+             Engine/Actions.ps1, subtrai 4294967296 antes de escrever.
+        Converter aqui tambem aplicaria o ajuste duas vezes.
+    #>
     param($Bruto, [string] $Tipo)
     if ($Tipo -eq 'DWord' -or $Tipo -eq 'QWord') {
         $s = "$Bruto".Trim()
@@ -667,6 +686,10 @@ function ConvertTo-TmxDns {
 # ---------------------------------------------------------------------------
 # Execucao
 # ---------------------------------------------------------------------------
+
+# Ponto de corte para os testes: com -SomenteDefinicoes o script so define as
+# funcoes acima e sai, sem ler nem escrever arquivo nenhum.
+if ($SomenteDefinicoes) { return }
 
 $refDir = $Reference
 if (-not [System.IO.Path]::IsPathRooted($refDir)) { $refDir = Join-Path (Get-Location).Path $refDir }

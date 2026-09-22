@@ -39,7 +39,9 @@ function Set-TmxRemoveEdge {
 
     try {
         if (-not (Test-TmxItemPath -Path $stub)) {
-            New-Item -Path $stub -ItemType File -Force -ErrorAction Stop | Out-Null
+            # Arquivo isca vazio: e a presenca dele no diretorio do Edge legado que
+            # faz o instalador aceitar a desinstalacao em nivel de sistema.
+            New-TmxEmptyFile -Path $stub | Out-Null
         }
         $r = Invoke-TmxProcess -FilePath $setup -ArgumentList @('--uninstall', '--system-level', '--force-uninstall', '--delete-profile')
         if ($null -ne $r.codigo -and $r.codigo -ne 0) {

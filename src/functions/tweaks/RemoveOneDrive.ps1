@@ -38,11 +38,18 @@ function Set-TmxRemoveOneDrive {
     try { $servicoAntes = (Get-TmxServiceState -Nome 'OneSyncSvc').startType } catch { $servicoAntes = $null }
 
     $rec = New-TmxCmdletRecord -TweakId "$($Tweak.id)" -Funcao 'Set-TmxRemoveOneDrive' -Alvo 'Microsoft OneDrive' `
-            -Estado @{ pasta = $pastaUsuario; servicoAnterior = $servicoAntes; pacoteWinget = 'Microsoft.OneDrive' } `
+            -Estado @{ pasta = $pastaUsuario; denyAplicado = $false; servicoAnterior = $servicoAntes; pacoteWinget = 'Microsoft.OneDrive' } `
             -ValorAnterior 'instalado' -ValorNovo 'removido'
 
     try {
         if ($pastaUsuario -and (Test-TmxItemPath -Path $pastaUsuario)) {
+            # A negacao de exclusao e o passo perigoso desta funcao: se o processo
+            # morrer entre o /deny e a devolucao da permissao, a pasta do usuario
+            # fica sem poder ser apagada. Marcamos a intencao NO DISCO antes de
+            # emitir o comando, para o Undo saber que ha ACE para limpar mesmo que
+            # o icacls tenha morrido no meio.
+            $rec.detalhe.estado.denyAplicado = $true
+            Save-TmxState
             Invoke-TmxIcacls @($pastaUsuario, '/deny', '*S-1-5-32-544:(D,DC)') | Out-Null
         }
 
@@ -57,7 +64,12 @@ function Set-TmxRemoveOneDrive {
         Remove-TmxItemPath -Path (Join-Path $env:ProgramData 'Microsoft OneDrive') -Recursivo -Silencioso
 
         if ($pastaUsuario -and (Test-TmxItemPath -Path $pastaUsuario)) {
-            Invoke-TmxIcacls @($pastaUsuario, '/grant', '*S-1-5-32-544:(D,DC)') | Out-Null
+            # '/remove:d' apaga a ACE de negacao. O WinUtil usa '/grant', que em vez
+            # disso DEIXA uma permissao explicita nova na pasta do usuario - efeito
+            # colateral permanente. Remover a ACE e o inverso exato do /deny.
+            Invoke-TmxIcacls @($pastaUsuario, '/remove:d', '*S-1-5-32-544') | Out-Null
+            $rec.detalhe.estado.denyAplicado = $false
+            Save-TmxState
         }
 
         if ($null -ne $servicoAntes) {
@@ -80,6 +92,19 @@ function Undo-TmxRemoveOneDrive {
     if ($Estado -and $Estado.pacoteWinget) { $pacote = "$($Estado.pacoteWinget)" }
 
     $partes = New-Object 'System.Collections.Generic.List[string]'
+
+    # PRIMEIRO a ACL, e SEMPRE. Se o Set morreu entre o /deny e a devolucao da
+    # permissao, a pasta do usuario ficou impossivel de apagar; e o unico estrago
+    # que este undo consegue desfazer por completo, entao ele vem antes do winget
+    # (que depende de rede e pode falhar). '/remove:d' e idempotente: rodar com a
+    # ACE ja ausente nao e erro.
+    $pasta = $null
+    if ($Estado) { $pasta = "$($Estado.pasta)" }
+    if ($pasta) {
+        $rAcl = Invoke-TmxIcacls @($pasta, '/remove:d', '*S-1-5-32-544')
+        if ($rAcl.codigo -ne 0) { throw "icacls /remove:d falhou em '$pasta' ($($rAcl.codigo)): $($rAcl.saida)" }
+        $partes.Add("negacao de exclusao removida de '$pasta'")
+    }
 
     $r = Invoke-TmxWinget @('install', '--id', $pacote, '--source', 'winget',
                             '--accept-package-agreements', '--accept-source-agreements')

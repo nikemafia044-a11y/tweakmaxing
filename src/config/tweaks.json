@@ -1604,7 +1604,7 @@
       "controle": "checkbox",
       "opcoes": [],
       "grupo": null,
-      "reversivel": "total",
+      "reversivel": "parcial",
       "requerReboot": false,
       "requerConsentimentoExtra": false,
       "consentimento": {
@@ -1617,7 +1617,7 @@
         "bloqueiaSe": []
       },
       "porque": "Desliga a busca automática de drivers em SearchOrderConfig, bloqueia co-instaladores e nega permissão de escrita na pasta que o instalador da Razer usa.",
-      "evidencia": "O bloqueio por ACL é verificável com icacls. O risco é medio porque DisableCoInstallers e SearchOrderConfig são globais: outros dispositivos também deixam de receber drivers e software auxiliar automaticamente pelo Windows Update.",
+      "evidencia": "O bloqueio por ACL é verificável com icacls. O risco é medio porque DisableCoInstallers e SearchOrderConfig são globais: outros dispositivos também deixam de receber drivers e software auxiliar automaticamente pelo Windows Update. A reversibilidade é parcial, não total: antes de negar a escrita, a pasta do instalador é esvaziada, e esse conteúdo não é copiado para lugar nenhum. Desfazer remove a negação de ACL e devolve as chaves de registro, mas não traz de volta os arquivos apagados.",
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1658,7 +1658,7 @@
       "controle": "checkbox",
       "opcoes": [],
       "grupo": null,
-      "reversivel": "total",
+      "reversivel": "parcial",
       "requerReboot": false,
       "requerConsentimentoExtra": false,
       "consentimento": {
@@ -1671,7 +1671,7 @@
         "bloqueiaSe": []
       },
       "porque": "Esvazia a pasta LogiDownloadAssistant e nega permissão de escrita nela, então o instalador não consegue mais se recriar.",
-      "evidencia": "A negação de ACL é conferível com icacls e o desfazer remove exatamente essa regra. Limitado a uma pasta, por isso risco baixo.",
+      "evidencia": "A negação de ACL é conferível com icacls e o desfazer remove exatamente essa regra. Limitado a uma pasta, por isso risco baixo. A reversibilidade é parcial, não total: esvaziar a pasta antes de negar a escrita apaga o que estava lá, sem cópia de segurança. Desfazer libera a pasta de novo, mas quem restaura o conteúdo é o próprio Windows Update, na próxima vez que oferecer o pacote.",
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
