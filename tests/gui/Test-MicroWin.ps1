@@ -188,6 +188,8 @@ try {
 
     Invoke-AB 'eval' "document.getElementById('toasts').innerHTML = ''; 'limpo'" | Out-Null
 
+    # O cabecalho e fixo: sem rolar ate o botao o clique pode cair nele.
+    Invoke-AB 'scrollintoview' '#mw-limpar-trabalho' | Out-Null
     Invoke-AB 'click' '#mw-limpar-trabalho' | Out-Null
     Invoke-AB 'wait' '#modal-buttons .btn-danger' | Out-Null
 
@@ -212,6 +214,20 @@ try {
     $modalAberto = "$(Invoke-AB 'is' 'visible' '#modal')".Trim()
     Assert-Tmx -Nome 'o modal de limpeza fecha sozinho' `
         -Condicao ($modalAberto -notmatch '(?i)true') -Detalhe "obtido: '$modalAberto'"
+
+    # --- aviso da senha em texto puro ---------------------------------------
+    $quantosAvisos = "$(Invoke-AB 'get' 'count' '.mw-aviso-senha')".Trim()
+    Assert-Tmx -Nome 'o bloco de conta local traz o aviso da senha' `
+        -Condicao ((ConvertTo-TmxInt $quantosAvisos) -eq 1) -Detalhe "obtido: '$quantosAvisos'"
+
+    $avisoSenha = "$(Invoke-AB 'get' 'text' '.mw-aviso-senha')".Trim()
+    Assert-Tmx -Nome 'o aviso diz que a senha fica em texto puro no autounattend.xml' `
+        -Condicao (($avisoSenha -match '(?i)texto puro') -and ($avisoSenha -match '(?i)autounattend')) `
+        -Detalhe "obtido: '$avisoSenha'"
+    Assert-Tmx -Nome 'o aviso manda guardar a ISO como dado sensivel' `
+        -Condicao ($avisoSenha -match '(?i)sens') -Detalhe "obtido: '$avisoSenha'"
+    Assert-Tmx -Nome 'o aviso lembra que da para trocar a senha depois da instalacao' `
+        -Condicao ($avisoSenha -match '(?i)troque a senha') -Detalhe "obtido: '$avisoSenha'"
 
     # --- validacao do nome de usuario ---------------------------------------
     Invoke-AB 'wait' '#mw-usuario' | Out-Null

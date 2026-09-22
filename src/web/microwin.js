@@ -29,6 +29,16 @@
 
   var RE_USUARIO = /^[A-Za-z][A-Za-z0-9_-]{0,19}$/;
 
+  /* O autounattend.xml guarda a senha em <Value> com <PlainText>true</PlainText>:
+     é o formato que o Windows Setup lê durante o OOBE, não uma escolha nossa.
+     Como ele vai para dentro da ISO gerada, quem recebe a ISO recebe a senha -
+     e isso precisa estar escrito na tela, não só no código. Constante fixa:
+     o innerHTML abaixo nunca carrega dado do usuário. */
+  var AVISO_SENHA =
+    'A senha fica em <strong>texto puro</strong> dentro do <code>autounattend.xml</code> ' +
+    'da ISO gerada — é assim que o Windows Setup a lê. Guarde a ISO como dado sensível ' +
+    '(não compartilhe nem envie para nuvem pública) e troque a senha depois da instalação.';
+
   var estado = {
     apps: [],
     edicoes: [],
@@ -322,6 +332,20 @@
     return !erro;
   }
 
+  /* O aviso nasce aqui e não no index.html porque é do fluxo da conta local:
+     quem mexer nos campos de senha encontra o texto ao lado deles. */
+  function montarAvisoSenha() {
+    if (document.querySelector('.mw-aviso-senha')) { return; }
+    var ancora = el('mw-erro-senha');
+    if (!ancora || !ancora.parentNode) { return; }
+
+    var aviso = document.createElement('p');
+    aviso.className = 'mw-aviso-senha';
+    aviso.setAttribute('role', 'note');
+    aviso.innerHTML = AVISO_SENHA;
+    ancora.parentNode.insertBefore(aviso, ancora.nextSibling);
+  }
+
   function validarSenha() {
     var a = el('mw-senha').value;
     var b = el('mw-senha2').value;
@@ -480,6 +504,7 @@
         el(par[0]).addEventListener('blur', par[1]);
       });
 
+      montarAvisoSenha();
       carregarPrereq();
       carregarApps();
     }

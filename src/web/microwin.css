@@ -48,6 +48,26 @@
   line-height: 1.5;
 }
 
+/* Aviso de que a senha viaja em texto puro dentro da ISO. Marcado em amarelo
+   (--warn) e não escondido num cinza de nota: é a única pista visível de que a
+   ISO gerada é um arquivo sensível. */
+.mw-aviso-senha {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--linha);
+  border-left: 3px solid var(--warn);
+  border-radius: var(--raio);
+  background: var(--panel-2);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mw-aviso-senha code {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 11px;
+}
+
 /* Caminho da pasta de trabalho: longo e sem espaços, precisa poder quebrar em
    qualquer ponto ou vaza para fora da coluna. */
 #mw-trabalho { word-break: break-all; }
