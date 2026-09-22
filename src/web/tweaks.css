@@ -1,0 +1,390 @@
+/* tweaks.css - aba "Ajustes".
+   Arquivo próprio (o app.css é a casca comum): tudo aqui é prefixado por
+   #tab-ajustes ou por .tw-*, e reusa os tokens de cor de :root do app.css.
+   Nada de cor literal fora dos tokens, para o tema claro continuar valendo. */
+
+/* ---------- barra superior ---------- */
+
+#tab-ajustes .tw-topo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+#tab-ajustes .tw-presets {
+  display: inline-flex;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  overflow: hidden;
+  background: var(--panel);
+}
+
+#tab-ajustes .tw-preset {
+  padding: 7px 14px;
+  border: 0;
+  border-right: 1px solid var(--linha);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+#tab-ajustes .tw-preset:last-child { border-right: 0; }
+#tab-ajustes .tw-preset:hover { background: var(--panel-2); color: var(--fg); }
+
+#tab-ajustes .tw-preset[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 650;
+}
+
+#tab-ajustes #tw-busca {
+  flex: 1 1 240px;
+  min-width: 170px;
+  padding: 7px 10px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--fg);
+  font: inherit;
+}
+
+#tab-ajustes #tw-contadores {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+#tab-ajustes .tw-legenda {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  align-items: center;
+  margin: 0 0 14px;
+  padding: 8px 12px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 12px;
+}
+
+#tab-ajustes .tw-legenda .selo { margin-right: 4px; }
+
+/* ---------- categorias ---------- */
+
+#tab-ajustes details.tw-cat {
+  margin-bottom: 8px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel);
+}
+
+#tab-ajustes details.tw-cat > summary {
+  padding: 10px 14px;
+  font-weight: 650;
+  cursor: pointer;
+  border-radius: var(--raio);
+}
+
+#tab-ajustes details.tw-cat > summary::marker { color: var(--muted); }
+#tab-ajustes details.tw-cat > summary:hover { background: var(--panel-2); }
+#tab-ajustes details.tw-cat > summary .tw-cat-conta {
+  margin-left: 8px;
+  color: var(--muted);
+  font-weight: 400;
+  font-size: 12px;
+}
+
+#tab-ajustes details.tw-cat[hidden] { display: none; }
+
+#tab-ajustes .tw-lista {
+  padding: 2px 10px 10px;
+}
+
+/* ---------- linha de um ajuste ---------- */
+
+#tab-ajustes .tweak {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 8px 10px;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+}
+
+#tab-ajustes .tweak:hover { background: var(--panel-2); }
+#tab-ajustes .tweak[hidden] { display: none; }
+
+#tab-ajustes .tweak.tw-folclore {
+  border-left-color: var(--warn);
+  background: color-mix(in srgb, var(--warn) 7%, transparent);
+}
+
+#tab-ajustes .tweak.tw-bloqueado { opacity: 0.6; }
+
+#tab-ajustes .tw-controle {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  min-height: 22px;
+  padding-top: 2px;
+}
+
+#tab-ajustes .tw-controle input[type="checkbox"],
+#tab-ajustes .tw-controle input[type="radio"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+#tab-ajustes .tw-controle input:disabled { cursor: not-allowed; }
+
+#tab-ajustes .tw-corpo {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+#tab-ajustes .tw-titulo {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+#tab-ajustes .tw-nome {
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#tab-ajustes .tw-id {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: Consolas, "Cascadia Mono", monospace;
+}
+
+#tab-ajustes .tw-desc {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+
+#tab-ajustes .tw-motivo {
+  margin: 3px 0 0;
+  color: var(--warn);
+  font-size: 12px;
+}
+
+#tab-ajustes .tw-acoes {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* ---------- selos e estado ---------- */
+
+#tab-ajustes .estado {
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--linha);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+#tab-ajustes .estado.estado-ok    { color: var(--ok);     border-color: var(--ok); }
+#tab-ajustes .estado.estado-undo  { color: var(--accent); border-color: var(--accent); }
+#tab-ajustes .estado.estado-falha { color: var(--danger); border-color: var(--danger); }
+#tab-ajustes .estado.estado-pulado{ color: var(--warn);   border-color: var(--warn); }
+
+/* ---------- interruptor (controle toggle) ---------- */
+
+#tab-ajustes .tw-switch {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+#tab-ajustes .tw-switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: left 0.12s ease, background 0.12s ease;
+}
+
+#tab-ajustes .tw-switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+#tab-ajustes .tw-switch[aria-checked="true"]::after {
+  left: 20px;
+  background: var(--accent-fg);
+}
+
+#tab-ajustes .tw-switch:disabled { opacity: 0.45; cursor: not-allowed; }
+
+/* ---------- combobox e botões por item ---------- */
+
+#tab-ajustes .tw-opcoes {
+  padding: 5px 8px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--fg);
+  font: inherit;
+  max-width: 260px;
+}
+
+#tab-ajustes .tw-info {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  font-weight: 700;
+  line-height: 1;
+}
+
+/* ---------- rodapé fixo da aba ---------- */
+
+#tab-ajustes .tw-rodape {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 10px 14px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel);
+  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.25);
+}
+
+#tab-ajustes .tw-rodape .tw-nota {
+  color: var(--muted);
+  font-size: 12px;
+  margin-left: auto;
+}
+
+/* ---------- conteúdo dentro do modal ---------- */
+
+.tw-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.tw-tabela th,
+.tw-tabela td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--linha);
+  text-align: left;
+  vertical-align: top;
+}
+
+.tw-tabela th { color: var(--muted); font-weight: 650; }
+.tw-tabela td.tw-antes  { color: var(--muted); }
+.tw-tabela td.tw-depois { color: var(--ok); font-weight: 600; }
+.tw-tabela tr.tw-grupo td {
+  padding-top: 10px;
+  border-bottom: 0;
+  color: var(--fg);
+  font-weight: 650;
+}
+
+.tw-tabela .tw-cel-mono {
+  font-family: Consolas, "Cascadia Mono", monospace;
+  /* anywhere em vez de break-all: caminhos de registro longos quebram, mas
+     valores curtos ("1", "<ausente>") continuam inteiros. */
+  overflow-wrap: anywhere;
+}
+
+.tw-tabela td.tw-antes,
+.tw-tabela td.tw-depois { white-space: nowrap; }
+
+/* A tabela antes->depois precisa de mais largura que os 560 px padrão do modal. */
+#modal .modal-box:has(.tw-tabela) { width: min(860px, calc(100vw - 48px)); }
+
+.tw-consentimento {
+  margin: 10px 0;
+  padding: 10px 12px;
+  border-left: 3px solid var(--danger);
+  border-radius: 4px;
+  background: var(--panel-2);
+}
+
+.tw-consentimento h4 { margin: 0 0 4px; font-size: 13px; }
+.tw-consentimento .tw-tradeoff { color: var(--muted); font-size: 12.5px; }
+
+.tw-barra {
+  height: 8px;
+  margin: 10px 0 4px;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  background: var(--panel-2);
+  overflow: hidden;
+}
+
+.tw-barra > span {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.tw-bloco { margin: 0 0 10px; }
+.tw-bloco h4 { margin: 0 0 2px; font-size: 13px; }
+.tw-bloco p { margin: 0; color: var(--muted); }
+
+.tw-aviso-reboot {
+  padding: 8px 12px;
+  border-left: 3px solid var(--warn);
+  border-radius: 4px;
+  background: var(--panel-2);
+  color: var(--warn);
+  font-weight: 600;
+}
+
+.tw-mono {
+  padding: 8px 10px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--panel-2);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  word-break: break-all;
+  user-select: all;
+}
+
+/* ---------- telas estreitas ---------- */
+
+@media (max-width: 900px) {
+  #tab-ajustes .tw-topo { gap: 8px; }
+  #tab-ajustes #tw-contadores { width: 100%; }
+  #tab-ajustes .tw-acoes { margin-left: 0; width: 100%; justify-content: flex-end; }
+  #tab-ajustes .tw-rodape .tw-nota { margin-left: 0; width: 100%; }
+  .tw-tabela { font-size: 12px; }
+}
