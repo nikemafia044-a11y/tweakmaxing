@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TweakMaxing</title>
 <link rel="stylesheet" href="app.css">
+<link rel="stylesheet" href="tweaks.css">
+<link rel="stylesheet" href="configure.css">
 </head>
 <body>
 
@@ -26,14 +28,43 @@
     <p class="vazio">Em construção</p>
   </section>
 
-  <section id="tab-ajustes" class="tab" hidden>
+  <section id="tab-ajustes" class="tab" hidden aria-busy="true">
     <h2>Ajustes</h2>
-    <p class="vazio">Em construção</p>
+    <p id="tw-carregando" class="vazio">Lendo o catálogo e o estado atual do sistema…</p>
   </section>
 
-  <section id="tab-configurar" class="tab" hidden>
+  <section id="tab-configurar" class="tab" hidden aria-busy="true">
     <h2>Configurar</h2>
-    <p class="vazio">Em construção</p>
+    <div id="cfg-colunas">
+      <section class="cfg-col" aria-labelledby="cfg-h-recursos">
+        <h3 id="cfg-h-recursos">Recursos do Windows</h3>
+        <p class="cfg-nota">Componentes opcionais ligados e desligados pelo DISM. Quase todos pedem reinício.</p>
+        <div id="cfg-recursos" role="group" aria-labelledby="cfg-h-recursos">
+          <p class="vazio" id="cfg-recursos-carregando">Lendo os recursos instalados…</p>
+        </div>
+      </section>
+
+      <section class="cfg-col" aria-labelledby="cfg-h-correcoes">
+        <h3 id="cfg-h-correcoes">Correções</h3>
+        <p class="cfg-nota">Rotinas de manutenção do Windows. Não são ajustes: não há estado anterior para guardar.</p>
+        <div id="cfg-correcoes">
+          <p class="vazio">Carregando…</p>
+        </div>
+      </section>
+
+      <section class="cfg-col" aria-labelledby="cfg-h-paineis">
+        <h3 id="cfg-h-paineis">Painéis legados</h3>
+        <p class="cfg-nota">Atalhos para as telas clássicas do Windows.</p>
+        <div id="cfg-paineis" class="cfg-grid-paineis">
+          <p class="vazio">Carregando…</p>
+        </div>
+
+        <h3 id="cfg-h-dns">Servidores DNS</h3>
+        <div id="cfg-dns">
+          <p class="vazio">Carregando…</p>
+        </div>
+      </section>
+    </div>
   </section>
 
   <section id="tab-atualizacoes" class="tab" hidden>

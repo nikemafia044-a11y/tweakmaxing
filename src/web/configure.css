@@ -1,0 +1,250 @@
+/* configure.css - aba "Configurar".
+   Só tokens de app.css: nenhuma cor literal nasce aqui, para o tema claro
+   (prefers-color-scheme) continuar valendo sem uma segunda folha. */
+
+#cfg-colunas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+  align-items: start;
+}
+
+/* Três colunas lado a lado só cabem com largura; abaixo disso empilham. */
+@media (max-width: 1100px) {
+  #cfg-colunas { grid-template-columns: minmax(0, 1fr); }
+}
+
+.cfg-col {
+  min-width: 0;
+  padding: 14px 16px 16px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel);
+}
+
+.cfg-col h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.cfg-col h3 + .cfg-nota { margin-top: 0; }
+
+#cfg-h-dns { margin-top: 20px; }
+
+.cfg-nota {
+  margin: 0 0 12px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+/* ---------- recursos (interruptores) ---------- */
+
+.feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 9px 4px;
+  border-top: 1px solid var(--linha);
+}
+
+.feature:first-child { border-top: 0; }
+
+.feature-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feature-nome {
+  display: block;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.feature-desc {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.feature-selos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 5px;
+  align-items: center;
+}
+
+.feature-acoes {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+/* Interruptor: um <button role="switch">, não uma caixa de seleção -
+   aria-checked carrega o estado e o teclado já o ativa com espaço/enter. */
+.switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  padding: 0;
+  flex: 0 0 auto;
+  border: 1px solid var(--linha);
+  border-radius: 999px;
+  background: var(--panel-2);
+  cursor: pointer;
+}
+
+.switch::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--muted);
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+
+.switch[aria-checked="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.switch[aria-checked="true"]::after {
+  transform: translateX(20px);
+  background: var(--accent-fg);
+}
+
+.switch:disabled { opacity: 0.45; cursor: default; }
+
+.switch[data-estado="desconhecido"] { border-style: dashed; }
+
+/* ---------- correções ---------- */
+
+.fix-card {
+  padding: 11px 12px;
+  margin-bottom: 10px;
+  border: 1px solid var(--linha);
+  border-radius: var(--raio);
+  background: var(--panel-2);
+}
+
+.fix-card:last-child { margin-bottom: 0; }
+
+.fix-nome {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.fix-desc {
+  margin: 0 0 9px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.fix-rodape {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ---------- painéis ---------- */
+
+.cfg-grid-paineis {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 6px;
+}
+
+.painel-btn {
+  width: 100%;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- DNS ---------- */
+
+.cfg-dns-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cfg-select {
+  flex: 1 1 150px;
+  min-width: 120px;
+  padding: 6px 8px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--fg);
+  font: inherit;
+}
+
+.cfg-dns-atual {
+  margin: 0 0 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.cfg-dns-atual li { overflow-wrap: anywhere; }
+
+.cfg-lista-limpa {
+  margin: 4px 0 0;
+  padding-left: 18px;
+}
+
+/* ---------- tabelas (benchmark e resultado das correções) ---------- */
+
+.cfg-tabela {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.cfg-tabela th,
+.cfg-tabela td {
+  padding: 5px 8px;
+  text-align: left;
+  border-bottom: 1px solid var(--linha);
+}
+
+.cfg-tabela td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.cfg-tabela tr.res-falha td { color: var(--danger); }
+
+.cfg-saida {
+  max-height: 160px;
+  overflow: auto;
+  margin: 4px 0 0;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-family: Consolas, "Cascadia Mono", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.cfg-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}

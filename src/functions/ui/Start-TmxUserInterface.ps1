@@ -124,6 +124,8 @@ function Start-TmxUserInterface {
     Register-TmxShellActions
     Register-TmxSessionActions
     Register-TmxInstallActions
+    Register-TmxTweakActions
+    Register-TmxFeatureActions
 
     $titulo = "TweakMaxing $versao"
     if ($sync.testMode) { $titulo = "$titulo [modo de teste]" }
