@@ -1,0 +1,5 @@
+{
+  "desktop":  { "nome": "Desktop",  "descricao": "PC de mesa: privacidade, desempenho e limpeza, incluindo plano de energia." },
+  "notebook": { "nome": "Notebook", "descricao": "Igual ao Desktop, sem planos de energia e sem itens que prejudicam bateria ou temperatura." },
+  "minimo":   { "nome": "Mínimo",   "descricao": "Só o essencial de privacidade: telemetria, recursos de consumidor e WPBT." }
+}

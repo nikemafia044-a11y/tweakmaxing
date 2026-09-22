@@ -1,0 +1,31 @@
+{
+  "os": {
+    "build": 22631,
+    "nome": "Windows 11",
+    "versao": "23H2",
+    "isLaptop": true,
+    "isVM": false,
+    "elevado": false,
+    "vbsAtivo": false,
+    "bcd": { "disponivel": false, "numproc": null, "useplatformclock": null, "disabledynamictick": null }
+  },
+  "network": {
+    "adaptadorAtivo": { "nome": "Wi-Fi", "tipo": "WiFi", "descricao": "Intel(R) Wi-Fi 6 AX201 160MHz" }
+  },
+  "storage": {
+    "discoSistema": { "tipo": "SSD", "midia": "SSD", "trimAtivo": true, "espacoLivrePct": 10.8, "livreGB": 50.1 },
+    "cs2Path": "D:\\SteamLibrary\\steamapps\\common\\Counter-Strike Global Offensive\\game\\bin\\win64\\cs2.exe"
+  },
+  "memory": { "capacidadeGB": 16 },
+  "gpu": {
+    "vendor": "NVIDIA",
+    "modelo": "NVIDIA GeForce RTX 3060 Laptop GPU",
+    "dataDriver": "2024-04-10",
+    "hagsAtivo": true,
+    "reflexProvavel": true,
+    "adaptadores": [
+      { "modelo": "NVIDIA GeForce RTX 3060 Laptop GPU", "vendor": "NVIDIA", "pnpId": "PCI\\VEN_10DE&DEV_2560", "integrada": false },
+      { "modelo": "Intel(R) Iris(R) Xe Graphics", "vendor": "Intel", "pnpId": "PCI\\VEN_8086&DEV_9A49", "integrada": true }
+    ]
+  }
+}

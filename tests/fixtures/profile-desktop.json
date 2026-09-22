@@ -1,0 +1,31 @@
+{
+  "os": {
+    "build": 26100,
+    "nome": "Windows 11",
+    "versao": "24H2",
+    "isLaptop": false,
+    "isVM": false,
+    "elevado": true,
+    "vbsAtivo": true,
+    "bcd": { "disponivel": true, "numproc": "2", "useplatformclock": "No", "disabledynamictick": "No" }
+  },
+  "network": {
+    "adaptadorAtivo": { "nome": "Ethernet", "tipo": "Ethernet", "descricao": "Intel(R) Ethernet Controller I225-V" }
+  },
+  "storage": {
+    "discoSistema": { "tipo": "NVMe", "midia": "SSD", "trimAtivo": true, "espacoLivrePct": 43.0, "livreGB": 400.2 },
+    "cs2Path": "C:\\Program Files (x86)\\Steam\\steamapps\\common\\Counter-Strike Global Offensive\\game\\bin\\win64\\cs2.exe"
+  },
+  "memory": { "capacidadeGB": 32 },
+  "gpu": {
+    "vendor": "NVIDIA",
+    "modelo": "NVIDIA GeForce RTX 4070",
+    "dataDriver": "2024-08-20",
+    "hagsAtivo": false,
+    "reflexProvavel": true,
+    "adaptadores": [
+      { "modelo": "NVIDIA GeForce RTX 4070", "vendor": "NVIDIA", "pnpId": "PCI\\VEN_10DE&DEV_2786", "integrada": false },
+      { "modelo": "Intel(R) UHD Graphics 770", "vendor": "Intel", "pnpId": "PCI\\VEN_8086&DEV_A780", "integrada": true }
+    ]
+  }
+}
