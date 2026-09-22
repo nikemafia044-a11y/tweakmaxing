@@ -1,0 +1,208 @@
+# functions/ui/Start-TmxUserInterface.ps1
+# A janela: WPF hospedando um WebView2 que carrega src/web.
+#
+# Roda numa runspace STA propria (ver scripts/main.ps1). Tudo que demora sai
+# daqui para o pool de jobs, senao a janela congela.
+#
+# Duas armadilhas ja pagas no spike e preservadas aqui:
+#   - Task.ContinueWith com scriptblock do PowerShell derruba o processo; a
+#     espera pelo ambiente acontece no evento Loaded, na thread da UI.
+#   - WebView2Loader.dll e resolvida pelo PATH do processo, nao pelo Add-Type.
+
+function New-TmxWindowIcon {
+    <#
+    .SYNOPSIS
+        Icone 32x32 desenhado em runtime ("TM" sobre retangulo arredondado).
+    .DESCRIPTION
+        Evita carregar asset externo: o .ps1 compilado e um arquivo so.
+        Puramente cosmetico - qualquer falha devolve $null.
+    #>
+    [CmdletBinding()]
+    param()
+
+    try {
+        $lado   = 32
+        $visual = New-Object System.Windows.Media.DrawingVisual
+        $ctx    = $visual.RenderOpen()
+
+        $fundo  = New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Color]::FromRgb(79, 140, 255))
+        $rect   = New-Object System.Windows.Rect 0, 0, $lado, $lado
+        $ctx.DrawRoundedRectangle($fundo, $null, $rect, 7, 7)
+
+        $tipo = New-Object System.Windows.Media.Typeface(
+            (New-Object System.Windows.Media.FontFamily 'Segoe UI'),
+            [System.Windows.FontStyles]::Normal,
+            [System.Windows.FontWeights]::Bold,
+            [System.Windows.FontStretches]::Normal)
+
+        $texto = New-Object System.Windows.Media.FormattedText(
+            'TM',
+            [System.Globalization.CultureInfo]::InvariantCulture,
+            [System.Windows.FlowDirection]::LeftToRight,
+            $tipo,
+            14.0,
+            (New-Object System.Windows.Media.SolidColorBrush ([System.Windows.Media.Colors]::White)),
+            1.0)
+
+        $ponto = New-Object System.Windows.Point (($lado - $texto.Width) / 2), (($lado - $texto.Height) / 2)
+        $ctx.DrawText($texto, $ponto)
+        $ctx.Close()
+
+        $bmp = New-Object System.Windows.Media.Imaging.RenderTargetBitmap(
+            $lado, $lado, 96, 96, [System.Windows.Media.PixelFormats]::Pbgra32)
+        $bmp.Render($visual)
+        $bmp.Freeze()
+        $bmp
+    } catch {
+        Write-Verbose "Icone nao pode ser desenhado: $($_.Exception.Message)"
+        $null
+    }
+}
+
+function Install-TmxWebView2Runtime {
+    <#
+    .SYNOPSIS
+        Instala o runtime do WebView2 via winget e devolve a versao resultante.
+    #>
+    [CmdletBinding()]
+    param()
+    try {
+        Start-Process -FilePath 'winget' -Wait -ArgumentList @(
+            'install', 'Microsoft.EdgeWebView2Runtime',
+            '--accept-package-agreements', '--accept-source-agreements'
+        )
+    } catch {
+        Write-TmxLog -Level WARN -Message "winget nao pode instalar o runtime do WebView2: $($_.Exception.Message)"
+    }
+    Test-TmxWebView2Runtime
+}
+
+function Start-TmxUserInterface {
+    <#
+    .SYNOPSIS
+        Abre a janela principal e bloqueia ate ela fechar.
+    .OUTPUTS
+        0 quando a janela abriu e fechou normalmente; 1 quando nao foi possivel abrir.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $lib = Get-TmxWebView2Sdk
+
+    Add-Type -AssemblyName PresentationFramework, PresentationCore, WindowsBase, System.Xaml
+    Get-ChildItem -LiteralPath $lib -Filter '*.dll' -File | Unblock-File -ErrorAction SilentlyContinue
+    Add-Type -Path (Join-Path $lib 'Microsoft.Web.WebView2.Core.dll')
+    Add-Type -Path (Join-Path $lib 'Microsoft.Web.WebView2.Wpf.dll')
+    # Core.dll carrega WebView2Loader.dll por nome: sem o PATH ela nao e achada.
+    if ($env:PATH -notlike "$lib;*") { $env:PATH = "$lib;" + $env:PATH }
+
+    $runtime = Test-TmxWebView2Runtime
+    if (-not $runtime) {
+        $escolha = Show-TmxDialog -Titulo 'WebView2 ausente' -Botoes 'Instalar', 'Fechar' -Texto (
+            'O TweakMaxing precisa do runtime do WebView2 (vem com o Microsoft Edge). Instalar agora via winget?')
+        if ($escolha -ne 'Instalar') {
+            Write-TmxLog -Level WARN -Message 'Runtime do WebView2 ausente e instalacao recusada'
+            return 1
+        }
+        $runtime = Install-TmxWebView2Runtime
+        if (-not $runtime) {
+            Show-TmxDialog -Titulo 'WebView2 ausente' -Botoes 'Fechar' -Texto (
+                'A instalacao do runtime do WebView2 nao pode ser concluida. Instale o Microsoft Edge WebView2 Runtime e abra o TweakMaxing de novo.') | Out-Null
+            return 1
+        }
+    }
+
+    $webRoot = Get-TmxWebRoot
+    $versao  = Get-TmxUiVersion
+
+    # So quando pedido: com a porta aberta, qualquer processo local fala CDP
+    # com a janela. E o que os testes de GUI usam.
+    if ($sync.debugPort) {
+        $env:WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS = "--remote-debugging-port=$($sync.debugPort)"
+    }
+
+    Register-TmxShellActions
+
+    $titulo = "TweakMaxing $versao"
+    if ($sync.testMode) { $titulo = "$titulo [modo de teste]" }
+
+    [xml]$xaml = @"
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="$([System.Security.SecurityElement]::Escape($titulo))"
+        Width="1200" Height="760"
+        MinWidth="900" MinHeight="600"
+        Background="#12131A"
+        WindowStartupLocation="CenterScreen">
+    <Grid x:Name="Root" />
+</Window>
+"@
+
+    $janela = [Windows.Markup.XamlReader]::Load((New-Object System.Xml.XmlNodeReader $xaml))
+    $grade  = $janela.FindName('Root')
+
+    $icone = New-TmxWindowIcon
+    if ($icone) { $janela.Icon = $icone }
+
+    $wv = New-Object Microsoft.Web.WebView2.Wpf.WebView2
+    [void]$grade.Children.Add($wv)
+
+    $sync.window  = $janela
+    $sync.webview = $wv
+
+    $pastaDados = Join-Path (Get-TmxUiHomePath) 'webview2-data'
+    New-Item -ItemType Directory -Path $pastaDados -Force | Out-Null
+    $tarefaAmbiente = [Microsoft.Web.WebView2.Core.CoreWebView2Environment]::CreateAsync($null, $pastaDados, $null)
+
+    $janela.add_Loaded({
+        # Esperar aqui (thread da UI) em vez de ContinuarWith: um ContinueWith
+        # com scriptblock do PowerShell mata o processo sem rastro.
+        $tarefaAmbiente.Wait()
+        $null = $wv.EnsureCoreWebView2Async($tarefaAmbiente.Result)
+    }.GetNewClosure())
+
+    $wv.add_CoreWebView2InitializationCompleted({
+        param($remetente, $evento)
+
+        if (-not $evento.IsSuccess) {
+            Write-TmxLog -Level ERROR -Message 'WebView2 nao inicializou' -Data @{ erro = "$($evento.InitializationException)" }
+            return
+        }
+
+        $core = $wv.CoreWebView2
+        $core.Settings.AreDefaultContextMenusEnabled = [bool]$sync.debugPort
+        $core.Settings.AreDevToolsEnabled            = [bool]$sync.debugPort
+        $core.Settings.IsStatusBarEnabled            = $false
+        $core.Settings.IsZoomControlEnabled          = $false
+
+        # Host virtual em vez de file://: o file:// fica com origem opaca e
+        # quebra fetch/modulos; e o mapeamento e somente-leitura da pasta.
+        $core.SetVirtualHostNameToFolderMapping(
+            'app.tweakmaxing', $webRoot,
+            [Microsoft.Web.WebView2.Core.CoreWebView2HostResourceAccessKind]::Allow)
+
+        $core.add_WebMessageReceived({
+            param($remetente2, $evento2)
+            # $sync.webview e nao a variavel $wv: GetNewClosure() copia apenas o
+            # escopo LOCAL, e neste handler aninhado $wv ja mora no escopo do
+            # closure de fora - chega aqui como $null.
+            try {
+                $resposta = Invoke-TmxBridgeRequest -Json $evento2.WebMessageAsJson
+                if ($resposta -and $sync.webview) { $sync.webview.CoreWebView2.PostWebMessageAsJson($resposta) }
+            } catch {
+                Write-TmxLog -Level ERROR -Message "Falha ao tratar mensagem da UI: $($_.Exception.Message)"
+            }
+        }.GetNewClosure())
+
+        $core.Navigate('https://app.tweakmaxing/index.html')
+    }.GetNewClosure())
+
+    Write-TmxLog -Level INFO -Message 'UI iniciada' -Data @{ versao = $versao; runtime = $runtime; testMode = [bool]$sync.testMode; debugPort = $sync.debugPort }
+
+    [void]$janela.ShowDialog()
+
+    $sync.webview = $null
+    $sync.window  = $null
+    Write-TmxLog -Level INFO -Message 'UI encerrada'
+    0
+}

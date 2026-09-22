@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TweakMaxing</title>
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+
+<header>
+  <div class="logo">TweakMaxing</div>
+  <span id="versao" class="versao">—</span>
+  <nav aria-label="Seções">
+    <button type="button" class="aba" data-tab="instalar">Instalar</button>
+    <button type="button" class="aba" data-tab="ajustes">Ajustes</button>
+    <button type="button" class="aba" data-tab="configurar">Configurar</button>
+    <button type="button" class="aba" data-tab="atualizacoes">Atualizações</button>
+    <button type="button" class="aba" data-tab="microwin">MicroWin</button>
+  </nav>
+</header>
+
+<main>
+  <section id="tab-instalar" class="tab" hidden>
+    <h2>Instalar</h2>
+    <p class="vazio">Em construção</p>
+  </section>
+
+  <section id="tab-ajustes" class="tab" hidden>
+    <h2>Ajustes</h2>
+    <p class="vazio">Em construção</p>
+  </section>
+
+  <section id="tab-configurar" class="tab" hidden>
+    <h2>Configurar</h2>
+    <p class="vazio">Em construção</p>
+  </section>
+
+  <section id="tab-atualizacoes" class="tab" hidden>
+    <h2>Atualizações</h2>
+    <p class="vazio">Em construção</p>
+  </section>
+
+  <section id="tab-microwin" class="tab" hidden>
+    <h2>MicroWin</h2>
+    <p class="vazio">Em construção</p>
+  </section>
+</main>
+
+<footer id="status" aria-live="polite">
+  <span id="st-rp" class="cel">Nenhum ponto de restauração</span>
+  <span id="st-run" class="cel">Sem sessão</span>
+  <span id="st-undo" class="cel">
+    <span id="st-undo-texto">Nada a reverter</span>
+    <button type="button" id="st-undo-copy" class="btn btn-mini" disabled>Copiar</button>
+  </span>
+  <span id="st-job" class="cel">Ocioso</span>
+</footer>
+
+<div id="toasts" aria-live="assertive"></div>
+
+<div id="modal" hidden>
+  <div class="modal-fundo"></div>
+  <div class="modal-box" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h3 id="modal-title"></h3>
+    <div id="modal-body"></div>
+    <div id="modal-buttons"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+<script src="install.js"></script>
+<script src="tweaks.js"></script>
+<script src="configure.js"></script>
+<script src="updates.js"></script>
+<script src="microwin.js"></script>
+</body>
+</html>

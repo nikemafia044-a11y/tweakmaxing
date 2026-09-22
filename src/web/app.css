@@ -1,0 +1,295 @@
+/* app.css - casca do TweakMaxing.
+   Tema escuro por padrão; o claro entra por prefers-color-scheme.
+   Tudo é token em :root para que as abas (tasks seguintes) não inventem cor. */
+
+:root {
+  --bg: #12131a;
+  --panel: #1b1d27;
+  --panel-2: #23263380;
+  --fg: #e8e8ef;
+  --muted: #9a9db0;
+  --linha: #2d303e;
+  --accent: #4f8cff;
+  --accent-fg: #ffffff;
+  --ok: #3ccf7a;
+  --warn: #f0b13b;
+  --danger: #ff5d5d;
+  --laranja: #ff8c42;
+  --header-h: 56px;
+  --footer-h: 40px;
+  --raio: 8px;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f4f5f9;
+    --panel: #ffffff;
+    --panel-2: #eceef5;
+    --fg: #16171d;
+    --muted: #55596b;
+    --linha: #d7dae5;
+    --accent: #1d5fd4;
+    --accent-fg: #ffffff;
+    --ok: #12864a;
+    --warn: #8a5d00;
+    --danger: #c02626;
+    --laranja: #a94e00;
+  }
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--fg);
+  font: 14px/1.5 "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+}
+
+/* ---------- cabeçalho e abas ---------- */
+
+header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: var(--header-h);
+  padding: 0 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--linha);
+  flex: 0 0 auto;
+}
+
+.logo {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.2px;
+}
+
+.logo::before {
+  content: "TM";
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  border-radius: 6px;
+  background: var(--accent);
+  color: var(--accent-fg);
+  font-size: 11px;
+  vertical-align: -5px;
+}
+
+.versao {
+  color: var(--muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+nav {
+  display: flex;
+  gap: 4px;
+  margin-left: auto;
+}
+
+.aba {
+  padding: 7px 14px;
+  border: 1px solid transparent;
+  border-radius: var(--raio);
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.aba:hover { background: var(--panel-2); color: var(--fg); }
+
+.aba.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+/* ---------- conteúdo ---------- */
+
+main {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  padding: 20px 24px 28px;
+}
+
+.tab[hidden] { display: none; }
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 650;
+}
+
+.vazio {
+  color: var(--muted);
+  padding: 28px;
+  border: 1px dashed var(--linha);
+  border-radius: var(--raio);
+  text-align: center;
+}
+
+/* ---------- selos de evidência e risco ---------- */
+
+.selo {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.selo-medido       { color: var(--ok); }
+.selo-tecnico      { color: var(--accent); }
+.selo-folclore     { color: var(--warn); }
+.selo-irreversivel { color: var(--danger); }
+.selo-parcial      { color: var(--laranja); }
+.selo-reboot       { color: var(--muted); }
+
+/* ---------- botões ---------- */
+
+.btn {
+  padding: 6px 12px;
+  border: 1px solid var(--linha);
+  border-radius: 6px;
+  background: var(--panel-2);
+  color: var(--fg);
+  font: inherit;
+  cursor: pointer;
+}
+
+.btn:hover { border-color: var(--accent); }
+.btn:disabled { opacity: 0.45; cursor: default; }
+.btn:disabled:hover { border-color: var(--linha); }
+
+.btn-mini { padding: 2px 8px; font-size: 12px; }
+
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-fg);
+  font-weight: 600;
+}
+
+.btn-danger {
+  background: transparent;
+  border-color: var(--danger);
+  color: var(--danger);
+  font-weight: 600;
+}
+
+/* ---------- barra de status ---------- */
+
+footer#status {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  height: var(--footer-h);
+  padding: 0 16px;
+  flex: 0 0 auto;
+  background: var(--panel);
+  border-top: 1px solid var(--linha);
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+footer#status .cel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#st-job { margin-left: auto; }
+
+/* ---------- toasts ---------- */
+
+#toasts {
+  position: fixed;
+  right: 16px;
+  bottom: calc(var(--footer-h) + 12px);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  z-index: 40;
+}
+
+.toast {
+  max-width: 380px;
+  padding: 10px 14px;
+  border: 1px solid var(--linha);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--raio);
+  background: var(--panel);
+  color: var(--fg);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+}
+
+.toast-ok    { border-left-color: var(--ok); }
+.toast-aviso { border-left-color: var(--warn); }
+.toast-erro  { border-left-color: var(--danger); }
+
+/* ---------- modal ---------- */
+
+#modal[hidden] { display: none; }
+
+#modal {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+}
+
+.modal-fundo {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.modal-box {
+  position: relative;
+  width: min(560px, calc(100vw - 48px));
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  padding: 20px 22px;
+  border: 1px solid var(--linha);
+  border-radius: 12px;
+  background: var(--panel);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.modal-box h3 { margin: 0 0 10px; font-size: 17px; }
+
+#modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+/* ---------- foco visível em tudo que recebe teclado ---------- */
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
