@@ -7,11 +7,12 @@ BeforeAll {
     . "$PSScriptRoot\_Helpers.ps1"
     Import-TmxTestModule
     New-TmxTestHome | Out-Null
-    $script:TestRoot = 'HKCU:\Software\TweakMaxing_Tests'
+    $script:TestSubKey = 'Core\Rollback'
+    $script:TestRoot   = "HKCU:\Software\TweakMaxing_Tests\$script:TestSubKey"
 }
 
 AfterAll {
-    Remove-TmxTestKey
+    Remove-TmxTestKey -SubKey $script:TestSubKey
     Remove-TmxTestHome
     Stop-TmxLogger
     Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
@@ -20,7 +21,7 @@ AfterAll {
 Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
 
     BeforeEach {
-        Remove-TmxTestKey
+        Remove-TmxTestKey -SubKey $script:TestSubKey
         New-Item -Path $script:TestRoot -Force | Out-Null
         $script:run = New-TmxRun
     }
@@ -149,6 +150,9 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
         $json.registros[0].status = 'aplicando'
         $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
 
+        # a forja so vale no arquivo; sem recarregar, o run ainda ativo usaria a
+        # memoria (onde o registro continua 'aplicado', nao testando o cenario).
+        Import-TmxTestModule
         Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
 
         (Get-ItemProperty -Path $key -Name 'V').V | Should -Be 3
@@ -196,6 +200,8 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
         ($json.registros | Where-Object { $_.tweakId -eq 'B' }).reversao.tipo = 'inexistente'
         $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
 
+        # forca a leitura do arquivo forjado (run ativo usaria a memoria intacta)
+        Import-TmxTestModule
         $sum = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
 
         $sum.falhas     | Should -Be 1
@@ -283,6 +289,8 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
         $json.registros[0].tipoAnterior = $null
         $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
 
+        # forca a leitura do arquivo forjado (run ativo usaria a memoria intacta)
+        Import-TmxTestModule
         $sum = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
 
         $sum.falhas | Should -Be 1
@@ -325,6 +333,10 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
             )
             $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
 
+            # forca a leitura do arquivo forjado (run ativo usaria a memoria, vazia).
+            # funcoes global: sobrevivem ao reimport do modulo (escopos distintos).
+            Import-TmxTestModule
+
             $sum = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
 
             $itemFake = $sum.itens | Where-Object { $_.tweakId -eq 'F1' }
@@ -337,5 +349,121 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
         } finally {
             Remove-Item function:global:Undo-TmxFakeRecord -ErrorAction SilentlyContinue
         }
+    }
+
+    It 'despacho dinamico: registro sem tipo vira falha explicita' {
+        $json = Get-Content -LiteralPath $script:run.StatePath -Raw | ConvertFrom-Json
+        $json.registros = @(
+            [pscustomobject]@{
+                tweakId = 'SEMTIPO'; tipo = $null; alvo = 'alvo-sem-tipo'
+                detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                existiaAntes = $false; valorNovo = $null
+                reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            }
+        )
+        $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
+        Import-TmxTestModule
+
+        $sum = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
+
+        $sum.falhas | Should -Be 1
+        $sum.itens[0].detalhe | Should -Match 'registro sem tipo'
+    }
+
+    It 'M2: ancestral que ganhou valor Default de terceiro e preservado' {
+        $base = $script:TestRoot
+        $path = "$base\A\B\C"
+
+        Set-TmxRegistry -Path $path -Name 'V' -Value 1 -Type DWord | Out-Null
+        # outro programa gravou um valor (Default) na chave intermediaria
+        Set-Item -LiteralPath "$base\A" -Value 'terceiro'
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+
+        Test-Path "$base\A\B" | Should -BeFalse
+        Test-Path "$base\A"   | Should -BeTrue
+        (Get-Item -LiteralPath "$base\A").GetValue('') | Should -Be 'terceiro'
+    }
+
+    It '-WhatIf mantem status "aplicado" no arquivo' {
+        $key = "$script:TestRoot\WhatIfArquivo"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+        Set-TmxRegistry -Path $key -Name 'V' -Value 2 -Type DWord
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath -WhatIf 6> $null | Out-Null
+
+        $st = @(Import-TmxState -StatePath $script:run.StatePath)
+        $st[0].status | Should -Be 'aplicado'
+    }
+
+    It 'lost-update: run ativo preserva registro concorrente apos novo Set-TmxRegistry' {
+        $key1 = "$script:TestRoot\LU1"
+        $key2 = "$script:TestRoot\LU2"
+        $key3 = "$script:TestRoot\LU3"
+        New-Item -Path $key1 -Force | Out-Null
+        New-Item -Path $key2 -Force | Out-Null
+        New-ItemProperty -Path $key1 -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $key2 -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+
+        Set-TmxRegistry -Path $key1 -Name 'V' -Value 2 -Type DWord -TweakId 'LU-1'
+        Set-TmxRegistry -Path $key2 -Name 'V' -Value 2 -Type DWord -TweakId 'LU-2'
+
+        # o run continua ativo neste mesmo processo: Undo deve operar sobre a
+        # memoria para nao perder a marcacao quando o terceiro Set gravar depois.
+        Undo-TweakMaxing -StatePath $script:run.StatePath -TweakId 'LU-1' 6> $null | Out-Null
+
+        Set-TmxRegistry -Path $key3 -Name 'V' -Value 5 -Type DWord -TweakId 'LU-3'
+
+        $st = @(Import-TmxState -StatePath $script:run.StatePath)
+        $st.Count | Should -Be 3
+        ($st | Where-Object { $_.tweakId -eq 'LU-1' }).status | Should -Be 'revertido'
+        ($st | Where-Object { $_.tweakId -eq 'LU-2' }).status | Should -Be 'aplicado'
+        ($st | Where-Object { $_.tweakId -eq 'LU-3' }).status | Should -Be 'aplicado'
+    }
+
+    It 'merge sem run ativo: preserva registro adicionado por outro escritor durante a reversao' {
+        $keyA = "$script:TestRoot\CA"
+        $keyB = "$script:TestRoot\CB"
+        $keyC = "$script:TestRoot\CC"
+        New-Item -Path $keyA -Force | Out-Null
+        New-Item -Path $keyB -Force | Out-Null
+        New-Item -Path $keyC -Force | Out-Null
+        New-ItemProperty -Path $keyA -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $keyB -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $keyC -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+
+        Set-TmxRegistry -Path $keyA -Name 'V' -Value 2 -Type DWord -TweakId 'C-A'
+        Set-TmxRegistry -Path $keyB -Name 'V' -Value 2 -Type DWord -TweakId 'C-B'
+        Set-TmxRegistry -Path $keyC -Name 'V' -Value 2 -Type DWord -TweakId 'C-C'
+        $statePath = $script:run.StatePath
+
+        # simula outro processo: perde o run ativo em memoria
+        Import-TmxTestModule
+        (Get-TmxState).Count | Should -Be 0
+
+        Mock Undo-TmxRegistryRecord -ModuleName TweakMaxing {
+            param($Record)
+            # simula um terceiro escritor gravando um novo registro durante a nossa reversao
+            $json = Get-Content -LiteralPath $statePath -Raw | ConvertFrom-Json
+            $novo = [pscustomobject]@{
+                tweakId = 'CONCORRENTE'; tipo = 'registry'; alvo = 'x::y'; seq = 999
+                detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                existiaAntes = $false; valorNovo = $null
+                reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+            }
+            $json.registros = @($json.registros) + $novo
+            $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $statePath -Encoding UTF8
+            "revertido (mock) para $($Record.alvo)"
+        }
+
+        Undo-TweakMaxing -StatePath $statePath -TweakId 'C-A' 6> $null | Out-Null
+
+        $st = @(Import-TmxState -StatePath $statePath)
+        $st.Count | Should -Be 4
+        ($st | Where-Object { $_.tweakId -eq 'C-A' }).status | Should -Be 'revertido'
+        ($st | Where-Object { $_.tweakId -eq 'C-B' }).status | Should -Be 'aplicado'
+        ($st | Where-Object { $_.tweakId -eq 'C-C' }).status | Should -Be 'aplicado'
+        ($st | Where-Object { $_.tweakId -eq 'CONCORRENTE' }).status | Should -Be 'aplicado'
     }
 }

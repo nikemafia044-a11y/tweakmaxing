@@ -68,6 +68,9 @@ function Add-TmxStateRecord {
     .NOTES
         O objeto e adicionado por referencia: quem chamou pode atualizar
         status/erro depois e chamar Save-TmxState para persistir.
+        Ganha um 'seq' 1-based (posicao na lista) se ainda nao tiver: e a
+        chave usada por Save-TmxStateFile para mesclar mudancas de status sem
+        sobrescrever registros concorrentes de outro processo/escritor.
     #>
     [CmdletBinding()]
     param(
@@ -77,6 +80,9 @@ function Add-TmxStateRecord {
         $script:TmxStateRecords = New-Object 'System.Collections.Generic.List[object]'
     }
     $script:TmxStateRecords.Add($Record)
+    if (-not ($Record.PSObject.Properties.Name -contains 'seq') -or $null -eq $Record.seq) {
+        $Record | Add-Member -NotePropertyName seq -NotePropertyValue $script:TmxStateRecords.Count -Force
+    }
     Save-TmxState
     $Record
 }
@@ -161,12 +167,29 @@ function Save-TmxState {
     Set-Content -LiteralPath $script:TmxRun.StatePath -Value $json -Encoding UTF8 -WhatIf:$false
 }
 
+function Get-TmxRecordSeq {
+    <#
+    .SYNOPSIS
+        Identidade estavel de um registro para fins de merge: o campo 'seq'
+        quando presente, senao a posicao (1-based) dele no array informado.
+    #>
+    param($Record, [Parameter(Mandatory)] [int] $Position)
+    if ($Record.PSObject.Properties.Name -contains 'seq' -and $null -ne $Record.seq) {
+        return [int]$Record.seq
+    }
+    $Position
+}
+
 function Save-TmxStateFile {
     <#
     .SYNOPSIS
-        Reescreve um state.json existente com uma nova lista de registros,
-        preservando runId/criadoEm/computador. Nao depende da execucao em
-        memoria (usado pelo rollback, que pode rodar num processo separado).
+        Mescla no state.json em disco as mudancas de status/revertidoEm dos
+        registros informados (tipicamente so os que acabaram de ser
+        revertidos), identificados por 'seq'. NUNCA sobrescreve o array
+        inteiro com um snapshot de memoria: rele o arquivo no momento da
+        escrita e so altera os registros que baterem por seq (ou posicao, na
+        ausencia de seq), preservando registros novos que outro processo
+        possa ter escrito nesse meio-tempo.
     #>
     [CmdletBinding()]
     param(
@@ -176,14 +199,35 @@ function Save-TmxStateFile {
     if (-not (Test-Path -LiteralPath $StatePath)) {
         throw "state.json nao encontrado em: $StatePath"
     }
+
+    # Indexa as mudancas (memoria) por seq/posicao ANTES de reler o disco.
+    $mudancas = @{}
+    $i = 0
+    foreach ($rec in @($Registros)) {
+        $i++
+        $chave = Get-TmxRecordSeq -Record $rec -Position $i
+        $mudancas[$chave] = $rec
+    }
+
+    # Rele o arquivo AGORA (o mais perto possivel da escrita) para minimizar
+    # a janela de corrida com outro escritor.
     $existing = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $emDisco  = @($existing.registros | Where-Object { $null -ne $_ })
+
+    $pos = 0
+    foreach ($discoRec in $emDisco) {
+        $pos++
+        $chave = Get-TmxRecordSeq -Record $discoRec -Position $pos
+        if ($mudancas.ContainsKey($chave)) {
+            $match = $mudancas[$chave]
+            $discoRec | Add-Member -NotePropertyName status      -NotePropertyValue $match.status -Force
+            $discoRec | Add-Member -NotePropertyName revertidoEm -NotePropertyValue $match.revertidoEm -Force
+        }
+    }
 
     # .ToArray()/array vazio: mesma cautela do Save-TmxState (ver comentario la).
     $arr = New-Object 'object[]' 0
-    if ($null -ne $Registros) {
-        $tmp = @($Registros)
-        if ($tmp.Count -gt 0) { $arr = $tmp }
-    }
+    if ($emDisco.Count -gt 0) { $arr = $emDisco }
 
     $payload = [ordered]@{
         runId      = $existing.runId
@@ -201,6 +245,9 @@ function Import-TmxState {
     <#
     .SYNOPSIS
         Le os registros de um state.json. Nao depende do estado em memoria.
+    .NOTES
+        Registros antigos sem 'seq' recebem seq = posicao (1-based) no
+        arquivo, para que Save-TmxStateFile ainda consiga mescla-los.
     #>
     [CmdletBinding()]
     param(
@@ -209,9 +256,19 @@ function Import-TmxState {
     if (-not (Test-Path -LiteralPath $StatePath)) {
         throw "state.json nao encontrado em: $StatePath"
     }
-    $data = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $data      = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    $registros = @($data.registros | Where-Object { $null -ne $_ })
+
+    $i = 0
+    foreach ($rec in $registros) {
+        $i++
+        if (-not ($rec.PSObject.Properties.Name -contains 'seq') -or $null -eq $rec.seq) {
+            $rec | Add-Member -NotePropertyName seq -NotePropertyValue $i -Force
+        }
+    }
+
     # Emite no pipeline; caller usa @(Import-TmxState ...) quando precisa de array.
-    $data.registros | Where-Object { $null -ne $_ }
+    $registros
 }
 
 # ---------------------------------------------------------------------------

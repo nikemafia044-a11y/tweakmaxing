@@ -26,13 +26,16 @@ function ConvertTo-TmxTypedValue {
 }
 
 function Test-TmxRegistryKeyEmpty {
-    # $true se a chave existe, nao tem valores (alem do default '') e nao tem subchaves.
+    # $true se a chave existe, nao tem valores nomeados, nao tem um valor
+    # (Default) com conteudo e nao tem subchaves.
     param([Parameter(Mandatory)] [string] $Path)
     if (-not (Test-Path -LiteralPath $Path)) { return $false }
-    $key         = Get-Item -LiteralPath $Path
-    $temValores  = @($key.GetValueNames() | Where-Object { $_ -ne '' }).Count -gt 0
-    $temSubchave = @(Get-ChildItem -LiteralPath $Path -ErrorAction SilentlyContinue).Count -gt 0
-    -not $temValores -and -not $temSubchave
+    $key            = Get-Item -LiteralPath $Path
+    $temNomeados    = @($key.GetValueNames() | Where-Object { $_ -ne '' }).Count -gt 0
+    $valorDefault   = $key.GetValue('')
+    $temDefault     = ($null -ne $valorDefault) -and ("$valorDefault" -ne '')
+    $temSubchave    = @(Get-ChildItem -LiteralPath $Path -ErrorAction SilentlyContinue).Count -gt 0
+    -not $temNomeados -and -not $temDefault -and -not $temSubchave
 }
 
 function Test-TmxPathDescendantOrEqual {
@@ -53,8 +56,10 @@ function Undo-TmxRegistryRecord {
     switch ($tipoRev) {
         'restaurarValorAnterior' {
             # B1: sem tipo anterior conhecido, nao ha default seguro (gravar como
-            # DWord poderia corromper um valor que era String/Binary/etc).
-            if ($Record.existiaAntes -eq $true -and [string]::IsNullOrEmpty($Record.tipoAnterior)) {
+            # DWord poderia corromper um valor que era String/Binary/etc). Guarda
+            # incondicional: nao ha cenario legitimo de restaurarValorAnterior
+            # sem tipoAnterior conhecido.
+            if ([string]::IsNullOrEmpty($Record.tipoAnterior)) {
                 throw 'tipo anterior desconhecido; restaure pelo .reg em regbackup\'
             }
             if (-not (Test-Path -LiteralPath $path)) {
@@ -222,7 +227,23 @@ function Undo-TweakMaxing {
         }
     }
 
-    $registros = @(Import-TmxState -StatePath $resolvedStatePath)
+    # Lost update (GUI): se o run ATIVO deste mesmo processo aponta para o
+    # mesmo state.json, operamos sobre os registros EM MEMORIA (mesmas
+    # referencias que Save-TmxState persiste) em vez de uma copia lida do
+    # disco. Assim, um Set-TmxRegistry chamado logo depois do Undo (ainda no
+    # mesmo run) nao apaga a marcacao 'revertido' com um Save-TmxState que
+    # nao sabia dela. Fora desse caso (run de outro processo, ou passado),
+    # os registros vem do disco e a gravacao final faz merge por 'seq'
+    # (Save-TmxStateFile), nunca overwrite do array inteiro.
+    $activeRun    = Get-TmxRun
+    $usarMemoria  = $false
+    if ($activeRun -and $activeRun.StatePath) {
+        try {
+            $usarMemoria = ([System.IO.Path]::GetFullPath($activeRun.StatePath) -ieq [System.IO.Path]::GetFullPath($resolvedStatePath))
+        } catch { $usarMemoria = $false }
+    }
+
+    $registros = if ($usarMemoria) { @(Get-TmxState) } else { @(Import-TmxState -StatePath $resolvedStatePath) }
     Write-TmxLog -Level INFO -Message 'Iniciando reversao' -Data @{ state = $resolvedStatePath; registros = $registros.Count }
 
     # So revertemos o que chegou a tocar o sistema. 'falha' entra porque a
@@ -260,6 +281,9 @@ function Undo-TweakMaxing {
                 'cmdlet'     { $r.detalhe = Undo-TmxCmdletRecord     -Record $rec; $r.resultado = 'revertido' }
                 'bcdedit'    { $r.detalhe = Undo-TmxBcdeditRecord    -Record $rec; $r.resultado = 'revertido' }
                 default {
+                    if ([string]::IsNullOrEmpty($rec.tipo)) {
+                        throw 'registro sem tipo'
+                    }
                     # Despacho dinamico: tipos definidos fora do Core (scheduled task,
                     # appx, feature, ...) sao revertidos se existir Undo-Tmx<Tipo>Record.
                     $fn = "Undo-Tmx$([char]::ToUpper($rec.tipo[0]) + $rec.tipo.Substring(1))Record"
@@ -287,11 +311,22 @@ function Undo-TweakMaxing {
         Write-TmxLog -Level INFO -Message "Reversao [$($r.resultado)] $($rec.alvo)" -Data @{ tweak = $rec.tweakId; detalhe = $r.detalhe }
     }
 
-    # A2: persiste a lista completa (com os status atualizados) de volta no
-    # state.json, independente do processo em memoria. So grava se algo de
-    # fato foi revertido (nao em -WhatIf, onde nada muda de status).
-    if (@($resultados | Where-Object { $_.resultado -eq 'revertido' }).Count -gt 0) {
-        Save-TmxStateFile -StatePath $resolvedStatePath -Registros $registros
+    # A2: persiste as marcacoes de 'revertido'. So grava se algo de fato foi
+    # revertido (nao em -WhatIf, onde nada muda de status).
+    $revertidos = @($aplicaveis | Where-Object { $_.status -eq 'revertido' })
+    if ($revertidos.Count -gt 0) {
+        if ($usarMemoria) {
+            # Mesmas referencias de $script:TmxStateRecords: Save-TmxState grava
+            # o array inteiro em memoria, que ja inclui as marcacoes acima e
+            # qualquer registro adicionado por Set-TmxRegistry ANTES deste ponto
+            # (nao ha concorrencia dentro do mesmo processo/thread).
+            Save-TmxState
+        } else {
+            # Processo diferente (ou run ja encerrado): mescla no arquivo por
+            # 'seq', preservando registros que outro escritor tenha adicionado
+            # nesse meio-tempo.
+            Save-TmxStateFile -StatePath $resolvedStatePath -Registros $revertidos
+        }
     }
 
     $summary = [pscustomobject]@{

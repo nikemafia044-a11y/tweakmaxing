@@ -6,9 +6,12 @@ BeforeAll {
     . "$PSScriptRoot\_Helpers.ps1"
     Import-TmxTestModule
     New-TmxTestHome | Out-Null
+    $script:TestSubKey = 'Core\Guard'
+    $script:TestRoot   = "HKCU:\Software\TweakMaxing_Tests\$script:TestSubKey"
 }
 
 AfterAll {
+    Remove-TmxTestKey -SubKey $script:TestSubKey
     Remove-TmxTestHome
     Stop-TmxLogger
     Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
@@ -112,7 +115,7 @@ Describe 'ConvertTo-TmxRegExportPath' -Tag 'Backup' {
 Describe 'Backup-TmxRegistryHive' -Tag 'Backup' {
     It 'exporta um ramo HKCU para .reg' {
         $run = New-TmxRun
-        $key = 'HKCU:\Software\TweakMaxing_Tests\Export'
+        $key = "$script:TestRoot\Export"
         New-Item -Path $key -Force | Out-Null
         New-ItemProperty -Path $key -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
 
@@ -120,8 +123,8 @@ Describe 'Backup-TmxRegistryHive' -Tag 'Backup' {
 
         $file | Should -Not -BeNullOrEmpty
         Test-Path $file | Should -BeTrue
-        (Get-Content $file -Raw) | Should -Match 'TweakMaxing_Tests\\Export'
+        (Get-Content $file -Raw) | Should -Match 'TweakMaxing_Tests\\Core\\Guard\\Export'
 
-        Remove-TmxTestKey
+        Remove-TmxTestKey -SubKey $script:TestSubKey
     }
 }

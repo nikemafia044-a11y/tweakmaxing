@@ -7,11 +7,12 @@ BeforeAll {
     . "$PSScriptRoot\_Helpers.ps1"
     Import-TmxTestModule
     New-TmxTestHome | Out-Null
-    $script:TestRoot = 'HKCU:\Software\TweakMaxing_Tests'
+    $script:TestSubKey = 'Core\Registry'
+    $script:TestRoot   = "HKCU:\Software\TweakMaxing_Tests\$script:TestSubKey"
 }
 
 AfterAll {
-    Remove-TmxTestKey
+    Remove-TmxTestKey -SubKey $script:TestSubKey
     Remove-TmxTestHome
     Stop-TmxLogger
     Remove-Module TweakMaxing -Force -ErrorAction SilentlyContinue
@@ -20,7 +21,7 @@ AfterAll {
 Describe 'Set-TmxRegistry' -Tag 'Registry' {
 
     BeforeEach {
-        Remove-TmxTestKey
+        Remove-TmxTestKey -SubKey $script:TestSubKey
         New-Item -Path $script:TestRoot -Force | Out-Null
         $script:run = New-TmxRun
     }
@@ -138,6 +139,18 @@ Describe 'Set-TmxRegistry' -Tag 'Registry' {
         $rec = Set-TmxRegistry -Path $key -Name 'Fantasma' -Remove -PassThru
 
         $rec.status | Should -Be 'naoAplicavel'
+        (Get-TmxState).Count | Should -Be 0
+    }
+
+    It '-Remove -WhatIf nao persiste nem remove' {
+        $key = "$script:TestRoot\RemoveWhatIf"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 9 -PropertyType DWord -Force | Out-Null
+
+        $rec = Set-TmxRegistry -Path $key -Name 'V' -Remove -WhatIf -PassThru
+
+        $rec.status | Should -Be 'whatif'
+        (Get-ItemProperty -Path $key -Name 'V').V | Should -Be 9
         (Get-TmxState).Count | Should -Be 0
     }
 }

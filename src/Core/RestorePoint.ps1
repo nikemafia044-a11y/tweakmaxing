@@ -236,7 +236,7 @@ function Invoke-TmxRestorePointStage {
         }
         if (-not $ConfirmSkip) {
             $out.exitCode = 2
-            $out.mensagem = 'confirmacao de pulo nao disponivel neste modo. Nada foi alterado.'
+            $out.mensagem = 'Confirmacao de pulo nao disponivel neste modo. Nada foi alterado.'
             return $out
         }
         $ok = & $ConfirmSkip

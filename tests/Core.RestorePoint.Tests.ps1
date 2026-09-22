@@ -9,7 +9,8 @@ BeforeAll {
     . "$PSScriptRoot\_Helpers.ps1"
     Import-TmxTestModule
     New-TmxTestHome | Out-Null
-    $script:TestRoot    = 'HKCU:\Software\TweakMaxing_Tests'
+    $script:TestSubKey  = 'Core\RestorePoint'
+    $script:TestRoot    = "HKCU:\Software\TweakMaxing_Tests\$script:TestSubKey"
     $script:ThrottleKey = "$script:TestRoot\SystemRestore"
     $script:ThrottleVal = 'SystemRestorePointCreationFrequency'
 
@@ -30,7 +31,7 @@ BeforeAll {
 }
 
 AfterAll {
-    Remove-TmxTestKey
+    Remove-TmxTestKey -SubKey $script:TestSubKey
     Remove-TmxTestHome
     Remove-Variable -Name Tmx_Created, Tmx_Enabled -Scope Global -ErrorAction SilentlyContinue
     Stop-TmxLogger
@@ -40,7 +41,7 @@ AfterAll {
 Describe 'New-TmxRestorePoint' -Tag 'RestorePoint' {
 
     BeforeEach {
-        Remove-TmxTestKey
+        Remove-TmxTestKey -SubKey $script:TestSubKey
         New-Item -Path $script:ThrottleKey -Force | Out-Null
         New-ItemProperty -Path $script:ThrottleKey -Name $script:ThrottleVal -Value 1440 -PropertyType DWord -Force | Out-Null
         $script:run = New-TmxRun
@@ -68,7 +69,7 @@ Describe 'New-TmxRestorePoint' -Tag 'RestorePoint' {
         }
         Mock Invoke-TmxCheckpoint -ModuleName TweakMaxing {
             $global:Tmx_Created = $true
-            $global:Tmx_ThrottleDuringCheckpoint = (Get-ItemProperty -Path 'HKCU:\Software\TweakMaxing_Tests\SystemRestore' -Name SystemRestorePointCreationFrequency).SystemRestorePointCreationFrequency
+            $global:Tmx_ThrottleDuringCheckpoint = (Get-ItemProperty -Path $script:ThrottleKey -Name SystemRestorePointCreationFrequency).SystemRestorePointCreationFrequency
         }
 
         New-TmxRestorePoint -Description 'TweakMaxing teste' -ThrottleKeyPath $script:ThrottleKey | Out-Null
@@ -195,7 +196,7 @@ Describe 'New-TmxRestorePoint' -Tag 'RestorePoint' {
 Describe 'Invoke-TmxRestorePointStage' -Tag 'RestorePoint' {
 
     BeforeEach {
-        Remove-TmxTestKey
+        Remove-TmxTestKey -SubKey $script:TestSubKey
         New-Item -Path $script:ThrottleKey -Force | Out-Null
         New-ItemProperty -Path $script:ThrottleKey -Name $script:ThrottleVal -Value 1440 -PropertyType DWord -Force | Out-Null
         $script:run = New-TmxRun

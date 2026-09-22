@@ -44,9 +44,17 @@ function Remove-TmxTestHome {
 function Remove-TmxTestKey {
     <#
     .SYNOPSIS
-        Remove recursivamente HKCU:\Software\TweakMaxing_Tests, se existir.
+        Remove recursivamente HKCU:\Software\TweakMaxing_Tests (ou uma
+        subchave dela), se existir.
+    .PARAMETER SubKey
+        Quando informado, remove so HKCU:\Software\TweakMaxing_Tests\<SubKey>,
+        preservando o resto da arvore. Use para nao derrubar testes de outras
+        suites/processos (ex.: Engine) rodando concorrentemente na mesma raiz
+        de testes.
     #>
     [CmdletBinding()]
-    param()
-    Remove-Item -LiteralPath 'HKCU:\Software\TweakMaxing_Tests' -Recurse -Force -ErrorAction SilentlyContinue
+    param([string] $SubKey)
+    $path = 'HKCU:\Software\TweakMaxing_Tests'
+    if ($SubKey) { $path = Join-Path $path $SubKey }
+    Remove-Item -LiteralPath $path -Recurse -Force -ErrorAction SilentlyContinue
 }
