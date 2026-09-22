@@ -30,24 +30,29 @@ function Get-TmxRegistryValueKind {
 function Set-TmxRegistry {
     <#
     .SYNOPSIS
-        Grava um valor no registro capturando o estado anterior para reversao.
+        Grava (ou remove, com -Remove) um valor no registro capturando o
+        estado anterior para reversao.
     .PARAMETER Path
         Caminho no formato PowerShell, ex.: HKLM:\SYSTEM\CurrentControlSet\...
     .PARAMETER TweakId
         Identificador do tweak (ex.: PWR-002) para rastreio no state.json.
+    .PARAMETER Remove
+        Remove o valor em vez de escrever (usado por politicas de atualizacao
+        que precisam desfazer um valor sem saber o que colocar no lugar).
     #>
-    [CmdletBinding(SupportsShouldProcess = $true)]
+    [CmdletBinding(SupportsShouldProcess = $true, DefaultParameterSetName = 'Set')]
     param(
         [Parameter(Mandatory)] [string] $Path,
         [Parameter(Mandatory)] [string] $Name,
-        [Parameter(Mandatory)] $Value,
+        [Parameter(Mandatory, ParameterSetName = 'Set')] $Value,
         [ValidateSet('String', 'ExpandString', 'Binary', 'DWord', 'MultiString', 'QWord')]
         [string] $Type = 'DWord',
         [string] $TweakId = '(sem-id)',
+        [Parameter(ParameterSetName = 'Remove')] [switch] $Remove,
         [switch] $PassThru
     )
 
-    # --- 1. Captura do estado atual -----------------------------------------
+    # --- 1. Captura do estado atual (comum aos dois modos) -------------------
     $keyExisted = Test-Path -LiteralPath $Path
     $existed    = $false
     $oldValue   = $null
@@ -62,21 +67,103 @@ function Set-TmxRegistry {
         }
     }
 
+    if ($PSCmdlet.ParameterSetName -eq 'Remove') {
+        # --- Caminho de remocao (-Remove) -------------------------------------
+        if (-not $existed) {
+            $record = [pscustomobject]@{
+                tweakId       = $TweakId
+                tipo          = 'registry'
+                alvo          = ('{0}::{1}' -f $Path, $Name)
+                detalhe       = @{ path = $Path; name = $Name; removido = $true }
+                valorAnterior = $null
+                tipoAnterior  = $null
+                existiaAntes  = $false
+                valorNovo     = $null
+                reversao      = @{ tipo = 'nenhuma' }
+                status        = 'naoAplicavel'
+                aplicadoEm    = $null
+                erro          = $null
+            }
+            if ($PassThru) { return $record }
+            return
+        }
+
+        $record = [pscustomobject]@{
+            tweakId       = $TweakId
+            tipo          = 'registry'
+            alvo          = ('{0}::{1}' -f $Path, $Name)
+            detalhe       = @{ path = $Path; name = $Name; removido = $true }
+            valorAnterior = $oldValue
+            tipoAnterior  = $oldType
+            existiaAntes  = $true
+            valorNovo     = $null
+            reversao      = @{ tipo = 'restaurarValorAnterior' }
+            status        = 'aplicando'
+            aplicadoEm    = $null
+            erro          = $null
+        }
+
+        if (-not $PSCmdlet.ShouldProcess($Path, "remover '$Name'")) {
+            $record.status = 'whatif'
+            if ($PassThru) { return $record }
+            return
+        }
+
+        # Persiste ANTES de remover: se o processo morrer entre a persistencia
+        # e a remocao, o rollback ainda sabe restaurar o valor original.
+        Add-TmxStateRecord -Record $record | Out-Null
+
+        try {
+            Remove-ItemProperty -LiteralPath $Path -Name $Name -ErrorAction Stop
+            $record.status     = 'aplicado'
+            $record.aplicadoEm = (Get-Date).ToString('o')
+            Write-TmxLog -Level INFO -Message "Valor removido [$TweakId]: $Path::$Name" -Data @{ anterior = $oldValue }
+        } catch {
+            $record.status = 'falha'
+            $record.erro   = $_.Exception.Message
+            Write-TmxLog -Level ERROR -Message "Falha ao remover [$TweakId]: $Path::$Name - $($_.Exception.Message)"
+        } finally {
+            Save-TmxState
+        }
+
+        if ($PassThru) { return $record }
+        return
+    }
+
+    # --- Caminho de escrita (padrao) ------------------------------------------
+
     # Estrategia de reversao decidida AGORA, com base no que existia.
     $reversao =
         if ($existed)        { @{ tipo = 'restaurarValorAnterior' } }
         elseif ($keyExisted) { @{ tipo = 'removerValor' } }
         else                 { @{ tipo = 'removerChaveCriada' } }
 
+    # M2: se a chave nao existe, identifica o ancestral mais alto que sera
+    # criado por esta escrita, para que a reversao apague so os niveis que
+    # nos criamos (e pare no primeiro ancestral que ja existia).
+    $chaveRaizCriada = $null
+    if (-not $keyExisted) {
+        $cur  = $Path
+        $last = $Path
+        while (-not (Test-Path -LiteralPath $cur)) {
+            $last   = $cur
+            $parent = Split-Path -Path $cur -Parent
+            if (-not $parent -or $parent -eq $cur) { break }
+            $cur = $parent
+        }
+        $chaveRaizCriada = $last
+    }
+
     $record = [pscustomobject]@{
         tweakId       = $TweakId
         tipo          = 'registry'
         alvo          = ('{0}::{1}' -f $Path, $Name)
         detalhe       = @{
-            path        = $Path
-            name        = $Name
-            tipoNovo    = $Type
-            chaveCriada = (-not $keyExisted)
+            path            = $Path
+            name            = $Name
+            tipoNovo        = $Type
+            chaveCriada     = (-not $keyExisted)
+            chaveRaizCriada = $chaveRaizCriada
         }
         valorAnterior = $oldValue
         tipoAnterior  = $oldType

@@ -86,7 +86,7 @@ function New-TmxRestorePoint {
     .PARAMETER ThrottleKeyPath
         Chave do throttle. Parametrizada para os testes apontarem para HKCU.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess = $true)]
     param(
         [string] $Description     = ('TweakMaxing {0:yyyy-MM-dd HH:mm:ss}' -f (Get-Date)),
         [string] $ThrottleKeyPath = $script:TmxThrottleKeyPath,
@@ -124,6 +124,12 @@ function New-TmxRestorePoint {
             if (-not $status.enabled) {
                 throw "Nao foi possivel habilitar a Protecao do Sistema em $Drive ($($status.motivo))."
             }
+        }
+
+        # B2: -WhatIf sai aqui, antes de qualquer escrita (throttle, checkpoint).
+        if (-not $PSCmdlet.ShouldProcess($Drive, 'criar ponto de restauracao')) {
+            $r.etapa = 'whatif'
+            return $r
         }
 
         # --- 3: Zerar throttle (via state.json, reversivel) -----------------
@@ -185,18 +191,13 @@ function New-TmxRestorePoint {
     $r
 }
 
-function Confirm-TmxSkipRestorePoint {
+function Get-TmxSkipPhrase {
     <#
     .SYNOPSIS
-        Exige que o usuario digite a frase exata para pular o ponto de restauracao.
+        Expoe a frase de confirmacao exigida para pular o ponto de restauracao,
+        para que a UI possa compara-la sem duplicar a constante.
     #>
-    Write-Host ''
-    Write-Host '  ATENCAO: voce pediu para pular o ponto de restauracao.' -ForegroundColor Red
-    Write-Host '  Sem ele, a unica reversao disponivel e Undo-TweakMaxing (state.json).' -ForegroundColor Yellow
-    Write-Host '  Se o Windows nao inicializar, nao havera como voltar pelo Ambiente de Recuperacao.' -ForegroundColor Yellow
-    Write-Host ''
-    $typed = Read-Host "  Digite exatamente '$script:TmxSkipPhrase' para continuar"
-    ($typed -ceq $script:TmxSkipPhrase)
+    $script:TmxSkipPhrase
 }
 
 function Invoke-TmxRestorePointStage {
@@ -204,12 +205,17 @@ function Invoke-TmxRestorePointStage {
     .SYNOPSIS
         Etapa do orquestrador. Retorna { proceed, exitCode, mensagem, pulado, resultado }.
         exitCode 2 = abortar sem aplicar nada.
+    .PARAMETER ConfirmSkip
+        Scriptblock fornecido pela UI que confirma o pulo do ponto de
+        restauracao (ex.: pedir a frase exata via Read-Host). O Core nao
+        interage com o host (M4): sem -ConfirmSkip, pular nao e permitido.
     #>
     [CmdletBinding()]
     param(
         [switch] $SkipRestorePoint,
         [switch] $IUnderstandTheRisk,
         [switch] $DryRun,
+        [scriptblock] $ConfirmSkip,
         [string] $ThrottleKeyPath = $script:TmxThrottleKeyPath
     )
 
@@ -228,7 +234,13 @@ function Invoke-TmxRestorePointStage {
             $out.mensagem = '-SkipRestorePoint so e aceito junto com -IUnderstandTheRisk. Nada foi alterado.'
             return $out
         }
-        if (-not (Confirm-TmxSkipRestorePoint)) {
+        if (-not $ConfirmSkip) {
+            $out.exitCode = 2
+            $out.mensagem = 'confirmacao de pulo nao disponivel neste modo. Nada foi alterado.'
+            return $out
+        }
+        $ok = & $ConfirmSkip
+        if ($ok -ne $true) {
             $out.exitCode = 2
             $out.mensagem = 'Frase de confirmacao incorreta. Encerrando sem alterar nada.'
             return $out

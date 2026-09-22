@@ -100,4 +100,44 @@ Describe 'Set-TmxRegistry' -Tag 'Registry' {
         $out = Set-TmxRegistry -Path $key -Name 'X' -Value 1 -Type DWord
         $out | Should -BeNullOrEmpty
     }
+
+    It 'M2: registra chaveRaizCriada como o primeiro ancestral inexistente' {
+        New-Item -Path "$script:TestRoot\Raiz" -Force | Out-Null
+        $key = "$script:TestRoot\Raiz\Sub\Folha"
+
+        $rec = Set-TmxRegistry -Path $key -Name 'X' -Value 1 -Type DWord -PassThru
+
+        $rec.detalhe.chaveRaizCriada | Should -Be "$script:TestRoot\Raiz\Sub"
+    }
+
+    It '-Remove captura o valor anterior, persiste antes de remover, e undo restaura' {
+        $key = "$script:TestRoot\ParaRemover"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 42 -PropertyType DWord -Force | Out-Null
+
+        $rec = Set-TmxRegistry -Path $key -Name 'V' -Remove -TweakId 'RM-1' -PassThru
+
+        $rec.status        | Should -Be 'aplicado'
+        $rec.valorAnterior | Should -Be 42
+        $rec.tipoAnterior  | Should -Be 'DWord'
+        $rec.reversao.tipo | Should -Be 'restaurarValorAnterior'
+        (Get-Item -Path $key).GetValueNames() | Should -Not -Contain 'V'
+
+        # persistiu ANTES de remover: o state.json ja tem o registro com o valor anterior
+        $emDisco = Import-TmxState -StatePath $script:run.StatePath
+        ($emDisco | Where-Object { $_.tweakId -eq 'RM-1' }).valorAnterior | Should -Be 42
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+        (Get-ItemProperty -Path $key -Name 'V').V | Should -Be 42
+    }
+
+    It '-Remove em valor inexistente e naoAplicavel' {
+        $key = "$script:TestRoot\SemValor"
+        New-Item -Path $key -Force | Out-Null
+
+        $rec = Set-TmxRegistry -Path $key -Name 'Fantasma' -Remove -PassThru
+
+        $rec.status | Should -Be 'naoAplicavel'
+        (Get-TmxState).Count | Should -Be 0
+    }
 }

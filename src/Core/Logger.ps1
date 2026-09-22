@@ -82,7 +82,7 @@ function Write-TmxLog {
         'DEBUG' { Write-Debug   $Message }
         'INFO'  { Write-Verbose $Message }
         'WARN'  { Write-Warning $Message }
-        'ERROR' { Write-Error   $Message -ErrorAction Continue }
+        'ERROR' { Write-Warning "[ERRO] $Message" }
     }
 }
 

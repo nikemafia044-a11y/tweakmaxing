@@ -53,6 +53,18 @@ Describe 'Test-TmxPendingReboot' -Tag 'Guard' {
     }
 }
 
+Describe 'Write-TmxLog' -Tag 'Guard' {
+    It 'B4: Write-TmxLog ERROR emite Warning e nao Error' {
+        New-TmxRun | Out-Null
+        $errCountAntes = $Error.Count
+
+        Write-TmxLog -Level ERROR -Message 'falha de teste' -WarningVariable wv -WarningAction SilentlyContinue
+
+        $wv | Should -Match '\[ERRO\] falha de teste'
+        $Error.Count | Should -Be $errCountAntes
+    }
+}
+
 Describe 'Logger e estrutura da execucao' -Tag 'Backup' {
 
     It 'New-TmxRun cria pasta, state.json e events.jsonl' {

@@ -202,4 +202,140 @@ Describe 'Undo-TweakMaxing' -Tag 'Rollback' {
         $sum.revertidos | Should -Be 1
         (Get-ItemProperty -Path $keyA -Name 'V').V | Should -Be 1
     }
+
+    It 'M2: undo remove os niveis intermediarios criados, ate o primeiro ancestral que existia' {
+        $base = $script:TestRoot
+        $path = "$base\A\B\C"
+
+        $rec = Set-TmxRegistry -Path $path -Name 'V' -Value 1 -Type DWord -PassThru
+        $rec.detalhe.chaveRaizCriada | Should -Be "$base\A"
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+
+        Test-Path "$base\A" | Should -BeFalse
+        Test-Path $base     | Should -BeTrue
+    }
+
+    It 'M2: nao apaga ancestral que ganhou outro conteudo depois' {
+        $base = $script:TestRoot
+        $path = "$base\A\B\C"
+
+        Set-TmxRegistry -Path $path -Name 'V' -Value 1 -Type DWord | Out-Null
+        # outro programa criou uma subchave em A depois da nossa escrita
+        New-Item -Path "$base\A\Outro" -Force | Out-Null
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+
+        Test-Path "$base\A\B"     | Should -BeFalse
+        Test-Path "$base\A"       | Should -BeTrue
+        Test-Path "$base\A\Outro" | Should -BeTrue
+    }
+
+    It 'A2: registros revertidos ficam marcados e nao sao revertidos de novo' {
+        $key = "$script:TestRoot\MarcaRevertido"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 5 -PropertyType DWord -Force | Out-Null
+
+        Set-TmxRegistry -Path $key -Name 'V' -Value 55 -Type DWord
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null | Out-Null
+
+        $st = @(Import-TmxState -StatePath $script:run.StatePath)
+        $st[0].status      | Should -Be 'revertido'
+        $st[0].revertidoEm | Should -Not -BeNullOrEmpty
+
+        # alteracao manual depois da reversao; um segundo undo nao deve tocar
+        New-ItemProperty -Path $key -Name 'V' -Value 77 -PropertyType DWord -Force | Out-Null
+
+        $sum2 = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
+
+        $sum2.total | Should -Be 0
+        (Get-ItemProperty -Path $key -Name 'V').V | Should -Be 77
+    }
+
+    It 'A2: -TweakId reverte so os registros daquele tweak' {
+        $keyA = "$script:TestRoot\TwkA"
+        $keyB = "$script:TestRoot\TwkB"
+        New-Item -Path $keyA -Force | Out-Null
+        New-Item -Path $keyB -Force | Out-Null
+        New-ItemProperty -Path $keyA -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+        New-ItemProperty -Path $keyB -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+
+        Set-TmxRegistry -Path $keyA -Name 'V' -Value 2 -Type DWord -TweakId 'TWK-A'
+        Set-TmxRegistry -Path $keyB -Name 'V' -Value 2 -Type DWord -TweakId 'TWK-B'
+
+        $sum = Undo-TweakMaxing -StatePath $script:run.StatePath -TweakId 'TWK-A' 6> $null
+
+        $sum.total | Should -Be 1
+        (Get-ItemProperty -Path $keyA -Name 'V').V | Should -Be 1
+        (Get-ItemProperty -Path $keyB -Name 'V').V | Should -Be 2
+    }
+
+    It 'B1: existiaAntes com tipoAnterior nulo vira falha explicita' {
+        $key = "$script:TestRoot\TipoNulo"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+
+        Set-TmxRegistry -Path $key -Name 'V' -Value 2 -Type DWord
+
+        # forja o state.json: tipoAnterior desconhecido
+        $json = Get-Content -LiteralPath $script:run.StatePath -Raw | ConvertFrom-Json
+        $json.registros[0].tipoAnterior = $null
+        $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
+
+        $sum = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
+
+        $sum.falhas | Should -Be 1
+        $sum.itens[0].detalhe | Should -Match 'tipo anterior desconhecido'
+    }
+
+    It 'M5: -Quiet nao chama Write-TmxRollbackReport' {
+        $key = "$script:TestRoot\Quiet"
+        New-Item -Path $key -Force | Out-Null
+        New-ItemProperty -Path $key -Name 'V' -Value 1 -PropertyType DWord -Force | Out-Null
+        Set-TmxRegistry -Path $key -Name 'V' -Value 2 -Type DWord
+
+        Mock Write-TmxRollbackReport -ModuleName TweakMaxing { }
+
+        Undo-TweakMaxing -StatePath $script:run.StatePath -Quiet 6> $null | Out-Null
+
+        Should -Invoke Write-TmxRollbackReport -ModuleName TweakMaxing -Times 0
+    }
+
+    It 'despacho dinamico: tipo desconhecido com Undo-TmxFakeRecord definido e revertido; sem funcao e pulado' {
+        function global:Undo-TmxFakeRecord {
+            param([Parameter(Mandatory)] $Record)
+            "fake revertido: $($Record.alvo)"
+        }
+        try {
+            $json = Get-Content -LiteralPath $script:run.StatePath -Raw | ConvertFrom-Json
+            $json.registros = @(
+                [pscustomobject]@{
+                    tweakId = 'F1'; tipo = 'fake'; alvo = 'alvo-fake'
+                    detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                    existiaAntes = $false; valorNovo = $null
+                    reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+                },
+                [pscustomobject]@{
+                    tweakId = 'S1'; tipo = 'semfuncao'; alvo = 'alvo-semfuncao'
+                    detalhe = @{}; valorAnterior = $null; tipoAnterior = $null
+                    existiaAntes = $false; valorNovo = $null
+                    reversao = @{ tipo = 'nenhuma' }; status = 'aplicado'; aplicadoEm = (Get-Date).ToString('o'); erro = $null
+                }
+            )
+            $json | ConvertTo-Json -Depth 12 | Set-Content -LiteralPath $script:run.StatePath -Encoding UTF8
+
+            $sum = Undo-TweakMaxing -StatePath $script:run.StatePath 6> $null
+
+            $itemFake = $sum.itens | Where-Object { $_.tweakId -eq 'F1' }
+            $itemSem  = $sum.itens | Where-Object { $_.tweakId -eq 'S1' }
+
+            $itemFake.resultado | Should -Be 'revertido'
+            $itemFake.detalhe   | Should -Match 'fake revertido'
+            $itemSem.resultado  | Should -Be 'pulado'
+            $itemSem.detalhe    | Should -Match 'sem reversao automatica'
+        } finally {
+            Remove-Item function:global:Undo-TmxFakeRecord -ErrorAction SilentlyContinue
+        }
+    }
 }

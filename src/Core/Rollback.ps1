@@ -25,6 +25,23 @@ function ConvertTo-TmxTypedValue {
     }
 }
 
+function Test-TmxRegistryKeyEmpty {
+    # $true se a chave existe, nao tem valores (alem do default '') e nao tem subchaves.
+    param([Parameter(Mandatory)] [string] $Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return $false }
+    $key         = Get-Item -LiteralPath $Path
+    $temValores  = @($key.GetValueNames() | Where-Object { $_ -ne '' }).Count -gt 0
+    $temSubchave = @(Get-ChildItem -LiteralPath $Path -ErrorAction SilentlyContinue).Count -gt 0
+    -not $temValores -and -not $temSubchave
+}
+
+function Test-TmxPathDescendantOrEqual {
+    # $true se $Candidate e o proprio $Ancestor ou esta abaixo dele na arvore do registro.
+    param([Parameter(Mandatory)] [string] $Candidate, [Parameter(Mandatory)] [string] $Ancestor)
+    if ($Candidate -ieq $Ancestor) { return $true }
+    $Candidate.TrimEnd('\') -like ($Ancestor.TrimEnd('\') + '\*')
+}
+
 function Undo-TmxRegistryRecord {
     # Reverte um unico registro do tipo 'registry'. Retorna descricao do que fez.
     param([Parameter(Mandatory)] $Record)
@@ -35,10 +52,15 @@ function Undo-TmxRegistryRecord {
 
     switch ($tipoRev) {
         'restaurarValorAnterior' {
+            # B1: sem tipo anterior conhecido, nao ha default seguro (gravar como
+            # DWord poderia corromper um valor que era String/Binary/etc).
+            if ($Record.existiaAntes -eq $true -and [string]::IsNullOrEmpty($Record.tipoAnterior)) {
+                throw 'tipo anterior desconhecido; restaure pelo .reg em regbackup\'
+            }
             if (-not (Test-Path -LiteralPath $path)) {
                 New-Item -Path $path -Force -ErrorAction Stop | Out-Null
             }
-            $kind = if ($Record.tipoAnterior) { $Record.tipoAnterior } else { 'DWord' }
+            $kind = $Record.tipoAnterior
             $val  = ConvertTo-TmxTypedValue -Value $Record.valorAnterior -Kind $kind
             New-ItemProperty -LiteralPath $path -Name $name -Value $val -PropertyType $kind -Force -ErrorAction Stop | Out-Null
             return "valor restaurado para [$($Record.valorAnterior)] ($kind)"
@@ -57,15 +79,30 @@ function Undo-TmxRegistryRecord {
             }
             Remove-ItemProperty -LiteralPath $path -Name $name -ErrorAction SilentlyContinue
 
-            $key         = Get-Item -LiteralPath $path
-            $temValores  = @($key.GetValueNames() | Where-Object { $_ -ne '' }).Count -gt 0
-            $temSubchave = @(Get-ChildItem -LiteralPath $path -ErrorAction SilentlyContinue).Count -gt 0
+            # M2: apaga so os niveis que a escrita criou (ate $raiz), subindo
+            # nivel a nivel e parando no primeiro ancestral nao-vazio ou que
+            # ja existia antes da nossa escrita.
+            $raiz = if ($Record.detalhe.chaveRaizCriada) { "$($Record.detalhe.chaveRaizCriada)" } else { $path }
+            $removidas = New-Object 'System.Collections.Generic.List[string]'
 
-            if (-not $temValores -and -not $temSubchave) {
+            if (Test-TmxRegistryKeyEmpty -Path $path) {
                 Remove-Item -LiteralPath $path -Force -Recurse -ErrorAction Stop
-                return "valor removido e chave criada '$path' apagada"
+                $removidas.Add($path)
             }
-            return "valor removido; chave '$path' mantida (nao estava vazia)"
+
+            $cur = Split-Path -Path $path -Parent
+            while ($cur -and (Test-TmxPathDescendantOrEqual -Candidate $cur -Ancestor $raiz)) {
+                if (-not (Test-TmxRegistryKeyEmpty -Path $cur)) { break }
+                Remove-Item -LiteralPath $cur -Force -Recurse -ErrorAction Stop
+                $removidas.Add($cur)
+                if ($cur -ieq $raiz) { break }
+                $cur = Split-Path -Path $cur -Parent
+            }
+
+            if ($removidas.Count -eq 0) {
+                return "valor removido; chave '$path' mantida (nao estava vazia)"
+            }
+            return "valor removido e chaves removidas: $($removidas.ToArray() -join ', ')"
         }
 
         default {
@@ -161,7 +198,14 @@ function Undo-TweakMaxing {
         [Parameter(ParameterSetName = 'Path', Mandatory)]
         [string] $StatePath,
 
-        [string] $RunsRoot = (Get-TmxRunsRoot)
+        [string] $RunsRoot = (Get-TmxRunsRoot),
+
+        # Quando informado, so considera registros deste tweak (ainda em ordem
+        # inversa, ainda filtrado por status).
+        [string] $TweakId,
+
+        # Quando presente, nao chama Write-TmxRollbackReport (M5: uso programatico/UI propria).
+        [switch] $Quiet
     )
 
     # --- Resolver o state.json ----------------------------------------------
@@ -183,7 +227,11 @@ function Undo-TweakMaxing {
 
     # So revertemos o que chegou a tocar o sistema. 'falha' entra porque a
     # escrita pode ter sido parcial; reverter e seguro (restaura o anterior).
+    # 'revertido' fica de fora: A2 garante que um registro so e revertido uma vez.
     $aplicaveis = @($registros | Where-Object { $_.status -in @('aplicado', 'falha', 'aplicando') })
+    if ($TweakId) {
+        $aplicaveis = @($aplicaveis | Where-Object { $_.tweakId -ieq $TweakId })
+    }
     [array]::Reverse($aplicaveis)
 
     $resultados = New-Object 'System.Collections.Generic.List[object]'
@@ -212,8 +260,16 @@ function Undo-TweakMaxing {
                 'cmdlet'     { $r.detalhe = Undo-TmxCmdletRecord     -Record $rec; $r.resultado = 'revertido' }
                 'bcdedit'    { $r.detalhe = Undo-TmxBcdeditRecord    -Record $rec; $r.resultado = 'revertido' }
                 default {
-                    $r.detalhe   = "tipo '$($rec.tipo)' ainda sem reversao automatica"
-                    $r.resultado = 'pulado'
+                    # Despacho dinamico: tipos definidos fora do Core (scheduled task,
+                    # appx, feature, ...) sao revertidos se existir Undo-Tmx<Tipo>Record.
+                    $fn = "Undo-Tmx$([char]::ToUpper($rec.tipo[0]) + $rec.tipo.Substring(1))Record"
+                    if (Get-Command $fn -ErrorAction SilentlyContinue) {
+                        $r.detalhe = & $fn -Record $rec
+                        $r.resultado = 'revertido'
+                    } else {
+                        $r.detalhe = "tipo '$($rec.tipo)' sem reversao automatica"
+                        $r.resultado = 'pulado'
+                    }
                 }
             }
         } catch {
@@ -221,8 +277,21 @@ function Undo-TweakMaxing {
             $r.detalhe   = $_.Exception.Message
         }
 
+        # A2: registro revertido com sucesso fica marcado para nao ser revertido de novo.
+        if ($r.resultado -eq 'revertido') {
+            $rec | Add-Member -NotePropertyName status      -NotePropertyValue 'revertido' -Force
+            $rec | Add-Member -NotePropertyName revertidoEm -NotePropertyValue (Get-Date).ToString('o') -Force
+        }
+
         $resultados.Add($r)
         Write-TmxLog -Level INFO -Message "Reversao [$($r.resultado)] $($rec.alvo)" -Data @{ tweak = $rec.tweakId; detalhe = $r.detalhe }
+    }
+
+    # A2: persiste a lista completa (com os status atualizados) de volta no
+    # state.json, independente do processo em memoria. So grava se algo de
+    # fato foi revertido (nao em -WhatIf, onde nada muda de status).
+    if (@($resultados | Where-Object { $_.resultado -eq 'revertido' }).Count -gt 0) {
+        Save-TmxStateFile -StatePath $resolvedStatePath -Registros $registros
     }
 
     $summary = [pscustomobject]@{
@@ -234,6 +303,8 @@ function Undo-TweakMaxing {
         itens      = $resultados
     }
 
-    Write-TmxRollbackReport -Summary $summary
+    if (-not $Quiet) {
+        Write-TmxRollbackReport -Summary $summary
+    }
     $summary
 }

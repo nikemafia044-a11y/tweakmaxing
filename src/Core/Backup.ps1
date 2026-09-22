@@ -161,6 +161,42 @@ function Save-TmxState {
     Set-Content -LiteralPath $script:TmxRun.StatePath -Value $json -Encoding UTF8 -WhatIf:$false
 }
 
+function Save-TmxStateFile {
+    <#
+    .SYNOPSIS
+        Reescreve um state.json existente com uma nova lista de registros,
+        preservando runId/criadoEm/computador. Nao depende da execucao em
+        memoria (usado pelo rollback, que pode rodar num processo separado).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $StatePath,
+        [Parameter(Mandatory)] $Registros
+    )
+    if (-not (Test-Path -LiteralPath $StatePath)) {
+        throw "state.json nao encontrado em: $StatePath"
+    }
+    $existing = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
+
+    # .ToArray()/array vazio: mesma cautela do Save-TmxState (ver comentario la).
+    $arr = New-Object 'object[]' 0
+    if ($null -ne $Registros) {
+        $tmp = @($Registros)
+        if ($tmp.Count -gt 0) { $arr = $tmp }
+    }
+
+    $payload = [ordered]@{
+        runId      = $existing.runId
+        criadoEm   = $existing.criadoEm
+        computador = $existing.computador
+        registros  = $arr
+    }
+    $json = $payload | ConvertTo-Json -Depth 12
+    # -WhatIf:$false: reescrever o state.json apos reversao e a garantia contra
+    # reverter o mesmo registro duas vezes; nunca pode ser pulado.
+    Set-Content -LiteralPath $StatePath -Value $json -Encoding UTF8 -WhatIf:$false
+}
+
 function Import-TmxState {
     <#
     .SYNOPSIS

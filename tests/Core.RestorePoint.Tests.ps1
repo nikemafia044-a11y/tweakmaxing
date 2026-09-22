@@ -177,6 +177,19 @@ Describe 'New-TmxRestorePoint' -Tag 'RestorePoint' {
         $r.ok | Should -BeTrue
         (Get-Item -Path $script:ThrottleKey).GetValueNames() | Should -Not -Contain $script:ThrottleVal
     }
+
+    It 'B2: New-TmxRestorePoint -WhatIf nao zera o throttle nem chama o checkpoint' {
+        Set-ProtectionEnabled
+        Mock Invoke-TmxCheckpoint -ModuleName TweakMaxing { throw 'nao deveria ser chamado' }
+
+        $r = New-TmxRestorePoint -Description 'TweakMaxing teste' -ThrottleKeyPath $script:ThrottleKey -WhatIf
+
+        $r.ok    | Should -BeFalse
+        $r.etapa | Should -Be 'whatif'
+        Should -Invoke Invoke-TmxCheckpoint -ModuleName TweakMaxing -Times 0
+        (Get-ItemProperty -Path $script:ThrottleKey -Name $script:ThrottleVal).$($script:ThrottleVal) | Should -Be 1440
+        @(Import-TmxState -StatePath $script:run.StatePath).Count | Should -Be 0
+    }
 }
 
 Describe 'Invoke-TmxRestorePointStage' -Tag 'RestorePoint' {
@@ -206,28 +219,29 @@ Describe 'Invoke-TmxRestorePointStage' -Tag 'RestorePoint' {
         $s.mensagem | Should -Match 'IUnderstandTheRisk'
     }
 
-    It 'skip com a frase errada retorna exitCode 2' {
-        Mock Read-Host -ModuleName TweakMaxing { 'sim' }
-        $s = Invoke-TmxRestorePointStage -SkipRestorePoint -IUnderstandTheRisk 6> $null
+    It 'M4: -SkipRestorePoint sem -ConfirmSkip retorna exitCode 2' {
+        $s = Invoke-TmxRestorePointStage -SkipRestorePoint -IUnderstandTheRisk
         $s.proceed  | Should -BeFalse
         $s.exitCode | Should -Be 2
+        $s.mensagem | Should -Match 'confirmacao de pulo'
     }
 
-    It 'skip exige a frase exata, sensivel a maiusculas' {
-        Mock Read-Host -ModuleName TweakMaxing { 'sem ponto de restauracao' }
-        $s = Invoke-TmxRestorePointStage -SkipRestorePoint -IUnderstandTheRisk 6> $null
-        $s.proceed | Should -BeFalse
-    }
-
-    It 'skip com a frase certa prossegue e marca como pulado' {
-        Mock Read-Host -ModuleName TweakMaxing { 'SEM PONTO DE RESTAURACAO' }
+    It 'M4: -ConfirmSkip que retorna $true prossegue como pulado' {
         Mock New-TmxRestorePoint -ModuleName TweakMaxing { throw 'nao deveria ser chamado' }
 
-        $s = Invoke-TmxRestorePointStage -SkipRestorePoint -IUnderstandTheRisk 6> $null 3> $null
+        $s = Invoke-TmxRestorePointStage -SkipRestorePoint -IUnderstandTheRisk -ConfirmSkip { $true } 6> $null
 
-        $s.proceed | Should -BeTrue
-        $s.pulado  | Should -BeTrue
+        $s.proceed  | Should -BeTrue
+        $s.pulado   | Should -BeTrue
+        $s.exitCode | Should -Be 0
         Should -Invoke New-TmxRestorePoint -ModuleName TweakMaxing -Times 0
+    }
+
+    It 'M4: -ConfirmSkip que retorna $false retorna exitCode 2' {
+        $s = Invoke-TmxRestorePointStage -SkipRestorePoint -IUnderstandTheRisk -ConfirmSkip { $false }
+
+        $s.proceed  | Should -BeFalse
+        $s.exitCode | Should -Be 2
     }
 
     It 'sucesso do ponto prossegue com exitCode 0' {
