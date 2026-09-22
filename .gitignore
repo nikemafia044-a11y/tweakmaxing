@@ -9,3 +9,4 @@ runs/
 TestResults*.xml
 tests/gui/out/
 .claude/settings.local.json
+tools/jev/out/
