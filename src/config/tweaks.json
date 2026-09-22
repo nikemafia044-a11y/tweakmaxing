@@ -1,0 +1,3903 @@
+{
+  "tweaks": [
+    {
+      "id": "PRI-001",
+      "origem": {
+        "winutil": "WPFTweaksActivity",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/activity"
+      },
+      "nome": "Histórico de atividades - desativar",
+      "descricao": "Impede o Windows de publicar e enviar a linha do tempo de atividades para a conta Microsoft. O histórico da área de transferência continua funcionando.",
+      "categoria": "Privacidade",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava três políticas em HKLM que desligam o feed de atividades (EnableActivityFeed, PublishUserActivities, UploadUserActivities), cortando a coleta e o upload da linha do tempo.",
+      "evidencia": "São políticas de grupo documentadas pela Microsoft e o efeito é verificável na própria interface: a Linha do Tempo deixa de listar atividades. Não há ganho de desempenho envolvido, é uma escolha de privacidade.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "EnableActivityFeed",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "PublishUserActivities",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "UploadUserActivities",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "ENE-001",
+      "origem": {
+        "winutil": "WPFTweaksHiber",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/hiber"
+      },
+      "nome": "Hibernação - desativar",
+      "descricao": "Desliga a hibernação e apaga o hiberfil.sys, liberando espaço equivalente a boa parte da RAM. Em notebook, avalie antes: hibernar preserva a sessão quando a bateria acaba.",
+      "categoria": "Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Executa powercfg /hibernate off e zera HibernateEnabled, o que remove o arquivo hiberfil.sys e tira a opção Hibernar do menu de energia.",
+      "evidencia": "O efeito em disco é direto e mensurável: o hiberfil.sys some. É reversível com powercfg /hibernate on. Desativar também desliga a inicialização rápida, que depende do mesmo arquivo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\System\\CurrentControlSet\\Control\\Session Manager\\Power",
+          "name": "HibernateEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\FlyoutMenuSettings",
+          "name": "ShowHibernateOption",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxHibernation",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "APM-001",
+      "origem": {
+        "winutil": "WPFTweaksWidget",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/widget"
+      },
+      "nome": "Widgets - remover",
+      "descricao": "Remove os pacotes de Widgets da barra de tarefas (WidgetsPlatformRuntime e Client.WebExperience).",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Remover os Widgets desinstala pacotes do sistema",
+        "tradeoff": "A volta é por reinstalação pela Microsoft Store, não por restauração de backup. Pode não voltar exatamente na mesma versão.",
+        "frase": "ACEITO REMOVER WIDGETS"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Desinstala os pacotes Appx que servem o painel de Widgets e reinicia o Explorer para o ícone sumir da barra de tarefas.",
+      "evidencia": "A remoção é verificável (o pacote deixa de aparecer em Get-AppxPackage). O desfazer depende da Store, por isso classificamos como reversibilidade parcial e não como total.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxWidgets",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "INT-001",
+      "origem": {
+        "winutil": "WPFTweaksRevertStartMenu",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/revertstartmenu"
+      },
+      "nome": "Menu Iniciar - layout anterior",
+      "descricao": "Reativa o layout antigo do menu Iniciar anterior ao rollout do 25H2. Em builds mais novas do Windows este ajuste simplesmente não tem efeito.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Escreve EnabledState em um override de FeatureManagement, que é o mecanismo pelo qual o Windows liga e desliga funcionalidades em rollout gradual.",
+      "evidencia": "O efeito depende da build: onde a funcionalidade antiga ainda existe, o override funciona; onde ela foi removida do código, não acontece nada. Não prometemos resultado em builds recentes.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\ControlSet001\\Control\\FeatureManagement\\Overrides\\8\\3036241548",
+          "name": "EnabledState",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-002",
+      "origem": {
+        "winutil": "WPFTweaksDisableStoreSearch",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/disablestoresearch"
+      },
+      "nome": "Sugestões da Microsoft Store na busca - desativar",
+      "descricao": "Impede que o menu Iniciar sugira aplicativos da Store quando você procura um programa.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Nega leitura do arquivo store.db (o cache local do catálogo da Store) por ACL, então a busca não tem de onde tirar as sugestões.",
+      "evidencia": "O efeito é observável na própria busca e a ACL é consultável com icacls. É um bloqueio de arquivo, não uma política: se a Store recriar o banco, pode ser necessário reaplicar.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxStoreSearch",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "PRI-002",
+      "origem": {
+        "winutil": "WPFTweaksLocation",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/location"
+      },
+      "nome": "Rastreamento de localização - desativar",
+      "descricao": "Nega o consentimento de localização para o sistema e desliga o serviço de geolocalização (lfsvc).",
+      "categoria": "Privacidade",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Coloca o ConsentStore de localização em Deny, zera a permissão do sensor e desativa o serviço lfsvc, que é quem entrega coordenadas aos aplicativos.",
+      "evidencia": "São as mesmas chaves que a página de privacidade do Windows manipula. O risco é medio porque aplicativos legítimos que dependem de localização (clima, Mapas, Encontrar meu dispositivo) deixam de funcionar.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\CapabilityAccessManager\\ConsentStore\\location",
+          "name": "Value",
+          "value": "Deny",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Sensor\\Overrides\\{BFA794E4-F964-4FDB-90F6-51056BFE4B44}",
+          "name": "SensorPermissionState",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\Maps",
+          "name": "AutoUpdateEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "service",
+          "nome": "lfsvc",
+          "tipoInicio": "Disabled"
+        }
+      ]
+    },
+    {
+      "id": "SIS-001",
+      "origem": {
+        "winutil": "WPFTweaksServices",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/services"
+      },
+      "nome": "Serviços - colocar em Manual",
+      "descricao": "Coloca um punhado de serviços em Manual ou Desativado e ajusta SvcHostSplitThresholdInKB para a memória instalada, reduzindo a quantidade de processos svchost.exe.",
+      "categoria": "Sistema",
+      "tier": "FOLCLORE",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Mantido no catálogo apenas na seção anti-folclore, com as ações preservadas para quem quiser aplicar conscientemente.",
+      "evidencia": "Agrupar svchost muda a contagem de processos no Gerenciador de Tarefas, o que parece impressionante, mas não reduz o trabalho executado nem a memória realmente usada. Não conhecemos medição controlada que mostre ganho.",
+      "folclore": {
+        "oQueE": "Elevar o SvcHostSplitThresholdInKB para agrupar serviços em menos processos svchost.exe e colocar serviços do Windows em Manual, prometendo sistema mais leve.",
+        "porqueCircula": "A lista de processos fica visivelmente menor no Gerenciador de Tarefas, e uma lista menor passa a impressão de um sistema mais enxuto.",
+        "porqueNaoRecomendamos": "Os serviços continuam rodando, só que dentro do mesmo processo: o trabalho é o mesmo e a memória compartilhada muda pouco. Em compensação, agrupar serviços derruba o isolamento entre eles (uma falha derruba vários de uma vez) e desativar CscService e SharedAccess quebra arquivos offline e compartilhamento de conexão. Ganho não demonstrado, risco concreto.",
+        "seVoceQuiserMesmo": "Aplique só se souber exatamente quais serviços usa. O TweakMaxing reverte tudo pelo state.json."
+      },
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "service",
+          "nome": "CscService",
+          "tipoInicio": "Disabled"
+        },
+        {
+          "tipo": "service",
+          "nome": "DiagTrack",
+          "tipoInicio": "Disabled"
+        },
+        {
+          "tipo": "service",
+          "nome": "MapsBroker",
+          "tipoInicio": "Manual"
+        },
+        {
+          "tipo": "service",
+          "nome": "StorSvc",
+          "tipoInicio": "Manual"
+        },
+        {
+          "tipo": "service",
+          "nome": "SharedAccess",
+          "tipoInicio": "Disabled"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxSvcHostSplit",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "PRI-003",
+      "origem": {
+        "winutil": "WPFTweaksBraveDebloat",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/bravedebloat"
+      },
+      "nome": "Brave - remover recursos promocionais",
+      "descricao": "Desliga Brave Rewards, Wallet, VPN, Leo AI, Brave News, Talk, Tor e os pings de estatística, via políticas corporativas do navegador.",
+      "categoria": "Privacidade",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava políticas em HKLM\\SOFTWARE\\Policies\\BraveSoftware\\Brave, o canal oficial de administração do navegador, que o Brave lê na inicialização.",
+      "evidencia": "São políticas publicadas pelo próprio Brave e o resultado aparece em brave://policy. Classificamos como TECNICO porque o efeito é de interface e telemetria do navegador, não algo que medimos em desempenho do sistema.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveRewardsDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveWalletDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveVPNDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveAIChatEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveStatsPingEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveNewsDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveTalkDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "TorDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "BraveP3AEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "UrlKeyedAnonymizedDataCollectionEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "SafeBrowsingExtendedReportingEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\BraveSoftware\\Brave",
+          "name": "MetricsReportingEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "SIS-002",
+      "origem": {
+        "winutil": "WPFTweaksDisableWarningForUnsignedRdp",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/disablewarningforunsignedrdp"
+      },
+      "nome": "Aviso de arquivo RDP não assinado - desativar",
+      "descricao": "Remove o aviso que o Windows passou a exibir ao abrir arquivos .rdp sem assinatura.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define RedirectionWarningDialogVersion e RdpLaunchConsentAccepted, as chaves que o cliente de Área de Trabalho Remota consulta antes de mostrar o diálogo de consentimento.",
+      "evidencia": "O comportamento é observável ao abrir um .rdp. O risco é medio de propósito: esse aviso existe para você notar arquivos RDP de origem desconhecida, que podem redirecionar suas unidades locais para a máquina remota.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows NT\\Terminal Services\\Client",
+          "name": "RedirectionWarningDialogVersion",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Terminal Server Client",
+          "name": "RdpLaunchConsentAccepted",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "PRI-004",
+      "origem": {
+        "winutil": "WPFTweaksEdgeDebloat",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/edgedebloat"
+      },
+      "nome": "Microsoft Edge - remover recursos promocionais",
+      "descricao": "Desliga telemetria, Coleções, assistente de compras, Rewards, feedback e os banners de promoção do Edge por política, sem desinstalar o navegador.",
+      "categoria": "Privacidade",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava políticas em HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge, o mesmo canal que administradores usam em ambiente corporativo, e o Edge as aplica ao iniciar.",
+      "evidencia": "Todas as chaves estão no catálogo público de políticas do Edge e o resultado é conferível em edge://policy. É higiene de navegador, não desempenho medido.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\EdgeUpdate",
+          "name": "CreateDesktopShortcutDefault",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "PersonalizationReportingEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge\\ExtensionInstallBlocklist",
+          "name": "1",
+          "value": "ofefcgjbeghpigppfmkologfjadafddi",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ShowRecommendationsEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "HideFirstRunExperience",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "UserFeedbackAllowed",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ConfigureDoNotTrack",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "AlternateErrorPagesEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeCollectionsEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeShoppingAssistantEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "MicrosoftEdgeInsiderPromotionEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "ShowMicrosoftRewards",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "WebWidgetAllowed",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "DiagnosticData",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "EdgeAssetDeliveryServiceEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "WalletDonationEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Edge",
+          "name": "DefaultBrowserSettingsCampaignEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "PRI-005",
+      "origem": {
+        "winutil": "WPFTweaksConsumerFeatures",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/consumerfeatures"
+      },
+      "nome": "Recursos de consumidor - desativar",
+      "descricao": "Impede que o Windows instale aplicativos promovidos sozinho e reduz as sugestões de conteúdo da Microsoft Store.",
+      "categoria": "Privacidade",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook",
+        "minimo"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa a política DisableWindowsConsumerFeatures, que bloqueia o mecanismo de entrega de conteúdo promovido (jogos, apps sugeridos, blocos dinâmicos patrocinados).",
+      "evidencia": "É política documentada pela Microsoft e o efeito é claro: aplicativos param de aparecer sozinhos no menu Iniciar após uma instalação limpa. Entra no preset mínimo por ser de baixo risco e alto incômodo evitado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\CloudContent",
+          "name": "DisableWindowsConsumerFeatures",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "PRI-006",
+      "origem": {
+        "winutil": "WPFTweaksTelemetry",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/telemetry"
+      },
+      "nome": "Telemetria - reduzir ao mínimo",
+      "descricao": "Desliga ID de publicidade, experiências personalizadas, coleta de digitação e escrita à mão, envio automático de amostras ao Defender, e os serviços DiagTrack e WerSvc.",
+      "categoria": "Privacidade",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "desktop",
+        "notebook",
+        "minimo"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Combina políticas de AllowTelemetry e InputPersonalization com a desativação dos serviços que empacotam e enviam diagnósticos (DiagTrack, wermgr), cortando a coleta na origem e o transporte.",
+      "evidencia": "As chaves e serviços são documentados pela Microsoft. Vale o alerta honesto: desligar SubmitSamplesConsent reduz o envio de amostras ao Defender, o que também reduz a velocidade com que ele aprende sobre ameaças novas na sua máquina.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\AdvertisingInfo",
+          "name": "Enabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Privacy",
+          "name": "TailoredExperiencesWithDiagnosticDataEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Speech_OneCore\\Settings\\OnlineSpeechPrivacy",
+          "name": "HasAccepted",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Input\\TIPC",
+          "name": "Enabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitInkCollection",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization",
+          "name": "RestrictImplicitTextCollection",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\InputPersonalization\\TrainedDataStore",
+          "name": "HarvestContacts",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Personalization\\Settings",
+          "name": "AcceptedPrivacyPolicy",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\DataCollection",
+          "name": "AllowTelemetry",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Start_TrackProgs",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "PublishUserActivities",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Siuf\\Rules",
+          "name": "NumberOfSIUFInPeriod",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxTelemetry",
+          "parametros": {}
+        },
+        {
+          "tipo": "service",
+          "nome": "DiagTrack",
+          "tipoInicio": "Disabled"
+        },
+        {
+          "tipo": "service",
+          "nome": "WerSvc",
+          "tipoInicio": "Disabled"
+        }
+      ]
+    },
+    {
+      "id": "RED-001",
+      "origem": {
+        "winutil": "WPFTweaksDeliveryOptimization",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/deliveryoptimization"
+      },
+      "nome": "Otimização de Entrega - desativar",
+      "descricao": "Impede que o Windows use sua banda de upload para distribuir atualizações a outros PCs pela internet.",
+      "categoria": "Rede",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define DODownloadMode como 0, que é o modo somente HTTP direto da Microsoft, sem participação no enxame peer-to-peer de atualizações.",
+      "evidencia": "O modo é documentado pela Microsoft e o consumo de upload durante atualizações é observável no próprio painel de Otimização de Entrega. Em rede com vários PCs, o download total pode aumentar porque cada máquina baixa por conta própria.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\DeliveryOptimization",
+          "name": "DODownloadMode",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "APM-002",
+      "origem": {
+        "winutil": "WPFTweaksRemoveEdge",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/removeedge"
+      },
+      "nome": "Microsoft Edge - remover",
+      "descricao": "Desinstala o Edge usando o desinstalador oficial, destravado por um arquivo isca no diretório do Edge legado.",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Remover o Edge afeta partes do Windows que dependem dele",
+        "tradeoff": "Widgets, ajuda do Windows e alguns links internos usam o motor do Edge. A volta é reinstalando pelo winget, não por backup.",
+        "frase": "ACEITO REMOVER EDGE"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Cria um MicrosoftEdge.exe vazio na pasta do Edge legado, o que faz o instalador aceitar a desinstalação em nível de sistema, e então chama o setup.exe oficial com --uninstall.",
+      "evidencia": "O procedimento é o da própria Microsoft, apenas destravado. Não é reversível por backup: o desfazer reinstala pelo winget, e por isso marcamos reversibilidade parcial e risco alto.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxRemoveEdge",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "SIS-003",
+      "origem": {
+        "winutil": "WPFTweaksDisableBitLocker",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/disablebitlocker"
+      },
+      "nome": "BitLocker - desativar",
+      "descricao": "Descriptografa a unidade do sistema e desliga o BitLocker.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Sem BitLocker, quem tiver a máquina tem os arquivos",
+        "tradeoff": "A descriptografia leva tempo e uso de disco. Reativar exige criptografar tudo de novo, e a chave de recuperação anterior deixa de valer.",
+        "frase": "ACEITO DESATIVAR BITLOCKER"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Chama Disable-BitLocker na unidade do sistema, o que inicia a descriptografia completa do volume.",
+      "evidencia": "O estado é verificável com Get-BitLockerVolume. Vale dizer com todas as letras: em notebook, desligar o BitLocker é abrir mão da principal proteção contra perda ou furto do aparelho.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxBitLocker",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "SIS-004",
+      "origem": {
+        "winutil": "WPFTweaksUTC",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/utc"
+      },
+      "nome": "Relógio do hardware em UTC",
+      "descricao": "Faz o Windows interpretar o relógio da placa-mãe como UTC, igual ao Linux. Útil em dual boot para o horário parar de dançar.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define RealTimeIsUniversal, que instrui o Windows a tratar o relógio RTC como tempo universal em vez de hora local.",
+      "evidencia": "É o ajuste padrão recomendado para dual boot com Linux e o efeito é imediatamente observável no relógio. Em máquina só com Windows não traz benefício e pode confundir sincronização se o servidor de tempo estiver desligado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\TimeZoneInformation",
+          "name": "RealTimeIsUniversal",
+          "value": 1,
+          "valueType": "QWord"
+        }
+      ]
+    },
+    {
+      "id": "APM-003",
+      "origem": {
+        "winutil": "WPFTweaksRemoveOneDrive",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/removeonedrive"
+      },
+      "nome": "Microsoft OneDrive - remover",
+      "descricao": "Desinstala o OneDrive com o desinstalador próprio, limpa os resíduos e desativa o serviço OneSyncSvc. Seus arquivos já sincronizados permanecem na nuvem.",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Remover o OneDrive interrompe a sincronização",
+        "tradeoff": "Arquivos marcados como disponíveis só na nuvem podem ficar inacessíveis localmente até você baixá-los. A volta é reinstalar pelo winget.",
+        "frase": "ACEITO REMOVER ONEDRIVE"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Nega temporariamente a permissão de exclusão da pasta do OneDrive, roda o OneDriveSetup.exe /uninstall, remove os resíduos em LocalAppData e ProgramData, devolve a permissão e desativa o OneSyncSvc.",
+      "evidencia": "O desinstalador é o oficial da Microsoft. Antes de aplicar, confirme que nada importante está marcado como apenas na nuvem: o TweakMaxing não consegue restaurar arquivos que nunca estiveram no disco.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxRemoveOneDrive",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "INT-003",
+      "origem": {
+        "winutil": "WPFTweaksRemoveHomeAndGallery",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/removehomeandgallery"
+      },
+      "nome": "Início e Galeria do Explorer - remover",
+      "descricao": "Tira Início e Galeria do painel lateral do Explorador de Arquivos e faz Este Computador ser a pasta de abertura.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Desafixa os dois CLSIDs do namespace da árvore do Explorer e define LaunchTo como 1, que corresponde a Este Computador.",
+      "evidencia": "São chaves por usuário em HKCU, com efeito visível ao reabrir o Explorer e reversão trivial. Preferência de interface, sem relação com desempenho.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Classes\\CLSID\\{f874310e-b6b7-47dc-bc84-b9e6b38f5903}",
+          "name": "System.IsPinnedToNameSpaceTree",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Classes\\CLSID\\{e88865ea-0e1c-4e20-9aa6-edcd0212c87c}",
+          "name": "System.IsPinnedToNameSpaceTree",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "LaunchTo",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-004",
+      "origem": {
+        "winutil": "WPFTweaksDisplay",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/display"
+      },
+      "nome": "Efeitos visuais - priorizar desempenho",
+      "descricao": "Reduz animações, sombras e transparências do Windows, equivalente a marcar Ajustar para melhor desempenho em sysdm.cpl, e diminui o atraso de abertura dos menus.",
+      "categoria": "Interface",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define VisualFXSetting como 3 (personalizado) e desliga uma a uma as animações do Explorer, da barra de tarefas e do DWM, além de gravar a máscara binária UserPreferencesMask que controla os efeitos de janela.",
+      "evidencia": "A percepção de resposta melhora porque as animações deixam de existir, não porque o sistema ficou mais rápido: o tempo até a ação concluir é praticamente o mesmo. Em máquina moderna, o efeito é de sensação, e por isso é TECNICO e não MEDIDO.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SettingChange",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "DragFullWindows",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "MenuShowDelay",
+          "value": "200",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop\\WindowMetrics",
+          "name": "MinAnimate",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Keyboard",
+          "name": "KeyboardDelay",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ListviewAlphaSelect",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ListviewShadow",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "TaskbarAnimations",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\VisualEffects",
+          "name": "VisualFXSetting",
+          "value": 3,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\DWM",
+          "name": "EnableAeroPeek",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "TaskbarMn",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ShowTaskViewButton",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "SearchboxTaskbarMode",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "UserPreferencesMask",
+          "value": [
+            144,
+            18,
+            3,
+            128,
+            16,
+            0,
+            0,
+            0
+          ],
+          "valueType": "Binary"
+        }
+      ]
+    },
+    {
+      "id": "SIS-005",
+      "origem": {
+        "winutil": "WPFTweaksReservedStorage",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/reservedstorage"
+      },
+      "nome": "Armazenamento Reservado - desativar",
+      "descricao": "Libera os 7 a 10 GB que o Windows reserva para atualizações e arquivos temporários. Recomendado só em disco pequeno.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Usa DISM /Set-ReservedStorageState para desligar a reserva, devolvendo o espaço ao volume do sistema.",
+      "evidencia": "O espaço liberado é real e conferível. O contraponto também é real: sem a reserva, atualizações de recurso podem falhar por falta de espaço. Reative antes de uma atualização grande do Windows.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxReservedStorage",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "MAN-001",
+      "origem": {
+        "winutil": "WPFTweaksRestorePoint",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/restorepoint"
+      },
+      "nome": "Ponto de restauração - criar",
+      "descricao": "Cria um ponto de restauração do sistema e remove o intervalo mínimo de 24 horas entre criações.",
+      "categoria": "Manutenção",
+      "tier": "FOLCLORE",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Mantido na seção anti-folclore porque o TweakMaxing já cria um ponto de restauração obrigatório antes de qualquer escrita, tornando este item redundante como tweak.",
+      "evidencia": "Ponto de restauração é uma boa prática, não um ajuste de sistema. Listá-lo como tweak opcional dá a impressão errada de que é uma escolha; aqui ele é pré-requisito.",
+      "folclore": {
+        "oQueE": "Oferecer a criação do ponto de restauração como um item marcável na lista de tweaks, ao lado dos demais.",
+        "porqueCircula": "Ferramentas de tweak tradicionalmente colocam o ponto de restauração como a primeira caixa da lista, e o usuário se acostumou a vê-lo ali.",
+        "porqueNaoRecomendamos": "Não é um tweak: é rede de segurança. O TweakMaxing cria o ponto antes de qualquer alteração, sempre, sem depender de o usuário lembrar de marcar a caixa. Deixá-lo opcional só cria o risco de alguém desmarcar. A ação foi preservada aqui apenas por fidelidade ao catálogo de origem.",
+        "seVoceQuiserMesmo": "Aplicar não faz mal: você terá um segundo ponto de restauração. Zerar SystemRestorePointCreationFrequency faz cada execução criar um ponto novo, o que consome espaço em disco."
+      },
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\SystemRestore",
+          "name": "SystemRestorePointCreationFrequency",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-005",
+      "origem": {
+        "winutil": "WPFTweaksEndTaskOnTaskbar",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/endtaskontaskbar"
+      },
+      "nome": "Finalizar tarefa pelo botão direito",
+      "descricao": "Adiciona Finalizar tarefa ao menu de contexto dos programas na barra de tarefas.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa TaskbarEndTask, a chave de configurações de desenvolvedor que expõe o item Finalizar tarefa no menu da barra de tarefas.",
+      "evidencia": "É a mesma opção que existe em Configurações, Sistema, Para desenvolvedores. Efeito imediato, reversão trivial, sem custo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\\TaskbarDeveloperSettings",
+          "name": "TaskbarEndTask",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "MAN-002",
+      "origem": {
+        "winutil": "WPFTweaksStorage",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/storage"
+      },
+      "nome": "Sensor de Armazenamento - desativar",
+      "descricao": "Impede que o Windows apague temporários e esvazie a lixeira automaticamente.",
+      "categoria": "Manutenção",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Zera a chave 01 de StoragePolicy, que é o interruptor mestre do Sensor de Armazenamento.",
+      "evidencia": "O efeito aparece na própria página de Armazenamento das Configurações. É preferência: quem quer controlar a limpeza na mão desliga, quem prefere automático deixa ligado. Não há ganho de desempenho.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\StorageSense\\Parameters\\StoragePolicy",
+          "name": "01",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "APM-004",
+      "origem": {
+        "winutil": "WPFTweaksWindowsAI",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/windowsai"
+      },
+      "nome": "Windows AI - desativar e remover",
+      "descricao": "Remove Copilot, CoreAI e Office Hub, desativa o serviço WSAIFabricSvc, desliga o recurso Recall e esconde a página de componentes de IA nas Configurações.",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": true,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Isso remove pacotes e desativa um recurso opcional do Windows",
+        "tradeoff": "Copilot e Recall voltam por reinstalação e reativação de recurso, não por backup. Em Copilot+ PCs, parte da experiência do aparelho depende desses componentes.",
+        "frase": "ACEITO REMOVER WINDOWS AI"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Combina remoção dos pacotes Appx de IA, marcação de fim de vida do CoreAI para o usuário atual, desativação do serviço WSAIFabricSvc e desligamento do recurso opcional Recall.",
+      "evidencia": "Cada parte é verificável isoladamente (Get-AppxPackage, Get-Service, Get-WindowsOptionalFeature). Como a volta depende da Store e da reativação do recurso, a reversibilidade é parcial. O Windows pode reinstalar componentes de IA em atualizações futuras.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+          "name": "SettingsPageVisibility",
+          "value": "hide:aicomponents",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\WindowsNotepad",
+          "name": "DisableAIFeatures",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxWindowsAI",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "SIS-006",
+      "origem": {
+        "winutil": "WPFTweaksWPBT",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/wpbt"
+      },
+      "nome": "WPBT - desativar",
+      "descricao": "Impede que o firmware da placa-mãe injete e execute programas no Windows a cada boot, mecanismo usado por alguns fabricantes para reinstalar software sem consentimento.",
+      "categoria": "Sistema",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [
+        "desktop",
+        "notebook",
+        "minimo"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define DisableWpbtExecution no Session Manager, que instrui o Windows a ignorar a tabela WPBT fornecida pelo firmware UEFI.",
+      "evidencia": "A chave é documentada pela Microsoft justamente como mitigação de segurança do WPBT, que já foi usado como vetor de persistência. Entra no preset mínimo por ser baixo risco e ganho claro de controle sobre a própria máquina.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Session Manager",
+          "name": "DisableWpbtExecution",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "SIS-007",
+      "origem": {
+        "winutil": "WPFTweaksPreventDeviceMetadataFromNetwork",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/preventdevicemetadatafromnetwork"
+      },
+      "nome": "Aplicativos companheiros de dispositivos - bloquear",
+      "descricao": "Impede que o Windows baixe metadados e instale software extra ao conectar um dispositivo novo, como o anúncio que aparece ao plugar certos monitores.",
+      "categoria": "Sistema",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa PreventDeviceMetadataFromNetwork, que corta a consulta ao serviço de metadados de dispositivos usado para sugerir e instalar apps companheiros.",
+      "evidencia": "É política documentada. O efeito colateral honesto: ícones e nomes amigáveis de alguns dispositivos podem ficar genéricos, já que vêm desse mesmo serviço.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Device Metadata",
+          "name": "PreventDeviceMetadataFromNetwork",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "SIS-008",
+      "origem": {
+        "winutil": "WPFTweaksRazerBlock",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/razerblock"
+      },
+      "nome": "Instalação automática de software Razer - bloquear",
+      "descricao": "Impede o Windows Update de instalar o Razer Synapse sozinho ao conectar um periférico Razer. O hardware continua funcionando.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Desliga a busca automática de drivers em SearchOrderConfig, bloqueia co-instaladores e nega permissão de escrita na pasta que o instalador da Razer usa.",
+      "evidencia": "O bloqueio por ACL é verificável com icacls. O risco é medio porque DisableCoInstallers e SearchOrderConfig são globais: outros dispositivos também deixam de receber drivers e software auxiliar automaticamente pelo Windows Update.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\DriverSearching",
+          "name": "SearchOrderConfig",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Device Installer",
+          "name": "DisableCoInstallers",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxRazerBlock",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "SIS-009",
+      "origem": {
+        "winutil": "WPFTweaksLogiBlock",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/logiblock"
+      },
+      "nome": "Logi Download Assistant - bloquear",
+      "descricao": "Impede que o Windows Update reinstale o Logi Download Assistant junto com drivers Logitech. Mouse e teclado continuam funcionando.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Esvazia a pasta LogiDownloadAssistant e nega permissão de escrita nela, então o instalador não consegue mais se recriar.",
+      "evidencia": "A negação de ACL é conferível com icacls e o desfazer remove exatamente essa regra. Limitado a uma pasta, por isso risco baixo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxLogiBlock",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "INT-006",
+      "origem": {
+        "winutil": "WPFTweaksDisableNotifications",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/disablenotifications"
+      },
+      "nome": "Central de notificações e calendário - desativar",
+      "descricao": "Desliga todas as notificações do sistema, incluindo o calendário do relógio da barra de tarefas.",
+      "categoria": "Interface",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa DisableNotificationCenter e zera ToastEnabled, o que remove a central e impede a exibição de qualquer notificação toast.",
+      "evidencia": "O efeito é total, e é aí que mora o risco: alertas de segurança, avisos de bateria e lembretes de calendário também somem. Não é um filtro, é um corte geral.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "DisableNotificationCenter",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\PushNotifications",
+          "name": "ToastEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "RED-002",
+      "origem": {
+        "winutil": "WPFTweaksBlockAdobeNet",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/blockadobenet"
+      },
+      "nome": "Lista de bloqueio de domínios Adobe",
+      "descricao": "Acrescenta ao arquivo hosts uma lista de domínios de ativação e telemetria da Adobe, baixada de um repositório público de terceiros.",
+      "categoria": "Rede",
+      "tier": "FOLCLORE",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Mantido na seção anti-folclore: a ação baixa uma lista de um repositório de terceiros e a despeja no arquivo hosts do sistema.",
+      "evidencia": "O conteúdo despejado no hosts não é auditado por nós nem versionado: é o que estiver no repositório no momento da execução. Um arquivo hosts é um ponto de controle sensível de toda a resolução de nomes da máquina.",
+      "folclore": {
+        "oQueE": "Baixar uma lista de domínios mantida por terceiros e anexá-la ao arquivo hosts para bloquear servidores de ativação e telemetria da Adobe.",
+        "porqueCircula": "Circula em fóruns como solução contra pop-ups de licença dos aplicativos da Adobe, e funciona bem o suficiente para virar receita repetida.",
+        "porqueNaoRecomendamos": "Escrever no hosts conteúdo baixado da internet no momento da execução significa executar uma configuração que ninguém revisou nesta máquina, nesta versão. Se o repositório mudar, o que entra no seu hosts muda junto. Além disso, bloquear a ativação pode quebrar aplicativos Adobe legitimamente licenciados. O TweakMaxing faz backup do hosts antes de qualquer alteração, mas não endossa a prática.",
+        "seVoceQuiserMesmo": "O backup do hosts fica na pasta da execução e o desfazer restaura o arquivo original byte a byte."
+      },
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxAdobeBlock",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "INT-007",
+      "origem": {
+        "winutil": "WPFTweaksRightClickMenu",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/rightclickmenu"
+      },
+      "nome": "Menu de contexto clássico",
+      "descricao": "Restaura o menu do botão direito completo do Windows 10 no Explorador de Arquivos, no lugar do menu reduzido do Windows 11.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Cria a subchave InprocServer32 vazia sob o CLSID do menu novo, o que faz o shell não encontrar o manipulador e cair de volta no menu clássico.",
+      "evidencia": "É uma chave por usuário em HKCU, com efeito visível após reiniciar o Explorer e reversão pela simples remoção da chave. Nenhum arquivo de sistema é tocado.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxRightClickMenu",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "MAN-003",
+      "origem": {
+        "winutil": "WPFTweaksDiskCleanup",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/diskcleanup"
+      },
+      "nome": "Limpeza de disco - executar",
+      "descricao": "Roda a Limpeza de Disco na unidade C: e remove as versões antigas de componentes do Windows com DISM.",
+      "categoria": "Manutenção",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "nenhuma",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Arquivos apagados não voltam",
+        "tradeoff": "O ResetBase do DISM apaga as versões antigas de componentes: você deixa de poder desinstalar atualizações já instaladas do Windows.",
+        "frase": "ACEITO ACAO IRREVERSIVEL"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Executa cleanmgr com o perfil VERYLOWDISK e depois DISM /StartComponentCleanup /ResetBase, que compacta o repositório de componentes descartando as versões antigas.",
+      "evidencia": "O espaço liberado é real e mensurável no próprio disco. Também é definitivo: não há backup possível do que foi apagado, por isso a reversibilidade é nenhuma e exigimos confirmação por frase.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxDiskCleanup",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "MAN-004",
+      "origem": {
+        "winutil": "WPFTweaksDeleteTempFiles",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/deletetempfiles"
+      },
+      "nome": "Arquivos temporários - apagar",
+      "descricao": "Esvazia as pastas TEMP do usuário e do Windows.",
+      "categoria": "Manutenção",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "nenhuma",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Arquivos apagados não voltam",
+        "tradeoff": "Alguns instaladores e programas guardam dados de trabalho em TEMP. Se algo estiver em andamento, pode quebrar.",
+        "frase": "ACEITO ACAO IRREVERSIVEL"
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Remove o conteúdo de %TEMP% e de %SystemRoot%\\Temp, ignorando os arquivos que estiverem em uso.",
+      "evidencia": "O espaço liberado é imediato e conferível. Como exclusão de arquivo não tem desfazer, a reversibilidade é nenhuma e a confirmação por frase é obrigatória.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxTempFiles",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "RED-003",
+      "origem": {
+        "winutil": "WPFTweaksIPv46",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/ipv46"
+      },
+      "nome": "Preferir IPv4 sobre IPv6",
+      "descricao": "Mantém o IPv6 ativo, mas faz o Windows tentar IPv4 primeiro na resolução de nomes.",
+      "categoria": "Rede",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define DisabledComponents com o bit de política de prefixo, que reordena a tabela de preferência para colocar IPv4 à frente do IPv6.",
+      "evidencia": "A chave é documentada pela Microsoft. Faz diferença em redes onde o IPv6 está anunciado mas não roteia de verdade, porque evita a espera do timeout; em rede com IPv6 funcional, não há motivo para aplicar.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters",
+          "name": "DisabledComponents",
+          "value": 32,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "RED-004",
+      "origem": {
+        "winutil": "WPFTweaksTeredo",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/teredo"
+      },
+      "nome": "Teredo - desativar",
+      "descricao": "Desliga o túnel Teredo, que encapsula IPv6 sobre IPv4. Pode afetar o matchmaking de alguns jogos que dependem dele.",
+      "categoria": "Rede",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Combina netsh interface teredo set state disabled com o bit correspondente em DisabledComponents, desativando a interface de túnel.",
+      "evidencia": "O estado é conferível com netsh interface teredo show state. O aviso importa: alguns jogos e o Xbox Live usam Teredo para conexão ponto a ponto, e desligar pode piorar o matchmaking.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters",
+          "name": "DisabledComponents",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxTeredo",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "RED-005",
+      "origem": {
+        "winutil": "WPFTweaksDisableIPv6",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/disableipv6"
+      },
+      "nome": "IPv6 - desativar completamente",
+      "descricao": "Desliga o IPv6 em todos os adaptadores e no stack TCP/IP.",
+      "categoria": "Rede",
+      "tier": "FOLCLORE",
+      "risco": "alto",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Mantido na seção anti-folclore: desligar o IPv6 inteiro é uma receita antiga que hoje quebra mais do que resolve.",
+      "evidencia": "Componentes modernos do Windows assumem IPv6 disponível, inclusive parte do DirectAccess, do compartilhamento local e de serviços de loopback. A própria Microsoft desaconselha desabilitar o IPv6 no adaptador.",
+      "folclore": {
+        "oQueE": "Desmarcar o IPv6 em todos os adaptadores e zerar o stack via DisabledComponents, prometendo rede mais rápida e menos latência.",
+        "porqueCircula": "Em redes domésticas antigas o IPv6 era anunciado sem rotear, causando esperas de timeout; desligar resolvia o sintoma e virou receita geral.",
+        "porqueNaoRecomendamos": "O sintoma se resolve preferindo IPv4 (veja Preferir IPv4 sobre IPv6), sem desligar nada. Desabilitar o IPv6 por completo quebra recursos que dependem dele e é explicitamente desaconselhado pela Microsoft. Não conhecemos medição que mostre ganho de latência em rede saudável.",
+        "seVoceQuiserMesmo": "Prefira o item de preferência IPv4, que resolve o mesmo problema sem quebrar aplicações modernas."
+      },
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Services\\Tcpip6\\Parameters",
+          "name": "DisabledComponents",
+          "value": 255,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxIpv6",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "DES-001",
+      "origem": {
+        "winutil": "WPFTweaksDisableBGapps",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/disablebgapps"
+      },
+      "nome": "Aplicativos em segundo plano - desativar",
+      "descricao": "Impede que aplicativos da Microsoft Store rodem em segundo plano, de uma vez só em vez de um a um.",
+      "categoria": "Desempenho",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa GlobalUserDisabled em BackgroundAccessApplications, o interruptor global que o Windows 11 deixou de expor na interface.",
+      "evidencia": "O efeito em consumo de CPU e energia existe, mas depende de quantos apps de Store você realmente usa: em máquina sem apps de Store, não muda nada. Aplicativos param de receber notificações e de atualizar conteúdo em segundo plano.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\BackgroundAccessApplications",
+          "name": "GlobalUserDisabled",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "DES-002",
+      "origem": {
+        "winutil": "WPFTweaksDisableExplorerAutoDiscovery",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/essential-tweaks/disableexplorerautodiscovery"
+      },
+      "nome": "Descoberta automática de tipo de pasta - desativar",
+      "descricao": "Impede o Explorer de adivinhar o tipo de cada pasta pelo conteúdo, o que deixa a navegação mais previsível em pastas grandes. Em troca, o agrupamento automático deixa de funcionar.",
+      "categoria": "Desempenho",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "desktop",
+        "notebook"
+      ],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Apaga o banco de visualizações do Explorer (Bags e BagMRU) e define FolderType como NotSpecified para todas as pastas, o que elimina a varredura de conteúdo feita a cada abertura.",
+      "evidencia": "O travamento ao abrir pastas com muitos arquivos de mídia é um comportamento conhecido e reproduzível, e este ajuste o elimina. O custo é real: o Explorer perde o agrupamento e as colunas específicas por tipo de pasta. As chaves apagadas são exportadas para .reg antes da remoção.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxExplorerAutoDiscovery",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "SIS-010",
+      "origem": {
+        "winutil": "WPFToggleDetailedBSoD",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/detailedbsod"
+      },
+      "nome": "Tela azul detalhada",
+      "descricao": "Mostra os parâmetros técnicos do erro na tela azul, em vez de apenas o rosto triste e o código.",
+      "categoria": "Sistema",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa DisplayParameters e desliga o emoticon em CrashControl, fazendo o Windows imprimir os parâmetros do bugcheck na tela de erro.",
+      "evidencia": "São chaves de diagnóstico documentadas. Utilidade real para quem vai investigar a causa do travamento; nenhum efeito em desempenho.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\CrashControl",
+          "name": "DisplayParameters",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\CrashControl",
+          "name": "DisableEmoticon",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\CrashControl",
+          "name": "DisplayParameters",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\CrashControl",
+          "name": "DisableEmoticon",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-008",
+      "origem": {
+        "winutil": "WPFToggleBatteryPercentage",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/batterypercentage"
+      },
+      "nome": "Porcentagem da bateria na bandeja",
+      "descricao": "Mostra o número da carga ao lado do ícone de bateria na barra de tarefas.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa IsBatteryPercentageEnabled em Explorer\\Advanced, a chave que o shell lê para desenhar o texto junto ao ícone.",
+      "evidencia": "Preferência de interface por usuário, com efeito imediato e reversão trivial. Faz sentido só em aparelho com bateria.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "IsBatteryPercentageEnabled",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "IsBatteryPercentageEnabled",
+          "valueType": "DWord",
+          "remove": true
+        }
+      ]
+    },
+    {
+      "id": "INT-009",
+      "origem": {
+        "winutil": "WPFToggleDarkMode",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/darkmode"
+      },
+      "nome": "Tema escuro do Windows",
+      "descricao": "Aplica o tema escuro ao sistema e aos aplicativos.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Zera AppsUseLightTheme e SystemUsesLightTheme em Themes\\Personalize e notifica o Explorer para redesenhar a interface.",
+      "evidencia": "São as mesmas chaves que a página de Personalização altera. Em telas OLED há economia de energia real; em LCD, é só preferência visual.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+          "name": "AppsUseLightTheme",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+          "name": "SystemUsesLightTheme",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxExplorerRestart",
+          "parametros": {}
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+          "name": "AppsUseLightTheme",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize",
+          "name": "SystemUsesLightTheme",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-010",
+      "origem": {
+        "winutil": "WPFToggleShowExt",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/showext"
+      },
+      "nome": "Extensões de arquivo visíveis",
+      "descricao": "Mostra as extensões (.exe, .png, .pdf) no Explorador de Arquivos.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Zera HideFileExt em Explorer\\Advanced e reinicia o Explorer para a mudança valer nas janelas abertas.",
+      "evidencia": "Além da preferência, tem valor de segurança verificável: com as extensões ocultas, um arquivo chamado foto.png.exe aparece como foto.png.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "HideFileExt",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxExplorerRestart",
+          "parametros": {}
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "HideFileExt",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-011",
+      "origem": {
+        "winutil": "WPFToggleHiddenFiles",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/hiddenfiles"
+      },
+      "nome": "Arquivos ocultos visíveis",
+      "descricao": "Exibe arquivos e pastas marcados como ocultos no Explorador de Arquivos.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa Hidden em Explorer\\Advanced e reinicia o Explorer para aplicar nas janelas já abertas.",
+      "evidencia": "Mesma opção da faixa Exibir do Explorer. Útil para manutenção; em uso cotidiano, polui a listagem com arquivos de sistema.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Hidden",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxExplorerRestart",
+          "parametros": {}
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "Hidden",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "SIS-011",
+      "origem": {
+        "winutil": "WPFToggleVerboseLogon",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/verboselogon"
+      },
+      "nome": "Mensagens detalhadas de logon",
+      "descricao": "Mostra o que o Windows está fazendo durante a entrada e a saída, em vez da mensagem genérica.",
+      "categoria": "Sistema",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa VerboseStatus nas políticas do sistema, que faz o Winlogon imprimir cada etapa em vez de Aguarde.",
+      "evidencia": "Chave documentada e muito útil para descobrir qual serviço ou script de logon está segurando a inicialização. Não acelera nada por si só, apenas mostra.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+          "name": "VerboseStatus",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
+          "name": "VerboseStatus",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "APM-005",
+      "origem": {
+        "winutil": "WPFToggleNewOutlook",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/newoutlook"
+      },
+      "nome": "Novo Outlook",
+      "descricao": "Alterna entre o Outlook clássico e a versão nova, e controla a migração automática.",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta UseNewOutlook e as políticas de migração no perfil do Office 16.0, que são as chaves consultadas ao abrir o cliente.",
+      "evidencia": "Chaves do próprio Office, com efeito ao reabrir o aplicativo. A versão nova não tem paridade de recursos com a clássica, então a escolha depende do que você usa.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Office\\16.0\\Outlook\\Preferences",
+          "name": "UseNewOutlook",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Office\\16.0\\Outlook\\Options\\General",
+          "name": "HideNewOutlookToggle",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Office\\16.0\\Outlook\\Options\\General",
+          "name": "DoNewOutlookAutoMigration",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Office\\16.0\\Outlook\\Preferences",
+          "name": "NewOutlookMigrationUserSetting",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Microsoft\\Office\\16.0\\Outlook\\Preferences",
+          "name": "UseNewOutlook",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Office\\16.0\\Outlook\\Options\\General",
+          "name": "HideNewOutlookToggle",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Office\\16.0\\Outlook\\Options\\General",
+          "name": "DoNewOutlookAutoMigration",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Policies\\Microsoft\\Office\\16.0\\Outlook\\Preferences",
+          "name": "NewOutlookMigrationUserSetting",
+          "valueType": "DWord",
+          "remove": true
+        }
+      ]
+    },
+    {
+      "id": "INT-012",
+      "origem": {
+        "winutil": "WPFToggleScrollbars",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/scrollbars"
+      },
+      "nome": "Barras de rolagem sempre visíveis",
+      "descricao": "Impede que as barras de rolagem encolham e sumam quando não estão em uso.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Zera DynamicScrollbars em Control Panel\\Accessibility, a chave de acessibilidade que controla o encolhimento automático.",
+      "evidencia": "Mesma opção disponível em Configurações, Acessibilidade, Efeitos visuais. Ganho de usabilidade, sem efeito em desempenho.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility",
+          "name": "DynamicScrollbars",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility",
+          "name": "DynamicScrollbars",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "SIS-012",
+      "origem": {
+        "winutil": "WPFMultiplaneOverlay",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/multiplaneoverlay"
+      },
+      "nome": "Multiplane Overlay (MPO)",
+      "descricao": "Controla a composição por múltiplas camadas do DWM. Desativar é o contorno conhecido para piscadas, telas pretas e travamentos de vídeo em algumas GPUs.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "combobox",
+      "opcoes": [
+        {
+          "valor": "habilitado",
+          "rotulo": "Habilitado (padrão do Windows)",
+          "acoes": [
+            {
+              "tipo": "registry",
+              "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm",
+              "name": "OverlayTestMode",
+              "valueType": "DWord",
+              "remove": true
+            },
+            {
+              "tipo": "registry",
+              "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+              "name": "DisableOverlays",
+              "valueType": "DWord",
+              "remove": true
+            }
+          ]
+        },
+        {
+          "valor": "desabilitadoCompat",
+          "rotulo": "Desabilitado (compatibilidade)",
+          "acoes": [
+            {
+              "tipo": "registry",
+              "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm",
+              "name": "OverlayTestMode",
+              "value": 5,
+              "valueType": "DWord"
+            },
+            {
+              "tipo": "registry",
+              "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+              "name": "DisableOverlays",
+              "valueType": "DWord",
+              "remove": true
+            }
+          ]
+        },
+        {
+          "valor": "desabilitadoTotal",
+          "rotulo": "Totalmente desabilitado",
+          "acoes": [
+            {
+              "tipo": "registry",
+              "path": "HKLM:\\SOFTWARE\\Microsoft\\Windows\\Dwm",
+              "name": "OverlayTestMode",
+              "value": 5,
+              "valueType": "DWord"
+            },
+            {
+              "tipo": "registry",
+              "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\GraphicsDrivers",
+              "name": "DisableOverlays",
+              "value": 1,
+              "valueType": "DWord"
+            }
+          ]
+        }
+      ],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "OverlayTestMode igual a 5 desliga o caminho de overlay do DWM; DisableOverlays igual a 1 vai além e desliga o suporte no driver gráfico.",
+      "evidencia": "É um contorno de compatibilidade amplamente relatado para piscadas de tela em placas Intel e NVIDIA, não um ajuste de desempenho. Desligar pode aumentar o consumo de energia, já que a composição volta para o caminho comum.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "INT-013",
+      "origem": {
+        "winutil": "WPFToggleMouseAcceleration",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/mouseacceleration"
+      },
+      "nome": "Aceleração do mouse",
+      "descricao": "Faz o cursor andar mais ou menos conforme a velocidade do movimento físico. Desligado, a relação entre mão e cursor fica constante.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta MouseSpeed e os dois limiares em Control Panel\\Mouse, que é a curva de precisão aprimorada do ponteiro.",
+      "evidencia": "São exatamente as chaves por trás de Aprimorar a precisão do ponteiro no painel do mouse. Para mira consistente em jogos, desligar é a recomendação comum; para uso geral, é preferência pessoal.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseSpeed",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold1",
+          "value": 6,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold2",
+          "value": 10,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseSpeed",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold1",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Mouse",
+          "name": "MouseThreshold2",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-014",
+      "origem": {
+        "winutil": "WPFToggleNumLock",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/numlock"
+      },
+      "nome": "Num Lock ao iniciar",
+      "descricao": "Define se o Num Lock começa ligado ao entrar no Windows.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava InitialKeyboardIndicators no perfil do usuário e no perfil padrão, que é o valor lido pelo Winlogon ao montar a sessão.",
+      "evidencia": "Chave clássica e bem documentada. Observação honesta: o firmware da placa-mãe também tem uma opção de Num Lock no boot, e ela pode sobrepor este ajuste.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKU:\\.Default\\Control Panel\\Keyboard",
+          "name": "InitialKeyboardIndicators",
+          "value": "2",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Keyboard",
+          "name": "InitialKeyboardIndicators",
+          "value": "2",
+          "valueType": "String"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKU:\\.Default\\Control Panel\\Keyboard",
+          "name": "InitialKeyboardIndicators",
+          "value": "0",
+          "valueType": "String"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Keyboard",
+          "name": "InitialKeyboardIndicators",
+          "value": "0",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "INT-015",
+      "origem": {
+        "winutil": "WPFToggleWindowSnapping",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/windowsnapping"
+      },
+      "nome": "Encaixe de janelas",
+      "descricao": "Liga ou desliga o encaixe automático ao arrastar uma janela até a borda da tela.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta WindowArrangementActive em Control Panel\\Desktop, o interruptor do Snap na área de trabalho.",
+      "evidencia": "Mesma opção de Configurações, Sistema, Multitarefas. Preferência pura, sem impacto em desempenho.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "WindowArrangementActive",
+          "value": "1",
+          "valueType": "String"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "WindowArrangementActive",
+          "value": "0",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "ENE-002",
+      "origem": {
+        "winutil": "WPFToggleStandbyFix",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/standbyfix"
+      },
+      "nome": "Rede durante suspensão moderna (S0)",
+      "descricao": "Mantém a conexão de rede ativa durante a suspensão moderna, útil para acordar por rede ou continuar recebendo mensagens.",
+      "categoria": "Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Define ACSettingIndex na política de energia de conectividade em standby, que decide se o rádio permanece associado durante o S0.",
+      "evidencia": "É a política de energia documentada para conectividade em standby. O custo é direto: manter a rede ativa consome bateria durante a suspensão.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\f15576e8-98b7-4186-b944-eafa664402d9",
+          "name": "ACSettingIndex",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\SOFTWARE\\Policies\\Microsoft\\Power\\PowerSettings\\f15576e8-98b7-4186-b944-eafa664402d9",
+          "name": "ACSettingIndex",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "ENE-003",
+      "origem": {
+        "winutil": "WPFToggleS3Sleep",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/s3sleep"
+      },
+      "nome": "Suspensão S3 em vez de suspensão moderna",
+      "descricao": "Força o modo de suspensão clássico S3, que corta energia da CPU e mantém apenas a memória. Em notebooks modernos, pode impedir o aparelho de acordar ou de suspender corretamente.",
+      "categoria": "Energia",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": [
+          "os.isLaptop == true :: em notebook com suspensao moderna, forcar S3 costuma impedir o aparelho de acordar"
+        ]
+      },
+      "porque": "Define PlatformAoAcOverride como 0, o que instrui o Windows a ignorar a suspensão moderna anunciada pelo firmware e usar o estado S3 do ACPI.",
+      "evidencia": "Funciona apenas quando o firmware realmente oferece o S3; em plataformas modernas que só implementam S0, o resultado comum é a máquina não suspender ou não acordar. Por isso é TECNICO, alto risco e bloqueado em notebook.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Power",
+          "name": "PlatformAoAcOverride",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\Power",
+          "name": "PlatformAoAcOverride",
+          "valueType": "DWord",
+          "remove": true
+        }
+      ]
+    },
+    {
+      "id": "INT-016",
+      "origem": {
+        "winutil": "WPFToggleHideSettingsHome",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/hidesettingshome"
+      },
+      "nome": "Página inicial das Configurações",
+      "descricao": "Mostra ou esconde a página Início do aplicativo Configurações, aquela com cartões de recomendação.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Usa SettingsPageVisibility com show:home ou hide:home, o mecanismo oficial de visibilidade de páginas do aplicativo Configurações.",
+      "evidencia": "É a mesma chave que administradores usam para esconder páginas inteiras das Configurações. Efeito imediato ao reabrir o aplicativo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+          "name": "SettingsPageVisibility",
+          "value": "show:home",
+          "valueType": "String"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\Explorer",
+          "name": "SettingsPageVisibility",
+          "value": "hide:home",
+          "valueType": "String"
+        }
+      ]
+    },
+    {
+      "id": "PRI-007",
+      "origem": {
+        "winutil": "WPFToggleBingSearch",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/bingsearch"
+      },
+      "nome": "Busca web do Bing no menu Iniciar",
+      "descricao": "Liga ou desliga os resultados da web na caixa de busca do Windows.",
+      "categoria": "Privacidade",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta BingSearchEnabled na chave de Search do usuário, que decide se o termo digitado é enviado ao Bing além da busca local.",
+      "evidencia": "Com a busca web desligada, o termo digitado deixa de sair da máquina, o que é verificável por captura de rede. A busca local por arquivos e aplicativos continua igual.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "BingSearchEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-017",
+      "origem": {
+        "winutil": "WPFToggleLoginBlur",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/loginblur"
+      },
+      "nome": "Desfoque acrílico na tela de logon",
+      "descricao": "Liga ou desliga o efeito de vidro fosco no plano de fundo da tela de entrada.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta DisableAcrylicBackgroundOnLogon nas políticas do sistema, que controla o efeito acrílico desenhado pelo Winlogon.",
+      "evidencia": "É a política documentada para esse efeito. Em máquinas antigas, remover o desfoque deixa a tela de logon aparecer mais rápido; em hardware atual, é preferência visual.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "DisableAcrylicBackgroundOnLogon",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\System",
+          "name": "DisableAcrylicBackgroundOnLogon",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-018",
+      "origem": {
+        "winutil": "WPFToggleDisableLockscreen",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/disablelockscreen"
+      },
+      "nome": "Tela de bloqueio - pular",
+      "descricao": "Vai direto para a tela de senha no boot e ao acordar, sem a tela de bloqueio com imagem.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa NoLockScreen nas políticas de personalização, que faz o Windows pular a camada de tela de bloqueio.",
+      "evidencia": "Política documentada, com efeito visível no próximo boot. Não remove a exigência de senha: apenas elimina o passo de dispensar a imagem.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization",
+          "name": "NoLockScreen",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Personalization",
+          "name": "NoLockScreen",
+          "valueType": "DWord",
+          "remove": true
+        }
+      ]
+    },
+    {
+      "id": "INT-019",
+      "origem": {
+        "winutil": "WPFToggleStartMenuRecommendations",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/startmenurecommendations"
+      },
+      "nome": "Seção Recomendados do menu Iniciar",
+      "descricao": "Mostra ou esconde a área de recomendações do menu Iniciar. Atenção: esconder também desliga o Windows Spotlight na tela de bloqueio.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta HideRecommendedSection no PolicyManager e nas políticas do Explorer, que é o caminho usado pelas edições Educação para esconder a seção.",
+      "evidencia": "O efeito aparece após reiniciar o Explorer. O efeito colateral no Spotlight é conhecido e está declarado aqui de propósito: vem de a chave marcar a máquina como ambiente educacional.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start",
+          "name": "HideRecommendedSection",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Education",
+          "name": "IsEducationEnvironment",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "HideRecommendedSection",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxExplorerRestart",
+          "parametros": {}
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Start",
+          "name": "HideRecommendedSection",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\PolicyManager\\current\\device\\Education",
+          "name": "IsEducationEnvironment",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Policies\\Microsoft\\Windows\\Explorer",
+          "name": "HideRecommendedSection",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-020",
+      "origem": {
+        "winutil": "WPFToggleStickyKeys",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/stickykeys"
+      },
+      "nome": "Teclas de aderência",
+      "descricao": "Liga ou desliga o recurso que dispara ao apertar Shift cinco vezes seguidas.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta a máscara de bits Flags em Accessibility\\StickyKeys, que controla ativação, atalho e som do recurso.",
+      "evidencia": "É a mesma configuração da página de Acessibilidade, Teclado. Desligar evita o diálogo interrompendo jogos; quem depende do recurso não deve desativar.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility\\StickyKeys",
+          "name": "Flags",
+          "value": 506,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Accessibility\\StickyKeys",
+          "name": "Flags",
+          "value": 58,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-021",
+      "origem": {
+        "winutil": "WPFToggleTaskbarAlignment",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/taskbaralignment"
+      },
+      "nome": "Ícones da barra de tarefas centralizados",
+      "descricao": "Alterna entre ícones centralizados (padrão do Windows 11) e alinhados à esquerda.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta TaskbarAl em Explorer\\Advanced e reinicia o Explorer para a barra ser redesenhada.",
+      "evidencia": "Mesma opção de Configurações, Personalização, Barra de tarefas. Preferência pura.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "TaskbarAl",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxExplorerRestart",
+          "parametros": {}
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "TaskbarAl",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-022",
+      "origem": {
+        "winutil": "WPFToggleTaskbarSearch",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/taskbarsearch"
+      },
+      "nome": "Ícone de busca na barra de tarefas",
+      "descricao": "Mostra ou esconde o botão de busca da barra de tarefas.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta SearchboxTaskbarMode na chave de Search, que define entre nenhum, ícone, caixa ou caixa com rótulo.",
+      "evidencia": "Mesma opção de Configurações, Personalização, Barra de tarefas. Esconder libera espaço; o atalho de teclado continua funcionando.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "SearchboxTaskbarMode",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Search",
+          "name": "SearchboxTaskbarMode",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "INT-023",
+      "origem": {
+        "winutil": "WPFToggleTaskView",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/taskview"
+      },
+      "nome": "Ícone de Visão de Tarefas",
+      "descricao": "Mostra ou esconde o botão de Visão de Tarefas na barra de tarefas.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta ShowTaskViewButton em Explorer\\Advanced, o interruptor do botão na barra.",
+      "evidencia": "Mesma opção de Configurações, Personalização, Barra de tarefas. Esconder o botão não desliga as áreas de trabalho virtuais.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ShowTaskViewButton",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+          "name": "ShowTaskViewButton",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "DES-003",
+      "origem": {
+        "winutil": "WPFToggleGameMode",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/gamemode"
+      },
+      "nome": "Modo Jogo",
+      "descricao": "Liga ou desliga o Modo Jogo, que prioriza o jogo em primeiro plano e suspende algumas tarefas em segundo plano.",
+      "categoria": "Desempenho",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ajusta AllowAutoGameMode e AutoGameModeEnabled em Software\\Microsoft\\GameBar, as chaves do interruptor de Modo Jogo.",
+      "evidencia": "Mesma opção de Configurações, Jogos. Os resultados relatados variam bastante por configuração: em algumas máquinas ajuda a estabilizar o frame time, em outras não muda nada perceptível. Por isso não prometemos número.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\GameBar",
+          "name": "AllowAutoGameMode",
+          "value": 1,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\GameBar",
+          "name": "AutoGameModeEnabled",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\GameBar",
+          "name": "AllowAutoGameMode",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\GameBar",
+          "name": "AutoGameModeEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "SIS-013",
+      "origem": {
+        "winutil": "WPFToggleLongPaths",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/customize-preferences/longpaths"
+      },
+      "nome": "Caminhos longos",
+      "descricao": "Permite caminhos de arquivo acima de 260 caracteres para os programas que declaram suporte.",
+      "categoria": "Sistema",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "toggle",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Ativa LongPathsEnabled em Control\\FileSystem, que libera o limite MAX_PATH para aplicações com o manifesto adequado.",
+      "evidencia": "Chave documentada pela Microsoft. Vale o alerta: programas antigos que não declaram suporte continuam limitados, então o problema pode persistir em parte das ferramentas.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+          "name": "LongPathsEnabled",
+          "value": 1,
+          "valueType": "DWord"
+        }
+      ],
+      "toggleDesligar": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SYSTEM\\CurrentControlSet\\Control\\FileSystem",
+          "name": "LongPathsEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ]
+    },
+    {
+      "id": "PRI-008",
+      "origem": {
+        "winutil": "WPFOOSUbutton",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/oosubutton"
+      },
+      "nome": "O&O ShutUp10++ - abrir site oficial",
+      "descricao": "Abre a página oficial do O&O ShutUp10++ no navegador. O TweakMaxing não baixa nem executa o programa por você.",
+      "categoria": "Privacidade",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "button",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Abre apenas a URL oficial no navegador padrão. Por decisão de projeto, nunca baixamos nem executamos binários de terceiros em nome do usuário.",
+      "evidencia": "O ShutUp10++ é uma ferramenta de privacidade conhecida e respeitada, mas é software de terceiro: baixar e rodar é uma decisão que cabe a você, com a verificação que julgar necessária.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxOosu",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "RED-006",
+      "origem": {
+        "winutil": "WPFchangedns",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/z--advanced-tweaks---caution/changedns"
+      },
+      "nome": "Servidor DNS",
+      "descricao": "Troca os servidores DNS dos adaptadores ativos, ou volta a obtê-los do roteador por DHCP.",
+      "categoria": "Rede",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "combobox",
+      "opcoes": [
+        {
+          "valor": "dhcp",
+          "rotulo": "Padrão (DHCP)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "dhcp"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "Google",
+          "rotulo": "Google (8.8.8.8)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "Google"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "Cloudflare",
+          "rotulo": "Cloudflare (1.1.1.1)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "Cloudflare"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "Cloudflare_Malware",
+          "rotulo": "Cloudflare com filtro de malware (1.1.1.2)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "Cloudflare_Malware"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "Cloudflare_Malware_Adult",
+          "rotulo": "Cloudflare com filtro de malware e conteúdo adulto (1.1.1.3)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "Cloudflare_Malware_Adult"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "Open_DNS",
+          "rotulo": "OpenDNS (208.67.222.222)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "Open_DNS"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "Quad9",
+          "rotulo": "Quad9 (9.9.9.9)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "Quad9"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "AdGuard_Ads_Trackers",
+          "rotulo": "AdGuard com filtro de anúncios e rastreadores (94.140.14.14)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "AdGuard_Ads_Trackers"
+              }
+            }
+          ]
+        },
+        {
+          "valor": "AdGuard_Ads_Trackers_Malware_Adult",
+          "rotulo": "AdGuard com filtro completo (94.140.14.15)",
+          "acoes": [
+            {
+              "tipo": "funcao",
+              "nome": "Set-TmxDns",
+              "parametros": {
+                "provedor": "AdGuard_Ads_Trackers_Malware_Adult"
+              }
+            }
+          ]
+        }
+      ],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava os endereços IPv4 e IPv6 do provedor escolhido nos adaptadores ativos com Set-DnsClientServerAddress, guardando os servidores anteriores de cada adaptador para a reversão.",
+      "evidencia": "A latência de resolução depende da sua rota até o resolvedor, então o melhor provedor varia por região e operadora: não existe um vencedor universal. Provedores com filtro de malware ou conteúdo adulto bloqueiam domínios, o que é um recurso, não um defeito, mas pode gerar falso positivo.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": []
+    },
+    {
+      "id": "ENE-004",
+      "origem": {
+        "winutil": "WPFAddUltPerf",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/performance-plans---not-for-laptops/addultperf"
+      },
+      "nome": "Plano de energia Desempenho Máximo - ativar",
+      "descricao": "Duplica e ativa o plano Ultimate Performance, que remove o estacionamento de núcleos e mantém as latências de energia no mínimo. Não use em notebook.",
+      "categoria": "Energia",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [
+        "desktop"
+      ],
+      "controle": "button",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": [
+          "os.isLaptop == true :: em notebook derruba autonomia e o boost termico"
+        ]
+      },
+      "porque": "Duplica o esquema Ultimate Performance embutido no Windows e o ativa, o que elimina o estacionamento de núcleos e as transições agressivas de estado de energia.",
+      "evidencia": "O plano é oficial da Microsoft, criado para estações de trabalho. O efeito mais consistente é na variação de latência sob carga leve, não no desempenho de pico. Em notebook, o custo em autonomia e temperatura é imediato, por isso bloqueamos.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxUltimatePowerPlan",
+          "parametros": {}
+        }
+      ]
+    },
+    {
+      "id": "ENE-005",
+      "origem": {
+        "winutil": "WPFRemoveUltPerf",
+        "link": "https://winutil.christitus.com/code-reference/tweaks/performance-plans---not-for-laptops/removeultperf"
+      },
+      "nome": "Plano de energia Desempenho Máximo - remover",
+      "descricao": "Remove os planos Desempenho Máximo duplicados e devolve o sistema a um plano padrão.",
+      "categoria": "Energia",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "button",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Apaga com powercfg os esquemas duplicados de Desempenho Máximo depois de registrar os GUIDs, para que o desfazer possa recriá-los.",
+      "evidencia": "A lista de esquemas é conferível com powercfg /list antes e depois. Recriar o plano é apenas duplicar o modelo embutido, então a reversão é completa.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxRemoveUltimatePowerPlan",
+          "parametros": {}
+        }
+      ]
+    }
+  ]
+}

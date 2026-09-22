@@ -1,0 +1,24 @@
+{
+  "_comentario": "Descrições em pt-BR para o catálogo de aplicativos. Chave = id do aplicativo em reference/winutil/config/applications.json. Campos aceitos: nome, descricao. O que não estiver aqui usa o texto original em inglês.",
+
+  "7zip": { "descricao": "Compactador de arquivos livre e de código aberto. Abre e cria zip, 7z, rar, tar e a maioria dos formatos usados no dia a dia." },
+  "brave": { "descricao": "Navegador baseado em Chromium com bloqueio de anúncios e rastreadores ativado por padrão." },
+  "firefox": { "descricao": "Navegador da Mozilla, com motor próprio e forte ênfase em privacidade e controle do usuário." },
+  "googlechrome": { "descricao": "Navegador do Google, o mais usado no mundo e referência de compatibilidade para sites." },
+  "vscode": { "nome": "Visual Studio Code", "descricao": "Editor de código da Microsoft, leve e extensível, com suporte a depuração e Git integrados." },
+  "git": { "descricao": "Sistema de controle de versão distribuído. Base para praticamente todo fluxo de trabalho moderno de desenvolvimento." },
+  "powertoys": { "descricao": "Coleção de utilitários da Microsoft para usuários avançados: FancyZones, seletor de cores, renomeação em lote e busca rápida." },
+  "vlc": { "descricao": "Reprodutor de mídia que toca praticamente qualquer formato sem precisar instalar codecs." },
+  "obs": { "descricao": "Estúdio de gravação e transmissão ao vivo, livre e de código aberto." },
+  "notepadplus": { "descricao": "Editor de texto leve com realce de sintaxe, abas e busca em múltiplos arquivos." },
+  "bitwarden": { "descricao": "Gerenciador de senhas de código aberto, com sincronização entre dispositivos." },
+  "sharex": { "descricao": "Ferramenta de captura de tela e gravação com fluxo de upload e edição configurável." },
+  "windowsterminal": { "descricao": "Terminal moderno da Microsoft, com abas, painéis e suporte a PowerShell, CMD e WSL." },
+  "steam": { "descricao": "Loja e biblioteca de jogos da Valve, com sincronização de saves na nuvem." },
+  "discord": { "descricao": "Aplicativo de voz, vídeo e texto usado por comunidades de jogos e trabalho." },
+  "malwarebytes": { "descricao": "Ferramenta de remoção de malware, usada como segunda opinião ao lado do antivírus principal." },
+  "revo": { "descricao": "Desinstalador que remove também os resíduos de registro e arquivos deixados para trás." },
+  "winrar": { "descricao": "Compactador tradicional, o único que cria arquivos .rar. Versão gratuita com lembrete de licença." },
+  "rufus": { "descricao": "Cria pendrives inicializáveis a partir de imagens ISO, inclusive do Windows." },
+  "crystaldiskinfo": { "descricao": "Lê os dados S.M.A.R.T. dos discos e avisa sobre desgaste ou falha iminente." }
+}

@@ -1,0 +1,386 @@
+{
+  "recursos": [
+    {
+      "id": "WPFFeaturesdotnet",
+      "nome": ".NET Framework (Versions 2, 3, 4) - Enable",
+      "descricao": ".NET and .NET Framework is a developer platform made up of tools, programming languages, and libraries for building many different types of applications.",
+      "categoria": "Recursos",
+      "controle": "toggle",
+      "feature": [
+        "NetFx4-AdvSrvs",
+        "NetFx3"
+      ],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFixesNTPPool",
+      "nome": "NTP Server - Enable",
+      "descricao": "Replaces the default Windows NTP server (time.windows.com) with pool.ntp.org for improved time synchronization accuracy and reliability.",
+      "categoria": "Correcoes",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFFixesNTPPool",
+      "funcao": "Invoke-TmxFixNtpPool",
+      "comando": null
+    },
+    {
+      "id": "WPFFeatureshyperv",
+      "nome": "Hyper-V - Enable",
+      "descricao": "Hyper-V is a hardware virtualization product developed by Microsoft that allows users to create and manage virtual machines.",
+      "categoria": "Recursos",
+      "controle": "toggle",
+      "feature": [
+        "Microsoft-Hyper-V-All"
+      ],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFeatureslegacymedia",
+      "nome": "Legacy Media Components (WMP, DirectPlay) - Enable",
+      "descricao": "Enables legacy programs from previous versions of Windows.",
+      "categoria": "Recursos",
+      "controle": "toggle",
+      "feature": [
+        "WindowsMediaPlayer",
+        "MediaPlayback",
+        "DirectPlay",
+        "LegacyComponents"
+      ],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFeaturewsl",
+      "nome": "Windows Subsystem for Linux (WSL) - Enable",
+      "descricao": "Windows Subsystem for Linux is an optional feature of Windows that allows Linux programs to run natively on Windows without the need for a separate virtual machine or dual booting.",
+      "categoria": "Recursos",
+      "controle": "toggle",
+      "feature": [
+        "VirtualMachinePlatform",
+        "Microsoft-Windows-Subsystem-Linux"
+      ],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFeaturenfs",
+      "nome": "Network File System (NFS) - Enable",
+      "descricao": "Network File System (NFS) is a mechanism for storing files on a network.",
+      "categoria": "Recursos",
+      "controle": "toggle",
+      "feature": [
+        "ServicesForNFS-ClientOnly",
+        "ClientForNFS-Infrastructure",
+        "NFS-Administration"
+      ],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFeatureRegBackup",
+      "nome": "Registry Backup (Daily Task 12:30am) - Enable",
+      "descricao": "Enables daily registry backup, previously disabled by Microsoft in Windows 10 1803.",
+      "categoria": "Recursos",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFeatureEnableLegacyRecovery",
+      "nome": "Legacy F8 Boot Recovery - Enable",
+      "descricao": "Enables Advanced Boot Options screen that lets you start Windows in advanced troubleshooting modes.",
+      "categoria": "Recursos",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "bcdedit /set bootmenupolicy legacy"
+    },
+    {
+      "id": "WPFFeatureDisableLegacyRecovery",
+      "nome": "Legacy F8 Boot Recovery - Disable",
+      "descricao": "Disables Advanced Boot Options screen that lets you start Windows in advanced troubleshooting modes.",
+      "categoria": "Recursos",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "bcdedit /set bootmenupolicy standard"
+    },
+    {
+      "id": "WPFFeaturesSandbox",
+      "nome": "Windows Sandbox - Enable",
+      "descricao": "Windows Sandbox is a lightweight virtual machine that provides a temporary desktop environment to safely run applications and programs in isolation.",
+      "categoria": "Recursos",
+      "controle": "toggle",
+      "feature": [
+        "Containers-DisposableClientVM"
+      ],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": null
+    },
+    {
+      "id": "WPFFeatureInstall",
+      "nome": "Install Features",
+      "descricao": "",
+      "categoria": "Recursos",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFFeatureInstall",
+      "funcao": "Invoke-TmxFeatureInstall",
+      "comando": null
+    },
+    {
+      "id": "WPFPanelAutologin",
+      "nome": "AutoLogon - Run",
+      "descricao": "",
+      "categoria": "Correcoes",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFPanelAutologin",
+      "funcao": "Invoke-TmxFixAutologin",
+      "comando": null
+    },
+    {
+      "id": "WPFFixesUpdate",
+      "nome": "Windows Update - Reset",
+      "descricao": "",
+      "categoria": "Correcoes",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFFixesUpdate",
+      "funcao": "Invoke-TmxFixWindowsUpdate",
+      "comando": null
+    },
+    {
+      "id": "WPFFixesNetwork",
+      "nome": "Network - Reset",
+      "descricao": "",
+      "categoria": "Correcoes",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFFixesNetwork",
+      "funcao": "Invoke-TmxFixNetwork",
+      "comando": null
+    },
+    {
+      "id": "WPFPanelDISM",
+      "nome": "System Corruption Scan - Run",
+      "descricao": "",
+      "categoria": "Correcoes",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFSystemRepair",
+      "funcao": "Invoke-TmxFixSystemRepair",
+      "comando": null
+    },
+    {
+      "id": "WPFFixesWinget",
+      "nome": "WinGet - Reinstall",
+      "descricao": "",
+      "categoria": "Correcoes",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFFixesWinget",
+      "funcao": "Invoke-TmxFixWinget",
+      "comando": null
+    },
+    {
+      "id": "WPFPanelComputer",
+      "nome": "Computer Management",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "compmgmt.msc"
+    },
+    {
+      "id": "WPFPanelControl",
+      "nome": "Control Panel",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "control"
+    },
+    {
+      "id": "WPFPanelMouse",
+      "nome": "Mouse Properties",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "main.cpl"
+    },
+    {
+      "id": "WPFPanelNetwork",
+      "nome": "Network Connections",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "ncpa.cpl"
+    },
+    {
+      "id": "WPFPanelPower",
+      "nome": "Power Panel",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "powercfg.cpl"
+    },
+    {
+      "id": "WPFPanelPrinter",
+      "nome": "Printer Panel",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "Start-Process 'shell:::{A8A91A66-3A7D-4424-8D24-04E180695C7A}'"
+    },
+    {
+      "id": "WPFPanelPrograms",
+      "nome": "Programs and Features",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "appwiz.cpl"
+    },
+    {
+      "id": "WPFPanelRegion",
+      "nome": "Region",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "intl.cpl"
+    },
+    {
+      "id": "WPFPanelSecurity",
+      "nome": "Security and Maintenance",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "wscui.cpl"
+    },
+    {
+      "id": "WPFPanelSound",
+      "nome": "Sound Settings",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "mmsys.cpl"
+    },
+    {
+      "id": "WPFPanelSystem",
+      "nome": "System Properties",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "sysdm.cpl"
+    },
+    {
+      "id": "WPFPanelTimedate",
+      "nome": "Time and Date",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "timedate.cpl"
+    },
+    {
+      "id": "WPFPanelFirewall",
+      "nome": "Windows Defender Firewall",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "firewall.cpl"
+    },
+    {
+      "id": "WPFPanelRestore",
+      "nome": "Windows Restore",
+      "descricao": "",
+      "categoria": "Paineis",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": null,
+      "funcao": null,
+      "comando": "rstrui.exe"
+    },
+    {
+      "id": "WPFWinUtilInstallPSProfile",
+      "nome": "CTT PowerShell Profile - Install",
+      "descricao": "",
+      "categoria": "Perfil PowerShell",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WinUtilInstallPSProfile",
+      "funcao": "Invoke-TmxInstallPSProfile",
+      "comando": null
+    },
+    {
+      "id": "WPFWinUtilUninstallPSProfile",
+      "nome": "CTT PowerShell Profile - Remove",
+      "descricao": "",
+      "categoria": "Perfil PowerShell",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WinUtilUninstallPSProfile",
+      "funcao": "Invoke-TmxUninstallPSProfile",
+      "comando": null
+    },
+    {
+      "id": "WPFWinUtilSSHServer",
+      "nome": "OpenSSH Server - Enable",
+      "descricao": "",
+      "categoria": "Remoto",
+      "controle": "button",
+      "feature": [],
+      "funcaoWinUtil": "Invoke-WPFSSHServer",
+      "funcao": "Invoke-TmxSSHServer",
+      "comando": null
+    }
+  ]
+}

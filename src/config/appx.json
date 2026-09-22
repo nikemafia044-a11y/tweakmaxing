@@ -1,0 +1,242 @@
+{
+  "appx": [
+    {
+      "id": "WPFAppxMicrosoft_WindowsFeedbackHub",
+      "nome": "Feedback Hub",
+      "descricao": "Allows users to submit bug reports, feature suggestions, and diagnostic data directly to Microsoft.",
+      "pacote": "Microsoft.WindowsFeedbackHub",
+      "storeId": "9NBLGGH4R32N"
+    },
+    {
+      "id": "WPFAppxMicrosoft_GetHelp",
+      "nome": "Get Help",
+      "descricao": "Provides access to automated troubleshooting guides, support documentation, and direct Microsoft customer assistance.",
+      "pacote": "Microsoft.GetHelp",
+      "storeId": "9PKDZBMV1H3T"
+    },
+    {
+      "id": "WPFAppxMicrosoft_OutlookForWindows",
+      "nome": "Outlook for Windows",
+      "descricao": "Provides modern email management, calendar scheduling, and contact organization features.",
+      "pacote": "Microsoft.OutlookForWindows",
+      "storeId": "9NRX63209R7B"
+    },
+    {
+      "id": "WPFAppxMSTeams",
+      "nome": "Microsoft Teams",
+      "descricao": "Facilitates instant messaging, video conferencing, file sharing, and workspace collaboration.",
+      "pacote": "MSTeams",
+      "storeId": "XP8BT8DW290MPQ"
+    },
+    {
+      "id": "WPFAppxClipchamp_Clipchamp",
+      "nome": "Clipchamp",
+      "descricao": "Provides a user-friendly video editor with built-in templates, effects, and timeline editing tools.",
+      "pacote": "Clipchamp.Clipchamp",
+      "storeId": "9P1J8S7CCWWT"
+    },
+    {
+      "id": "WPFAppxMicrosoft_MicrosoftOfficeHub",
+      "nome": "Microsoft 365",
+      "descricao": "Serves as a centralized launcher and dashboard for accessing cloud-based Microsoft 365 apps and recent documents.",
+      "pacote": "Microsoft.MicrosoftOfficeHub",
+      "storeId": "9WZDNCRD29V9"
+    },
+    {
+      "id": "WPFAppxMicrosoft_ZuneMusic",
+      "nome": "Media Player",
+      "descricao": "Plays local audio and video files with modern playlist management and casting capabilities.",
+      "pacote": "Microsoft.ZuneMusic",
+      "storeId": "9WZDNCRFJ3PT"
+    },
+    {
+      "id": "WPFAppxMicrosoft_BingSearch",
+      "nome": "Bing Search",
+      "descricao": "Integrates Microsoft Bing search capabilities and web services directly into the operating system.",
+      "pacote": "Microsoft.BingSearch",
+      "storeId": "9NZBF4GT040C"
+    },
+    {
+      "id": "WPFAppxMicrosoftCorporationII_QuickAssist",
+      "nome": "Quick Assist",
+      "descricao": "Enables secure remote technical support and screen sharing over an internet connection.",
+      "pacote": "MicrosoftCorporationII.QuickAssist",
+      "storeId": "9P7BP5VNWKX5"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsDevHome",
+      "nome": "Dev Home",
+      "descricao": "Provides a specialized dashboard for software developer environment setups, repository syncing, and hardware widgets.",
+      "pacote": "Microsoft.Windows.DevHome",
+      "storeId": "9N8MHTPHNGVV"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsCrossDevice",
+      "nome": "Mobile Devices",
+      "descricao": "Manages system-level background connectivity with paired mobile devices. Removing this may disable cross-device features such as phone screen mirroring, file transfer, and mobile hotspot handoff integrated into Windows Settings.",
+      "pacote": "MicrosoftWindows.CrossDevice",
+      "storeId": "9NTXGKQ8P7N0"
+    },
+    {
+      "id": "WPFAppxMicrosoft_Todos",
+      "nome": "To Do",
+      "descricao": "Creates, tracks, and synchronizes personal tasks, smart lists, and daily reminders.",
+      "pacote": "Microsoft.Todos",
+      "storeId": "9NBLGGH5R558"
+    },
+    {
+      "id": "WPFAppxMicrosoft_PowerAutomateDesktop",
+      "nome": "Power Automate",
+      "descricao": "Automates repetitive workflows and desktop tasks using low-code visual scripting.",
+      "pacote": "Microsoft.PowerAutomateDesktop",
+      "storeId": "9NFTCH6J7FHV"
+    },
+    {
+      "id": "WPFAppxMicrosoft_YourPhone",
+      "nome": "Phone Link",
+      "descricao": "Synchronizes text messages, phone notifications, photos, and calls from a mobile device to the desktop.",
+      "pacote": "Microsoft.YourPhone",
+      "storeId": "9NMPJ99VJBWV"
+    },
+    {
+      "id": "WPFAppxMicrosoft_MicrosoftStickyNotes",
+      "nome": "Sticky Notes",
+      "descricao": "Creates quick, floating text notes on the desktop that automatically sync across devices.",
+      "pacote": "Microsoft.MicrosoftStickyNotes",
+      "storeId": "9NBLGGH4QGHW"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsSoundRecorder",
+      "nome": "Sound Recorder",
+      "descricao": "Records and trims live audio inputs with simple microphone adjustment controls.",
+      "pacote": "Microsoft.WindowsSoundRecorder",
+      "storeId": "9WZDNCRFHWKN"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsAlarms",
+      "nome": "Clock",
+      "descricao": "Features world clocks, alarms, countdown timers, stopwatches, and dedicated focus session tracking.",
+      "pacote": "Microsoft.WindowsAlarms",
+      "storeId": "9WZDNCRFJ3PR"
+    },
+    {
+      "id": "WPFAppxMicrosoft_Paint",
+      "nome": "Paint",
+      "descricao": "Provides built-in digital sketching, basic image editing, and pixel-level graphic manipulation tools.",
+      "pacote": "Microsoft.Paint",
+      "storeId": "9PCFS5B6T72H"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsNotepad",
+      "nome": "Notepad",
+      "descricao": "Provides a lightweight text editor with multi-tab support for plain text files and code snippets.",
+      "pacote": "Microsoft.WindowsNotepad",
+      "storeId": "9MSMLRH6LZF3"
+    },
+    {
+      "id": "WPFAppxMicrosoft_ScreenSketch",
+      "nome": "Snipping Tool",
+      "descricao": "Captures screenshots or screen recordings with built-in markup, image cropping, and optical character recognition (OCR).",
+      "pacote": "Microsoft.ScreenSketch",
+      "storeId": "9MZ95KL8MR0L"
+    },
+    {
+      "id": "WPFAppxMicrosoft_Copilot",
+      "nome": "Copilot",
+      "descricao": "Launches the Microsoft AI companion for contextual answers, creative writing assistance, and intelligent web search.",
+      "pacote": "Microsoft.Copilot",
+      "storeId": "9NHT9RB2F4HD"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsCalculator",
+      "nome": "Calculator",
+      "descricao": "Performs standard arithmetic, scientific operations, programming calculations, and unit conversions.",
+      "pacote": "Microsoft.WindowsCalculator",
+      "storeId": "9WZDNCRFHVN5"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsCamera",
+      "nome": "Camera",
+      "descricao": "Captures photographs and records video files via connected webcams or imaging hardware.",
+      "pacote": "Microsoft.WindowsCamera",
+      "storeId": "9WZDNCRFJBBG"
+    },
+    {
+      "id": "WPFAppxMicrosoft_WindowsPhotos",
+      "nome": "Photos",
+      "descricao": "Organizes, views, and crops local images with basic color adjustment and album creation tools.",
+      "pacote": "Microsoft.Windows.Photos",
+      "storeId": "9WZDNCRFJBH4"
+    },
+    {
+      "id": "WPFAppxMicrosoft_BingNews",
+      "nome": "News",
+      "descricao": "Aggregates breaking news headlines, personalized article feeds, and world current events.",
+      "pacote": "Microsoft.BingNews",
+      "storeId": "9WZDNCRFHVFW"
+    },
+    {
+      "id": "WPFAppxMicrosoft_BingWeather",
+      "nome": "Weather",
+      "descricao": "Displays local real-time weather tracking, radar maps, and historical meteorological forecasts.",
+      "pacote": "Microsoft.BingWeather",
+      "storeId": "9WZDNCRFJ3Q2"
+    },
+    {
+      "id": "WPFAppxMicrosoft_GamingApp",
+      "nome": "Xbox App",
+      "descricao": "Serves as the primary gaming library manager, social community interface, and PC Game Pass dashboard.",
+      "pacote": "Microsoft.GamingApp",
+      "storeId": "9MV0B5HZVK9Z"
+    },
+    {
+      "id": "WPFAppxMicrosoft_XboxGamingOverlay",
+      "nome": "Xbox Game Bar",
+      "descricao": "Provides customizable in-game status widgets, audio balancing sliders, system monitoring tools, and gameplay recording.",
+      "pacote": "Microsoft.XboxGamingOverlay",
+      "storeId": "9NZKPSTSNW4P"
+    },
+    {
+      "id": "WPFAppxMicrosoft_XboxIdentityProvider",
+      "nome": "Xbox Identity Provider",
+      "descricao": "Manages Xbox network user authentication and background account validation for connected titles. Warning: removing this may break Microsoft account sign-in for non-Xbox games and apps that rely on this authentication pipeline.",
+      "pacote": "Microsoft.XboxIdentityProvider",
+      "storeId": "9WZDNCRD1HKW"
+    },
+    {
+      "id": "WPFAppxMicrosoft_XboxSpeechToTextOverlay",
+      "nome": "Xbox Speech To Text Overlay",
+      "descricao": "Provides system-level live accessibility captions and voice-to-text translation for gaming chat networks.",
+      "pacote": "Microsoft.XboxSpeechToTextOverlay",
+      "storeId": null
+    },
+    {
+      "id": "WPFAppxMicrosoft_Xbox_TCUI",
+      "nome": "Xbox TCUI",
+      "descricao": "Provides core account connection UI modules for single sign-on flows within game titles. Warning: removing this may break Microsoft account authentication in games and apps that do not otherwise require the Xbox app.",
+      "pacote": "Microsoft.Xbox.TCUI",
+      "storeId": null
+    },
+    {
+      "id": "WPFAppxMicrosoft_StartExperiencesApp",
+      "nome": "Start Experiences App",
+      "descricao": "Powers the Windows Widgets board, delivering a personalized feed of news, weather, sports, and finance content.",
+      "pacote": "Microsoft.StartExperiencesApp",
+      "storeId": "9PC1H9VN18CM"
+    },
+    {
+      "id": "WPFAppxMicrosoft_MicrosoftSolitaireCollection",
+      "nome": "Solitaire Collection",
+      "descricao": "Bundles built-in card game modes including Klondike, Spider, FreeCell, Pyramid, and TriPeaks alongside daily challenges.",
+      "pacote": "Microsoft.MicrosoftSolitaireCollection",
+      "storeId": null
+    },
+    {
+      "id": "WPFAppxMicrosoft_ZuneVideo",
+      "nome": "Movies & TV",
+      "descricao": "The default video player and storefront for purchasing or renting media.",
+      "pacote": "Microsoft.ZuneVideo",
+      "storeId": "9WZDNCRFJ3P2"
+    }
+  ]
+}
