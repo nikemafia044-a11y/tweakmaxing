@@ -13,8 +13,16 @@ function ConvertFrom-TmxWingetListOutput {
         As colunas de winget list sao separadas por 2+ espacos (Name/Id/Version
         [/Available] [/Source]); dividir por posicao de caractere quebra com
         nomes de largura variavel (CJK etc.), entao o parse divide por
-        '\s{2,}' em vez de contar colunas fixas. Uma linha de separador
-        (soh tracos) marca onde os dados comecam; linhas que nao dividem em
+        '\s{2,}' em vez de contar colunas fixas.
+
+        O inicio dos dados e achado PELA LINHA SEPARADORA (uma linha de so
+        tracos, "^-{10,}$"), nunca pelo texto do cabecalho: winget nao
+        localiza os nomes das colunas ("Name"/"Id"/"Version" ficam em ingles
+        mesmo num Windows pt-BR - confirmado nesta maquina), mas outra
+        versao/locale poderia mostrar "Nome/ID/Versao" (com acento no real).
+        A linha imediatamente
+        ANTES do separador e o cabecalho (nao e usada para nomear campos, so
+        para confirmar que existe uma linha ali). Linhas que nao dividem em
         pelo menos 3 campos (rodape, "N upgrades available.", linhas em
         branco) sao ignoradas.
     #>
@@ -23,16 +31,12 @@ function ConvertFrom-TmxWingetListOutput {
 
     $linhas = @($Texto -split "`r?`n")
 
-    $idxCabecalho = -1
+    $idxSeparador = -1
     for ($i = 0; $i -lt $linhas.Count; $i++) {
-        if ($linhas[$i] -match '^\s*Name\s+Id\s+Version') { $idxCabecalho = $i; break }
+        if ($linhas[$i].Trim() -match '^-{10,}$') { $idxSeparador = $i; break }
     }
-    if ($idxCabecalho -lt 0) { return @() }
-
-    $idxSeparador = $idxCabecalho + 1
-    if ($idxSeparador -ge $linhas.Count -or $linhas[$idxSeparador].Trim() -notmatch '^-+$') {
-        return @()
-    }
+    # >= 1: precisa existir uma linha de cabecalho antes do separador.
+    if ($idxSeparador -lt 1) { return @() }
 
     $itens = New-Object System.Collections.Generic.List[object]
     for ($i = $idxSeparador + 1; $i -lt $linhas.Count; $i++) {
@@ -73,7 +77,7 @@ function Get-TmxInstalledPackages {
     [CmdletBinding()]
     param([switch] $Catalog)
 
-    $r = Invoke-TmxWingetProcess -Arguments @('list', '--accept-source-agreements', '--disable-interactivity')
+    $r = Invoke-TmxWingetProcess -Arguments @('list', '--accept-source-agreements', '--disable-interactivity') -TimeoutSeconds 60
     $itens = @(ConvertFrom-TmxWingetListOutput -Texto "$($r.saida)")
 
     if ($Catalog) {

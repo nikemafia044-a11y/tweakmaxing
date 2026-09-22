@@ -101,11 +101,19 @@ function Register-TmxInstallActions {
 
     Register-TmxBridgeAction -Name 'apps.repairWinget' -Async -Handler {
         param($payload)
+        # Reparar o winget instala/atualiza o modulo Microsoft.WinGet.Client
+        # da PowerShell Gallery - a UI mostra o que isso faz num modal antes
+        # de chamar esta acao, e so manda { consentido: true } depois do
+        # clique em "Reparar". Sem isso, a ponte recusa.
+        if ($payload.consentido -ne $true) { throw 'consentimento pendente' }
         Install-TmxWinget -Force
     }
 
     Register-TmxBridgeAction -Name 'apps.installChoco' -Async -Handler {
         param($payload)
+        # Mesma ideia: install.js mostra o modal explicando o download do
+        # instalador oficial antes de chamar esta acao com consentido:true.
+        if ($payload.consentido -ne $true) { throw 'consentimento pendente' }
         Install-TmxChoco
     }
 }

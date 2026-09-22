@@ -13,6 +13,10 @@ function Test-TmxPackageManager {
         para diferenciar "nao instalado" de "instalado mas nao respondeu" (o
         pacote da Store pode estar la sem o binario estar no PATH ainda).
         choco: `choco --version` via Invoke-TmxChocoProcess.
+
+        As duas chamadas usam -TimeoutSeconds 60 (nao os 900 do padrao):
+        apps.managers e sincrono na ponte, e "--version" nunca deveria
+        demorar - se estourar 60s e porque o processo travou de verdade.
     #>
     [CmdletBinding()]
     param()
@@ -21,7 +25,7 @@ function Test-TmxPackageManager {
     try {
         $caminhoWinget = Get-TmxCommandPath -Name 'winget'
         if ($caminhoWinget) {
-            $r = Invoke-TmxWingetProcess -Arguments @('--version')
+            $r = Invoke-TmxWingetProcess -Arguments @('--version') -TimeoutSeconds 60
             if ($r.codigo -eq 0) {
                 $winget.disponivel = $true
                 $winget.versao     = "$($r.saida)".Trim()
@@ -47,7 +51,7 @@ function Test-TmxPackageManager {
     try {
         $caminhoChoco = Get-TmxCommandPath -Name 'choco'
         if ($caminhoChoco) {
-            $r2 = Invoke-TmxChocoProcess -Arguments @('--version')
+            $r2 = Invoke-TmxChocoProcess -Arguments @('--version') -TimeoutSeconds 60
             if ($r2.codigo -eq 0) {
                 $choco.disponivel = $true
                 $choco.versao     = "$($r2.saida)".Trim()

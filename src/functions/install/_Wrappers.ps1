@@ -19,61 +19,153 @@ function Get-TmxCommandPath {
     $null
 }
 
+function Stop-TmxProcessTree {
+    <#
+    .SYNOPSIS
+        Mata um processo e todos os filhos dele (taskkill /T /F). Nunca lanca.
+    .DESCRIPTION
+        Usado quando um processo externo (winget/choco/powershell) estoura o
+        tempo limite: Stop-Process so mata o processo apontado, e winget/choco
+        as vezes abrem um processo filho (o instalador de verdade) que
+        continuaria rodando orfao.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [int] $ProcessId)
+
+    if ($ProcessId -le 0) { return }
+    try { & taskkill.exe /PID $ProcessId /T /F 2>&1 | Out-Null } catch { }
+}
+
+function ConvertFrom-TmxProcessOutputBytes {
+    <#
+    .SYNOPSIS
+        Decodifica a saida redirecionada (bytes) de winget/choco com o
+        encoding certo.
+    .DESCRIPTION
+        winget/choco nao documentam um encoding fixo para saida redirecionada
+        - depende do codepage ativo do console no momento em que o processo
+        nasce. Medido nesta maquina (Windows pt-BR, codepage ativo 65001):
+        "winget list" redirecionado sai em UTF-8 SEM BOM - Get-Content sem
+        -Encoding explicito le como ANSI (1252) e qualquer nome com acento
+        vira mojibake (ex.: um nome com a-til/e-agudo sai com dois
+        caracteres estranhos no lugar de cada um). A leitura tenta,
+        nesta ordem: BOM UTF-8 explicito; UTF-8 estrito (rejeita sequencia de
+        byte invalida); OEM 850 como ultimo recurso (codepage classico de
+        console Windows em pt-BR quando o processo NAO nasceu em modo UTF-8 -
+        ex.: uma sessao com chcp 850 ainda ativo).
+    #>
+    [CmdletBinding()]
+    param([byte[]] $Bytes)
+
+    if ($null -eq $Bytes -or $Bytes.Length -eq 0) { return '' }
+
+    if ($Bytes.Length -ge 3 -and $Bytes[0] -eq 0xEF -and $Bytes[1] -eq 0xBB -and $Bytes[2] -eq 0xBF) {
+        return [System.Text.Encoding]::UTF8.GetString($Bytes, 3, $Bytes.Length - 3)
+    }
+
+    try {
+        $utf8Estrito = New-Object System.Text.UTF8Encoding($false, $true)
+        return $utf8Estrito.GetString($Bytes)
+    } catch {
+        return [System.Text.Encoding]::GetEncoding(850).GetString($Bytes)
+    }
+}
+
+function Invoke-TmxProcessWithTimeout {
+    <#
+    .SYNOPSIS
+        Roda um processo externo com limite de tempo; mata a arvore inteira
+        se estourar. Base comum de Invoke-TmxWingetProcess/ChocoProcess/
+        Invoke-TmxPowerShellFile.
+    .DESCRIPTION
+        Start-Process -PassThru (sem -Wait) + Process.WaitForExit(ms), nao
+        Start-Process -Wait: -Wait nao tem limite de tempo, e winget/choco
+        podem ficar pendurados esperando rede/prompt que nunca chega.
+    .OUTPUTS
+        [pscustomobject] @{ codigo; saida }. Nunca lanca. Ao estourar o
+        tempo: { codigo = -1; saida = 'tempo esgotado' }.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string]   $FilePath,
+        [Parameter(Mandatory)] [string[]] $Arguments,
+        [int]    $TimeoutSeconds = 900,
+        [string] $DescricaoErro = $FilePath
+    )
+
+    $arquivoTmp = [System.IO.Path]::GetTempFileName()
+    try {
+        $processo = Start-Process -FilePath $FilePath -ArgumentList $Arguments `
+            -NoNewWindow -PassThru -RedirectStandardOutput $arquivoTmp -ErrorAction Stop
+
+        $limiteMs = [Math]::Max(0, $TimeoutSeconds) * 1000
+        $terminou = $processo.WaitForExit($limiteMs)
+
+        if (-not $terminou) {
+            Stop-TmxProcessTree -ProcessId $processo.Id
+            return [pscustomobject]@{ codigo = -1; saida = 'tempo esgotado' }
+        }
+
+        $codigo = [int]$processo.ExitCode
+        $bytes  = @()
+        if (Test-Path -LiteralPath $arquivoTmp) {
+            $bytes = [System.IO.File]::ReadAllBytes($arquivoTmp)
+        }
+        $saida = ConvertFrom-TmxProcessOutputBytes -Bytes $bytes
+        [pscustomobject]@{ codigo = $codigo; saida = $saida }
+    } catch {
+        [pscustomobject]@{ codigo = -1; saida = "$DescricaoErro nao pode ser executado: $($_.Exception.Message)" }
+    } finally {
+        Remove-Item -LiteralPath $arquivoTmp -Force -ErrorAction SilentlyContinue
+    }
+}
+
 function Invoke-TmxWingetProcess {
     <#
     .SYNOPSIS
         Roda winget com os argumentos dados e devolve { codigo, saida }.
-    .DESCRIPTION
-        Start-Process (nao Invoke-Expression/&): winget as vezes escreve saida
-        colorida/interativa que trava um pipe simples; redirecionar so o
-        stdout para um arquivo temporario evita isso e ainda deixa ler o texto
-        depois. Nunca lanca - uma falha ao iniciar o processo vira codigo -1.
+    .PARAMETER TimeoutSeconds
+        Padrao 900 (install/upgrade podem baixar arquivo grande); chamadas
+        curtas (--version, list) devem passar um valor bem menor.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)] [string[]] $Arguments)
-
-    $arquivoTmp = [System.IO.Path]::GetTempFileName()
-    try {
-        $processo = Start-Process -FilePath 'winget' -ArgumentList $Arguments `
-            -NoNewWindow -Wait -PassThru -RedirectStandardOutput $arquivoTmp -ErrorAction Stop
-
-        $saida = ''
-        if (Test-Path -LiteralPath $arquivoTmp) {
-            $conteudo = Get-Content -LiteralPath $arquivoTmp -Raw -ErrorAction SilentlyContinue
-            if ($null -ne $conteudo) { $saida = [string]$conteudo }
-        }
-        [pscustomobject]@{ codigo = [int]$processo.ExitCode; saida = $saida }
-    } catch {
-        [pscustomobject]@{ codigo = -1; saida = "winget nao pode ser executado: $($_.Exception.Message)" }
-    } finally {
-        Remove-Item -LiteralPath $arquivoTmp -Force -ErrorAction SilentlyContinue
-    }
+    param(
+        [Parameter(Mandatory)] [string[]] $Arguments,
+        [int] $TimeoutSeconds = 900
+    )
+    Invoke-TmxProcessWithTimeout -FilePath 'winget' -Arguments $Arguments -TimeoutSeconds $TimeoutSeconds -DescricaoErro 'winget'
 }
 
 function Invoke-TmxChocoProcess {
     <#
     .SYNOPSIS
         Roda choco com os argumentos dados e devolve { codigo, saida }.
+    .PARAMETER TimeoutSeconds
+        Ver Invoke-TmxWingetProcess.
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)] [string[]] $Arguments)
+    param(
+        [Parameter(Mandatory)] [string[]] $Arguments,
+        [int] $TimeoutSeconds = 900
+    )
+    Invoke-TmxProcessWithTimeout -FilePath 'choco' -Arguments $Arguments -TimeoutSeconds $TimeoutSeconds -DescricaoErro 'choco'
+}
 
-    $arquivoTmp = [System.IO.Path]::GetTempFileName()
-    try {
-        $processo = Start-Process -FilePath 'choco' -ArgumentList $Arguments `
-            -NoNewWindow -Wait -PassThru -RedirectStandardOutput $arquivoTmp -ErrorAction Stop
-
-        $saida = ''
-        if (Test-Path -LiteralPath $arquivoTmp) {
-            $conteudo = Get-Content -LiteralPath $arquivoTmp -Raw -ErrorAction SilentlyContinue
-            if ($null -ne $conteudo) { $saida = [string]$conteudo }
-        }
-        [pscustomobject]@{ codigo = [int]$processo.ExitCode; saida = $saida }
-    } catch {
-        [pscustomobject]@{ codigo = -1; saida = "choco nao pode ser executado: $($_.Exception.Message)" }
-    } finally {
-        Remove-Item -LiteralPath $arquivoTmp -Force -ErrorAction SilentlyContinue
-    }
+function Test-TmxPackageId {
+    <#
+    .SYNOPSIS
+        Confere se um id de pacote (winget ou choco) tem formato valido.
+    .DESCRIPTION
+        Winget usa "Publisher.Produto" (ponto) e o prefixo "msstore:" (dois-
+        pontos) para ids da Microsoft Store, que por baixo do prefixo sao
+        alfanumericos. O conjunto aceito cobre os dois formatos sem abrir
+        espaco para separador de argumento, aspas ou qualquer coisa que nao
+        faca sentido num --id de linha de comando.
+    #>
+    [CmdletBinding()]
+    param([string] $Id)
+    if ([string]::IsNullOrWhiteSpace($Id)) { return $false }
+    $Id -cmatch '^[A-Za-z0-9_.+:@-]+$'
 }
 
 function Install-TmxWingetClientModule {
@@ -108,21 +200,23 @@ function Invoke-TmxPowerShellFile {
         E o unico jeito aprovado, neste projeto, de executar texto baixado da
         rede: o arquivo fica no disco (auditavel, com SHA-256 registrado por
         quem chama) e roda isolado, sem poder tocar variaveis/funcoes deste
-        processo.
+        processo. Usa o mesmo limite de tempo + kill de arvore de
+        Invoke-TmxWingetProcess/ChocoProcess (ver Invoke-TmxProcessWithTimeout).
     .OUTPUTS
-        [pscustomobject] @{ codigo }. Nunca lanca (falha ao iniciar vira -1).
+        [pscustomobject] @{ codigo }. Nunca lanca (falha ao iniciar, ou tempo
+        esgotado, viram codigo -1).
     #>
     [CmdletBinding()]
-    param([Parameter(Mandatory)] [string] $Path)
+    param(
+        [Parameter(Mandatory)] [string] $Path,
+        [int] $TimeoutSeconds = 900
+    )
 
-    try {
-        $processo = Start-Process -FilePath 'powershell' -ArgumentList @(
-            '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $Path
-        ) -NoNewWindow -Wait -PassThru -ErrorAction Stop
-        [pscustomobject]@{ codigo = [int]$processo.ExitCode }
-    } catch {
-        [pscustomobject]@{ codigo = -1 }
-    }
+    $r = Invoke-TmxProcessWithTimeout -FilePath 'powershell' -Arguments @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass', '-File', $Path
+    ) -TimeoutSeconds $TimeoutSeconds -DescricaoErro 'powershell'
+
+    [pscustomobject]@{ codigo = $r.codigo }
 }
 
 function Invoke-TmxChocoBootstrap {
@@ -130,14 +224,24 @@ function Invoke-TmxChocoBootstrap {
     .SYNOPSIS
         Baixa o instalador oficial do Chocolatey para disco e roda como
         processo separado (so deve ser chamado depois de consentimento
-        explicito na UI - o modal de confirmacao mora em install.js, nao
-        aqui).
+        explicito na UI - a ponte (Actions.Install.ps1) recusa
+        apps.installChoco sem { consentido: true }, e o modal que pede esse
+        consentimento mora em install.js).
     .DESCRIPTION
         Nunca executa o texto baixado dentro deste processo (sem
         Invoke-Expression, sem [scriptblock]::Create): o instalador vai para
-        <home>\downloads\choco-install.ps1, o SHA-256 fica no log como
-        trilha de auditoria, e quem roda o arquivo e um powershell -File
-        separado (Invoke-TmxPowerShellFile), isolado deste processo.
+        <home>\downloads\choco-install.ps1, o SHA-256 fica no log, e quem
+        roda o arquivo e um powershell -File separado
+        (Invoke-TmxPowerShellFile), isolado deste processo.
+
+        O SHA-256 e trilha de auditoria (fica no log para conferencia manual
+        depois), NAO verificacao: o instalador oficial muda com frequencia e
+        a Chocolatey Software nao publica um hash fixo esperado para
+        comparar contra. Sem esse hash de referencia, um mismatch aqui nao
+        teria contra o que ser comparado - so registrar o que foi executado
+        importa. A execucao em processo separado, so depois de consentimento
+        explicito na UI, e o controle real; o hash e so para investigar
+        depois, se precisar.
     .OUTPUTS
         [pscustomobject] @{ ok; sha256; detalhe }. Nunca lanca.
     #>
@@ -188,6 +292,12 @@ function Get-TmxAppCatalog {
         src/config/applications.json a partir de $sync.webRoot. Lanca so
         quando nenhuma das duas fontes existe - um catalogo ausente e um erro
         de configuracao, nao um caso silencioso.
+
+        Valida (so registra aviso; nao remove nem altera nada) os ids de
+        winget/choco de cada app contra Test-TmxPackageId. A recusa de
+        verdade - falha sem chamar o processo - acontece em
+        Invoke-TmxPackage, na hora de montar os argumentos; aqui e so para o
+        log denunciar cedo um catalogo com id mal formado.
     #>
     [CmdletBinding()]
     param()
@@ -207,6 +317,21 @@ function Get-TmxAppCatalog {
         throw 'catalogo de aplicativos nao encontrado (nem $sync.configs.applications, nem src/config/applications.json).'
     }
 
+    $apps = @($doc.aplicativos)
+
+    if (Get-Command -Name Write-TmxLog -ErrorAction SilentlyContinue) {
+        foreach ($app in $apps) {
+            $idWinget = "$($app.winget)"
+            $idChoco  = "$($app.choco)"
+            if ($idWinget -and -not (Test-TmxPackageId -Id $idWinget)) {
+                Write-TmxLog -Level WARN -Message 'Catalogo: id de winget mal formado' -Data @{ appId = "$($app.id)"; winget = $idWinget }
+            }
+            if ($idChoco -and -not (Test-TmxPackageId -Id $idChoco)) {
+                Write-TmxLog -Level WARN -Message 'Catalogo: id de choco mal formado' -Data @{ appId = "$($app.id)"; choco = $idChoco }
+            }
+        }
+    }
+
     # A virgula evita que um catalogo de 1 app so seja desenrolado no pipeline.
-    ,@($doc.aplicativos)
+    ,$apps
 }

@@ -159,7 +159,7 @@
         {
           rotulo: 'Reparar', classe: 'btn btn-primary', onClick: function () {
             tmx.toast('Reparando o winget...', 'aviso');
-            chamarAcaoAssincrona('apps.repairWinget').then(function (r) {
+            chamarAcaoAssincrona('apps.repairWinget', { consentido: true }).then(function (r) {
               tmx.toast(r && r.ok ? ('winget: ' + r.detalhe) : ('Falha ao reparar o winget: ' + (r && r.detalhe)), r && r.ok ? 'ok' : 'erro');
               return atualizarGerenciadores();
             }).catch(function (e) {
@@ -181,7 +181,7 @@
         {
           rotulo: 'Instalar', classe: 'btn btn-primary', onClick: function () {
             tmx.toast('Instalando o Chocolatey...', 'aviso');
-            chamarAcaoAssincrona('apps.installChoco').then(function (r) {
+            chamarAcaoAssincrona('apps.installChoco', { consentido: true }).then(function (r) {
               tmx.toast(r && r.ok ? 'Chocolatey instalado' : ('Falha ao instalar o Chocolatey: ' + (r && r.detalhe)), r && r.ok ? 'ok' : 'erro');
               return atualizarGerenciadores();
             }).catch(function (e) {

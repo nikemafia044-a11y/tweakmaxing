@@ -23,6 +23,10 @@ function Invoke-TmxPackage {
     .OUTPUTS
         Um [pscustomobject] por pacote: { pacote, gerenciador, acao, codigo, resultado, detalhe }.
         resultado e 'ok' | 'pulado' | 'falha'.
+    .NOTES
+        Id vazio ou mal formado (Test-TmxPackageId) vira falha SEM chamar o
+        processo - inclusive um id de winget vazio, que so serve para abrir
+        caminho para a reserva no choco em -Manager auto.
     #>
     [CmdletBinding()]
     param(
@@ -50,6 +54,11 @@ function Invoke-TmxPackage {
     $chocoRebootOk = @{
         1641 = 'instalado; o instalador iniciou o reinicio'
         3010 = 'instalado; reinicio necessario para concluir'
+    }
+    # 2 = "nothing to do" na referencia (Install-WinUtilProgramChoco.ps1): o
+    # choco ja olhou e nao tinha o que fazer - nao e falha.
+    $chocoPulado = @{
+        2 = 'nada a fazer'
     }
 
     $catalogo = $null
@@ -94,52 +103,64 @@ function Invoke-TmxPackage {
         $detalhe          = $null
 
         if ($Manager -ne 'choco') {
-            $caminhoWinget = Get-TmxCommandPath -Name 'winget'
             $gerenciadorUsado = 'winget'
 
-            if (-not $caminhoWinget) {
+            if ([string]::IsNullOrWhiteSpace($wingetId)) {
+                # Catalogo sem id de winget para este app: nao ha o que tentar
+                # aqui - em -Manager auto isso so abre caminho para o choco.
                 $codigo       = -1
                 $resultadoTxt = 'falha'
-                $detalhe      = 'winget nao esta disponivel'
+                $detalhe      = 'sem id de winget para este pacote'
+            } elseif (-not (Test-TmxPackageId -Id $wingetId)) {
+                $codigo       = -1
+                $resultadoTxt = 'falha'
+                $detalhe      = "id de pacote invalido para winget: $wingetId"
             } else {
-                $origem   = 'winget'
-                $idEfetivo = $wingetId
-                if (-not $upgradeAll -and "$idEfetivo".StartsWith('msstore:', [System.StringComparison]::OrdinalIgnoreCase)) {
-                    $origem    = 'msstore'
-                    $idEfetivo = $idEfetivo.Substring('msstore:'.Length)
-                }
-
-                $argumentos = switch ($Action) {
-                    'Uninstall' { @('uninstall', '--id', $idEfetivo, '--source', $origem, '--silent') }
-                    'Upgrade' {
-                        if ($upgradeAll) {
-                            @('upgrade', '--all', '--accept-package-agreements', '--accept-source-agreements', '--include-unknown', '--silent')
-                        } else {
-                            @('upgrade', '--id', $idEfetivo, '--accept-package-agreements', '--accept-source-agreements', '--source', $origem, '--include-unknown', '--silent')
-                        }
-                    }
-                    default { @('install', '--id', $idEfetivo, '--accept-package-agreements', '--accept-source-agreements', '--source', $origem, '--silent') }
-                }
-
-                $proc   = Invoke-TmxWingetProcess -Arguments $argumentos
-                $codigo = $proc.codigo
-
-                if ($codigo -eq 0) {
-                    $resultadoTxt = 'ok'; $detalhe = 'codigo de saida 0'
-                } elseif ($wingetRebootOk.ContainsKey($codigo)) {
-                    $resultadoTxt = 'ok'; $detalhe = $wingetRebootOk[$codigo]
-                } elseif ($wingetPulado.ContainsKey($codigo)) {
-                    $resultadoTxt = 'pulado'; $detalhe = $wingetPulado[$codigo]
-                } elseif ($codigo -eq $adminContextProhibited) {
-                    $resultadoTxt = 'pulado'
-                    $detalhe = switch ($Action) {
-                        'Install'   { 'ja instalado para o usuario atual; o TweakMaxing elevado nao pode altera-lo' }
-                        'Upgrade'   { 'nao atualizado; instalado para o usuario atual e o TweakMaxing elevado nao pode modifica-lo' }
-                        'Uninstall' { 'continua instalado para o usuario atual; o TweakMaxing elevado nao pode desinstala-lo' }
-                    }
-                } else {
+                $caminhoWinget = Get-TmxCommandPath -Name 'winget'
+                if (-not $caminhoWinget) {
+                    $codigo       = -1
                     $resultadoTxt = 'falha'
-                    $detalhe = "winget devolveu 0x{0:X8}. Veja https://learn.microsoft.com/windows/package-manager/winget/returnCodes" -f $codigo
+                    $detalhe      = 'winget nao esta disponivel'
+                } else {
+                    $origem   = 'winget'
+                    $idEfetivo = $wingetId
+                    if (-not $upgradeAll -and "$idEfetivo".StartsWith('msstore:', [System.StringComparison]::OrdinalIgnoreCase)) {
+                        $origem    = 'msstore'
+                        $idEfetivo = $idEfetivo.Substring('msstore:'.Length)
+                    }
+
+                    $argumentos = switch ($Action) {
+                        'Uninstall' { @('uninstall', '--id', $idEfetivo, '--source', $origem, '--silent') }
+                        'Upgrade' {
+                            if ($upgradeAll) {
+                                @('upgrade', '--all', '--accept-package-agreements', '--accept-source-agreements', '--include-unknown', '--silent')
+                            } else {
+                                @('upgrade', '--id', $idEfetivo, '--accept-package-agreements', '--accept-source-agreements', '--source', $origem, '--include-unknown', '--silent')
+                            }
+                        }
+                        default { @('install', '--id', $idEfetivo, '--accept-package-agreements', '--accept-source-agreements', '--source', $origem, '--silent') }
+                    }
+
+                    $proc   = Invoke-TmxWingetProcess -Arguments $argumentos
+                    $codigo = $proc.codigo
+
+                    if ($codigo -eq 0) {
+                        $resultadoTxt = 'ok'; $detalhe = 'codigo de saida 0'
+                    } elseif ($wingetRebootOk.ContainsKey($codigo)) {
+                        $resultadoTxt = 'ok'; $detalhe = $wingetRebootOk[$codigo]
+                    } elseif ($wingetPulado.ContainsKey($codigo)) {
+                        $resultadoTxt = 'pulado'; $detalhe = $wingetPulado[$codigo]
+                    } elseif ($codigo -eq $adminContextProhibited) {
+                        $resultadoTxt = 'pulado'
+                        $detalhe = switch ($Action) {
+                            'Install'   { 'ja instalado para o usuario atual; o TweakMaxing elevado nao pode altera-lo' }
+                            'Upgrade'   { 'nao atualizado; instalado para o usuario atual e o TweakMaxing elevado nao pode modifica-lo' }
+                            'Uninstall' { 'continua instalado para o usuario atual; o TweakMaxing elevado nao pode desinstala-lo' }
+                        }
+                    } else {
+                        $resultadoTxt = 'falha'
+                        $detalhe = "winget devolveu 0x{0:X8}. Veja https://learn.microsoft.com/windows/package-manager/winget/returnCodes" -f $codigo
+                    }
                 }
             }
         }
@@ -152,25 +173,40 @@ function Invoke-TmxPackage {
         }
 
         if ($deveTentarChoco) {
-            $caminhoChoco = Get-TmxCommandPath -Name 'choco'
             $gerenciadorUsado = 'choco'
+            $idChocoEfetivo = if ($upgradeAll) { 'all' } else { $chocoId }
 
-            if (-not $caminhoChoco) {
+            if ([string]::IsNullOrWhiteSpace($idChocoEfetivo)) {
                 $codigo       = -1
                 $resultadoTxt = 'falha'
-                $detalhe      = 'choco ausente: nao ha como instalar/atualizar/desinstalar por ele'
+                $detalhe      = 'sem id de choco para este pacote'
+            } elseif (-not (Test-TmxPackageId -Id $idChocoEfetivo)) {
+                $codigo       = -1
+                $resultadoTxt = 'falha'
+                $detalhe      = "id de pacote invalido para choco: $idChocoEfetivo"
             } else {
-                $idChocoEfetivo = if ($upgradeAll) { 'all' } else { $chocoId }
-                $argsChoco = @($verbo, $idChocoEfetivo, '-y')
-                $procC  = Invoke-TmxChocoProcess -Arguments $argsChoco
-                $codigo = $procC.codigo
-
-                if ($codigo -eq 0) {
-                    $resultadoTxt = 'ok'; $detalhe = 'codigo de saida 0'
-                } elseif ($chocoRebootOk.ContainsKey($codigo)) {
-                    $resultadoTxt = 'ok'; $detalhe = $chocoRebootOk[$codigo]
+                $caminhoChoco = Get-TmxCommandPath -Name 'choco'
+                if (-not $caminhoChoco) {
+                    $codigo       = -1
+                    $resultadoTxt = 'falha'
+                    $detalhe      = 'choco ausente: nao ha como instalar/atualizar/desinstalar por ele'
                 } else {
-                    $resultadoTxt = 'falha'; $detalhe = "choco devolveu codigo $codigo"
+                    # --no-progress: como na referencia (Install-WinUtilProgramChoco.ps1) -
+                    # para de redesenhar uma linha de percentual que so faz sentido com
+                    # alguem olhando um console de verdade.
+                    $argsChoco = @($verbo, $idChocoEfetivo, '-y', '--no-progress')
+                    $procC  = Invoke-TmxChocoProcess -Arguments $argsChoco
+                    $codigo = $procC.codigo
+
+                    if ($codigo -eq 0) {
+                        $resultadoTxt = 'ok'; $detalhe = 'codigo de saida 0'
+                    } elseif ($chocoRebootOk.ContainsKey($codigo)) {
+                        $resultadoTxt = 'ok'; $detalhe = $chocoRebootOk[$codigo]
+                    } elseif ($chocoPulado.ContainsKey($codigo)) {
+                        $resultadoTxt = 'pulado'; $detalhe = $chocoPulado[$codigo]
+                    } else {
+                        $resultadoTxt = 'falha'; $detalhe = "choco devolveu codigo $codigo"
+                    }
                 }
             }
         }

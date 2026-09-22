@@ -36,35 +36,10 @@ function Assert-Tmx {
     }
 }
 
-function Wait-TmxOutroTestePid {
-    <#
-    .SYNOPSIS
-        Espera ate 3 minutos se tests/gui/out/gui.pid apontar para um
-        processo vivo (outro agente rodando o teste de fumaca na 9333).
-    #>
-    param([int] $TimeoutSeconds = 180)
-
-    Initialize-TmxGuiOut | Out-Null
-    if (-not (Test-Path -LiteralPath $script:TmxGuiPidFile)) { return }
-
-    $pidAnterior = 0
-    [int]::TryParse((Get-Content -LiteralPath $script:TmxGuiPidFile -Raw).Trim(), [ref]$pidAnterior) | Out-Null
-    if ($pidAnterior -le 0) { return }
-
-    $proc = Get-Process -Id $pidAnterior -ErrorAction SilentlyContinue
-    if (-not $proc) { return }
-
-    Write-Host "Outro teste de GUI (PID $pidAnterior) parece ativo; esperando ate $TimeoutSeconds s..." -ForegroundColor Cyan
-    $limite = (Get-Date).AddSeconds($TimeoutSeconds)
-    while ((Get-Date) -lt $limite) {
-        $proc = Get-Process -Id $pidAnterior -ErrorAction SilentlyContinue
-        if (-not $proc) { return }
-        Start-Sleep -Seconds 2
-    }
-    Write-Host 'Tempo de espera esgotado; seguindo mesmo assim.' -ForegroundColor DarkYellow
-}
-
-Wait-TmxOutroTestePid
+# _GuiHelpers.ps1 agora isola tudo por porta (PID em out\gui-<porta>.pid,
+# varredura de processo orfao filtrada pela porta na linha de comando) -
+# Start-TmxGui/Clear-TmxGuiLeftovers ja cuidam de nao derrubar um teste de
+# GUI concorrente noutra porta, entao nao ha mais o que esperar aqui.
 
 $gui = $null
 try {

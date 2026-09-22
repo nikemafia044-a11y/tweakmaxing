@@ -1,0 +1,9 @@
+
+Nome                                       ID                                    Versão          Disponível      Origem
+------------------------------------------------------------------------------------------------------------------------
+7-Zip                                      7zip.7zip                            23.01           -               winget
+Firefox                                    Mozilla.Firefox                      129.0.1         130.0.2         winget
+Extensão de Vídeo HEVC                     Microsoft.HEVCVideoExtension         2.4.109.0       -               winget
+Segurança do Windows                       Microsoft.SecHealthUI                1000.27840.1000.0  -              winget
+
+4 atualizações disponíveis.

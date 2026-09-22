@@ -157,12 +157,61 @@ Describe 'Invoke-TmxPackage' -Tag 'Install' {
             @{ Codigo = 0;    Resultado = 'ok' }
             @{ Codigo = 1641; Resultado = 'ok' }
             @{ Codigo = 3010; Resultado = 'ok' }
+            @{ Codigo = 2;    Resultado = 'pulado' }
             @{ Codigo = 1;    Resultado = 'falha' }
         ) {
             Mock -CommandName Invoke-TmxChocoProcess -ModuleName TweakMaxing -MockWith { @{ codigo = $Codigo; saida = '' } }
             $r = Invoke-TmxPackage -Action Install -Programs @('meuapp') -Manager choco
             $r[0].resultado | Should -Be $Resultado
             $r[0].gerenciador | Should -Be 'choco'
+        }
+
+        It 'passa --no-progress para o choco' {
+            $script:argsChocoCapturados = $null
+            Mock -CommandName Invoke-TmxChocoProcess -ModuleName TweakMaxing -MockWith {
+                param($Arguments)
+                $script:argsChocoCapturados = $Arguments
+                @{ codigo = 0; saida = '' }
+            }
+            Invoke-TmxPackage -Action Install -Programs @('meuapp') -Manager choco | Out-Null
+            $script:argsChocoCapturados | Should -Contain '--no-progress'
+        }
+    }
+
+    Context 'Validacao de id (Test-TmxPackageId) antes de montar argumentos' {
+
+        It 'id de winget invalido vira falha sem chamar o processo' {
+            Mock -CommandName Get-TmxCommandPath -ModuleName TweakMaxing -MockWith { 'C:\fake\winget.exe' }
+            Mock -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -MockWith { @{ codigo = 0; saida = '' } }
+
+            $r = Invoke-TmxPackage -Action Install -Programs @('id com espaco') -Manager winget
+            $r[0].resultado | Should -Be 'falha'
+            $r[0].detalhe | Should -Match 'invalido'
+            Should -Invoke -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -Times 0
+        }
+
+        It 'id de choco invalido vira falha sem chamar o processo' {
+            Mock -CommandName Get-TmxCommandPath -ModuleName TweakMaxing -MockWith { 'C:\fake\choco.exe' }
+            Mock -CommandName Invoke-TmxChocoProcess -ModuleName TweakMaxing -MockWith { @{ codigo = 0; saida = '' } }
+
+            $r = Invoke-TmxPackage -Action Install -Programs @('id;com;ponto-e-virgula') -Manager choco
+            $r[0].resultado | Should -Be 'falha'
+            $r[0].detalhe | Should -Match 'invalido'
+            Should -Invoke -CommandName Invoke-TmxChocoProcess -ModuleName TweakMaxing -Times 0
+        }
+
+        It 'winget id vazio no catalogo pula direto para o choco em -Manager auto' {
+            Mock -CommandName Get-TmxAppCatalog -ModuleName TweakMaxing -MockWith {
+                @([pscustomobject]@{ id = 'semwinget'; winget = ''; choco = 'semwinget' })
+            }
+            Mock -CommandName Get-TmxCommandPath -ModuleName TweakMaxing -MockWith { param($Name) "C:\fake\$Name.exe" }
+            Mock -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -MockWith { @{ codigo = 0; saida = '' } }
+            Mock -CommandName Invoke-TmxChocoProcess -ModuleName TweakMaxing -MockWith { @{ codigo = 0; saida = '' } }
+
+            $r = Invoke-TmxPackage -Action Install -Programs @('semwinget') -Manager auto -Catalog
+            $r[0].gerenciador | Should -Be 'choco'
+            $r[0].resultado | Should -Be 'ok'
+            Should -Invoke -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -Times 0
         }
     }
 
@@ -257,6 +306,183 @@ Describe 'Get-TmxInstalledPackages' -Tag 'Install' {
 
         $chrome = $itens | Where-Object { $_.id -eq 'Google.Chrome' }
         $chrome.instalado | Should -BeFalse
+    }
+
+    It 'acha o separador mesmo com cabecalho pt-BR (Nome/ID/Versao/Disponivel/Origem)' {
+        # O cabecalho deixa de importar: so a linha de tracos (^-{10,}$) e usada
+        # para achar onde os dados comecam, entao um winget localizado em
+        # outro idioma (ou versao futura) tambem funciona.
+        $textoPtBr = Get-Content -LiteralPath (Join-Path $PSScriptRoot 'fixtures\winget-list-ptbr.txt') -Raw -Encoding UTF8
+        Mock -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -MockWith { @{ codigo = 0; saida = $textoPtBr } }
+
+        $itens = Get-TmxInstalledPackages
+        $itens.Count | Should -Be 4
+        ($itens | Where-Object { $_.id -eq 'Mozilla.Firefox' }).disponivel | Should -Be '130.0.2'
+        ($itens | Where-Object { $_.id -eq 'Microsoft.SecHealthUI' }).disponivel | Should -BeNullOrEmpty
+    }
+}
+
+Describe 'Wrappers de processo' -Tag 'Install' {
+
+    BeforeAll {
+        . (Join-Path $PSScriptRoot '_Helpers.ps1')
+        Import-TmxTestModule
+        New-TmxTestHome | Out-Null
+    }
+
+    AfterAll {
+        Remove-TmxTestHome
+    }
+
+    Context 'Invoke-TmxProcessWithTimeout' {
+
+        It 'mata o processo e devolve tempo esgotado quando estoura o limite' {
+            # powershell -Command Start-Sleep 5, com TimeoutSeconds 1: tem que
+            # voltar bem antes dos 5s (senao o timeout nao fez nada) e nao
+            # pode deixar o processo rodando pendurado.
+            $cron = [System.Diagnostics.Stopwatch]::StartNew()
+            $r = Invoke-TmxProcessWithTimeout -FilePath 'powershell' `
+                -Arguments @('-NoProfile', '-Command', 'Start-Sleep -Seconds 5') -TimeoutSeconds 1
+            $cron.Stop()
+
+            $r.codigo | Should -Be -1
+            $r.saida | Should -Be 'tempo esgotado'
+            $cron.Elapsed.TotalSeconds | Should -BeLessThan 4
+        }
+
+        It 'devolve o codigo de saida de verdade quando o processo termina a tempo' {
+            $r = Invoke-TmxProcessWithTimeout -FilePath 'powershell' `
+                -Arguments @('-NoProfile', '-Command', 'exit 0') -TimeoutSeconds 30
+            $r.codigo | Should -Be 0
+        }
+    }
+
+    Context 'Invoke-TmxWingetProcess/ChocoProcess/Invoke-TmxPowerShellFile repassam o timeout' {
+
+        It 'Invoke-TmxWingetProcess usa 900s por padrao e repassa -TimeoutSeconds' {
+            $script:capturado = $null
+            Mock -CommandName Invoke-TmxProcessWithTimeout -ModuleName TweakMaxing -MockWith {
+                param($FilePath, $Arguments, $TimeoutSeconds, $DescricaoErro)
+                $script:capturado = @{ FilePath = $FilePath; TimeoutSeconds = $TimeoutSeconds }
+                @{ codigo = 0; saida = '' }
+            }
+            Invoke-TmxWingetProcess -Arguments @('--version') | Out-Null
+            $script:capturado.FilePath | Should -Be 'winget'
+            $script:capturado.TimeoutSeconds | Should -Be 900
+
+            Invoke-TmxWingetProcess -Arguments @('--version') -TimeoutSeconds 60 | Out-Null
+            $script:capturado.TimeoutSeconds | Should -Be 60
+        }
+
+        It 'Invoke-TmxChocoProcess usa 900s por padrao e repassa -TimeoutSeconds' {
+            $script:capturado = $null
+            Mock -CommandName Invoke-TmxProcessWithTimeout -ModuleName TweakMaxing -MockWith {
+                param($FilePath, $Arguments, $TimeoutSeconds, $DescricaoErro)
+                $script:capturado = @{ FilePath = $FilePath; TimeoutSeconds = $TimeoutSeconds }
+                @{ codigo = 0; saida = '' }
+            }
+            Invoke-TmxChocoProcess -Arguments @('--version') -TimeoutSeconds 60 | Out-Null
+            $script:capturado.FilePath | Should -Be 'choco'
+            $script:capturado.TimeoutSeconds | Should -Be 60
+        }
+    }
+
+    Context 'ConvertFrom-TmxProcessOutputBytes' {
+
+        It 'decodifica UTF-8 com BOM' {
+            # Sem literal acentuado no .ps1 (sem BOM: PS 5.1 le como ANSI e
+            # corrompe qualquer caractere fora de ASCII) - monta a partir do
+            # codepoint: 0xE3 = a-til, 0xED = i-agudo.
+            $texto = 'Extens' + [char]0xE3 + 'o de V' + [char]0xED + 'deo'
+            $bytes = [byte[]](0xEF, 0xBB, 0xBF) + [System.Text.Encoding]::UTF8.GetBytes($texto)
+            ConvertFrom-TmxProcessOutputBytes -Bytes $bytes | Should -Be $texto
+        }
+
+        It 'decodifica UTF-8 sem BOM (medido nesta maquina: winget list redirecionado sai assim)' {
+            # Fixture gerada com Encoding.UTF8.GetBytes (nunca inclui BOM), nao
+            # editada por uma ferramenta de texto que poderia normalizar/mudar
+            # o encoding do arquivo.
+            $bytes = [System.IO.File]::ReadAllBytes((Join-Path $PSScriptRoot 'fixtures\winget-output-utf8-sembom.txt'))
+            ($bytes.Length -ge 3 -and $bytes[0] -eq 0xEF -and $bytes[1] -eq 0xBB -and $bytes[2] -eq 0xBF) | Should -BeFalse -Because 'a fixture nao pode ter BOM'
+
+            $esperadoExtensao  = 'Extens' + [char]0xE3 + 'o de V' + [char]0xED + 'deo'
+            $esperadoSeguranca = 'Seguran' + [char]0xE7 + 'a'
+
+            $texto = ConvertFrom-TmxProcessOutputBytes -Bytes $bytes
+            $texto | Should -Match ([regex]::Escape($esperadoExtensao))
+            $texto | Should -Match ([regex]::Escape($esperadoSeguranca))
+        }
+
+        It 'cai para OEM 850 quando os bytes nao sao UTF-8 valido' {
+            $original = 'Seguran' + [char]0xE7 + 'a do Windows'
+            $bytesOem = [System.Text.Encoding]::GetEncoding(850).GetBytes($original)
+            # Confere a premissa: esses bytes NAO formam UTF-8 valido (senao o
+            # teste passaria por acidente, sem exercitar o fallback).
+            { (New-Object System.Text.UTF8Encoding($false, $true)).GetString($bytesOem) } | Should -Throw
+
+            ConvertFrom-TmxProcessOutputBytes -Bytes $bytesOem | Should -Be $original
+        }
+
+        It 'string vazia para bytes vazios/nulos' {
+            ConvertFrom-TmxProcessOutputBytes -Bytes @() | Should -Be ''
+            ConvertFrom-TmxProcessOutputBytes -Bytes $null | Should -Be ''
+        }
+    }
+
+    Context 'Test-TmxPackageId' {
+
+        It '<Id> e valido' -ForEach @(
+            @{ Id = '7zip.7zip' }
+            @{ Id = 'Mozilla.Firefox' }
+            @{ Id = 'msstore:9WZDNCRFHWQZ' }
+            @{ Id = 'meu-pacote_1.0+x' }
+        ) {
+            Test-TmxPackageId -Id $Id | Should -BeTrue
+        }
+
+        It '<Id> e invalido' -ForEach @(
+            @{ Id = '' }
+            @{ Id = $null }
+            @{ Id = 'id com espaco' }
+            @{ Id = 'id;rm -rf' }
+            @{ Id = 'id"com"aspas' }
+            @{ Id = "id`ncom`nquebra" }
+        ) {
+            Test-TmxPackageId -Id $Id | Should -BeFalse
+        }
+    }
+
+    Context 'Get-TmxAppCatalog valida ids ao carregar' {
+
+        It 'registra aviso (nao lanca, nao remove) para id mal formado no catalogo' {
+            $s = [Hashtable]::Synchronized(@{})
+            $s.configs = @{
+                applications = [pscustomobject]@{
+                    aplicativos = @(
+                        [pscustomobject]@{ id = 'ok'; nome = 'Ok'; winget = 'Vendor.Ok'; choco = 'ok' }
+                        [pscustomobject]@{ id = 'ruim'; nome = 'Ruim'; winget = 'id com espaco'; choco = '' }
+                    )
+                }
+            }
+            $global:sync = $s
+            try {
+                Mock -CommandName Write-TmxLog -ModuleName TweakMaxing -MockWith { }
+                # $apps=... DENTRO do scriptblock nao vazaria para fora (o
+                # call operator do Should -Not -Throw roda num escopo filho) -
+                # chama de novo, fora, para conferir o retorno.
+                { Get-TmxAppCatalog } | Should -Not -Throw
+                $apps = Get-TmxAppCatalog
+                $apps.Count | Should -Be 2
+                # Get-TmxAppCatalog roda duas vezes neste teste (a checagem de
+                # -Not -Throw e a leitura de verdade logo depois), entao o
+                # aviso tambem sai duas vezes.
+                Should -Invoke -CommandName Write-TmxLog -ModuleName TweakMaxing -Times 2 -ParameterFilter {
+                    $Level -eq 'WARN' -and $Message -like '*winget mal formado*'
+                }
+            } finally {
+                Remove-Variable -Name sync -Scope Global -ErrorAction SilentlyContinue
+            }
+        }
     }
 }
 
@@ -398,7 +624,7 @@ Describe 'Ponte da aba Instalar' -Tag 'Install' {
             $pronto.payload.error.message | Should -Match 'app desconhecido'
         }
 
-        It 'apps.install devolve jobId na hora e job.done acontece (winget de verdade, id inexistente vira falha)' {
+        It 'apps.install devolve jobId na hora e job.done acontece (winget de verdade, id inexistente vira falha)' -Skip:(-not (Get-Command winget -ErrorAction SilentlyContinue)) {
             # Sem mock aqui de proposito: o job roda no pool de runspaces (Start-TmxJob),
             # que tem SUA PROPRIA copia das funcoes (New-TmxSessionState copia o texto de
             # cada funcao para uma InitialSessionState nova) - Mock -ModuleName TweakMaxing
@@ -484,6 +710,44 @@ Describe 'Ponte da aba Instalar' -Tag 'Install' {
 
         It 'apps.installChoco (handler) esta registrado como assincrono' {
             (Get-TmxBridgeAction -Name 'apps.installChoco').async | Should -BeTrue
+        }
+    }
+
+    Context 'Consentimento obrigatorio (apps.repairWinget / apps.installChoco)' {
+
+        It 'apps.repairWinget recusa sem { consentido: true }' {
+            Mock -CommandName Install-TmxWinget -ModuleName TweakMaxing -MockWith { [pscustomobject]@{ ok = $true; detalhe = 'nao deveria ter rodado' } }
+            $entry = Get-TmxBridgeAction -Name 'apps.repairWinget'
+
+            { & $entry.handler $null } | Should -Throw '*consentimento pendente*'
+            { & $entry.handler ([pscustomobject]@{ consentido = $false }) } | Should -Throw '*consentimento pendente*'
+            Should -Invoke -CommandName Install-TmxWinget -ModuleName TweakMaxing -Times 0
+        }
+
+        It 'apps.repairWinget roda quando consentido:true' {
+            Mock -CommandName Install-TmxWinget -ModuleName TweakMaxing -MockWith { [pscustomobject]@{ ok = $true; detalhe = 'reparado' } }
+            $entry = Get-TmxBridgeAction -Name 'apps.repairWinget'
+
+            $r = & $entry.handler ([pscustomobject]@{ consentido = $true })
+            $r.ok | Should -BeTrue
+            Should -Invoke -CommandName Install-TmxWinget -ModuleName TweakMaxing -Times 1
+        }
+
+        It 'apps.installChoco recusa sem { consentido: true }' {
+            Mock -CommandName Install-TmxChoco -ModuleName TweakMaxing -MockWith { [pscustomobject]@{ ok = $true; detalhe = 'nao deveria ter rodado' } }
+            $entry = Get-TmxBridgeAction -Name 'apps.installChoco'
+
+            { & $entry.handler $null } | Should -Throw '*consentimento pendente*'
+            Should -Invoke -CommandName Install-TmxChoco -ModuleName TweakMaxing -Times 0
+        }
+
+        It 'apps.installChoco roda quando consentido:true' {
+            Mock -CommandName Install-TmxChoco -ModuleName TweakMaxing -MockWith { [pscustomobject]@{ ok = $true; detalhe = 'instalado' } }
+            $entry = Get-TmxBridgeAction -Name 'apps.installChoco'
+
+            $r = & $entry.handler ([pscustomobject]@{ consentido = $true })
+            $r.ok | Should -BeTrue
+            Should -Invoke -CommandName Install-TmxChoco -ModuleName TweakMaxing -Times 1
         }
     }
 }
