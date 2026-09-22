@@ -1,0 +1,36 @@
+{
+  "geradoEm": "2026-09-22T00:00:00.0000000-03:00",
+  "os": {
+    "nome": "Windows 11 Pro",
+    "build": 26100,
+    "isLaptop": false,
+    "isVM": false,
+    "elevado": false
+  },
+  "network": {
+    "adaptadorAtivo": {
+      "nome": "Ethernet",
+      "tipo": "Ethernet",
+      "descricao": "Realtek Gaming 2.5GbE Family Controller"
+    }
+  },
+  "gpu": {
+    "adaptadores": [
+      {
+        "nome": "NVIDIA GeForce RTX 4070",
+        "vendor": "NVIDIA",
+        "dataDriver": "2026-05-12"
+      }
+    ]
+  },
+  "storage": {
+    "cs2Path": "C:\\Games\\Steam\\steamapps\\common\\Counter-Strike Global Offensive",
+    "discoSistema": {
+      "tipo": "NVMe",
+      "livrePct": 42.5
+    }
+  },
+  "memory": {
+    "totalGB": 32
+  }
+}
