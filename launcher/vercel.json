@@ -1,0 +1,15 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "redirects": [
+    {
+      "source": "/",
+      "destination": "https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/TweakMaxing.ps1",
+      "permanent": false
+    },
+    {
+      "source": "/win",
+      "destination": "https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/TweakMaxing.ps1",
+      "permanent": false
+    }
+  ]
+}

@@ -10,3 +10,7 @@ TestResults*.xml
 tests/gui/out/
 .claude/settings.local.json
 tools/jev/out/
+
+# notas internas de sessao do agente
+state.md
+session-log.md
