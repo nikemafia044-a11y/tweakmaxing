@@ -13,26 +13,34 @@ Utilitário de otimização e manutenção do Windows 10/11, em português, com 
 
 ## Como usar
 
-> O repositório publicado é lido de `REPO`. Enquanto esse arquivo ainda tiver o placeholder `SEU_USUARIO/tweakmaxing`, substitua-o pelo dono real do repositório nos comandos abaixo — `tools/Publish-Release.ps1` grava o valor definitivo automaticamente a cada publicação.
-
 ### Rápido
 
+Abra o **PowerShell** (Iniciar → digite `powershell`) e cole:
+
 ```powershell
-irm https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 | iex
+irm "https://tweakmax1ng.vercel.app" | iex
 ```
 
-### Verificado (recomendado)
+Se o terminal não for de administrador, o TweakMaxing pede o UAC sozinho e reabre elevado. O endereço redireciona para o release mais recente em [GitHub Releases](https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest); o processo elevado baixa exatamente a mesma versão que você iniciou.
 
-Baixa o arquivo, confere o SHA256 publicado em `SHA256SUMS.txt` e só então executa:
+Com parâmetros (ex.: modo headless):
 
 ```powershell
-Invoke-WebRequest -Uri https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
-Invoke-WebRequest -Uri https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
+& ([scriptblock]::Create((irm "https://tweakmax1ng.vercel.app"))) -Headless -Preset notebook -DryRun
+```
+
+### Verificado (recomendado para auditoria)
+
+Baixa uma versão fixa, confere o SHA256 publicado em `SHA256SUMS.txt` e só então executa:
+
+```powershell
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.1.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
 (Get-FileHash .\TweakMaxing.ps1).Hash -eq (Get-Content .\SHA256SUMS.txt).Split(' ')[0]   # tem que imprimir True
 powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1
 ```
 
-**Por que uma tag fixa (`v0.1.0`), não `latest`:** o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável; um `latest` mudaria de conteúdo sem aviso embaixo do link publicado em algum lugar. Apenas HTTPS é usado (GitHub Releases). O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
+**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v0.1.0`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
 
 ### Desfazer
 

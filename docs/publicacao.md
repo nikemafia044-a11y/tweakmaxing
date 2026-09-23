@@ -21,16 +21,16 @@ Guia para quem mantém o repositório. Cobre a primeira publicação (repositór
 ## Primeira publicação (repositório remoto ainda não existe)
 
 ```powershell
-.\tools\Publish-Release.ps1 -Repo SEU_USUARIO/tweakmaxing -CreateRepo
+.\tools\Publish-Release.ps1 -Repo nikemafia044-a11y/tweakmaxing -CreateRepo
 ```
 
 Isso, em ordem:
 
-1. Valida `SEU_USUARIO/tweakmaxing` e grava em `REPO`.
+1. Valida `nikemafia044-a11y/tweakmaxing` e grava em `REPO`.
 2. Lê `VERSION` (por padrão `0.1.0`).
 3. Exige a árvore de trabalho limpa; comita `REPO`/`VERSION` como `chore(release): v0.1.0` se algo mudou.
-4. Roda `gh repo create SEU_USUARIO/tweakmaxing --public --source . --push` (só porque `origin` ainda não existe — com `-CreateRepo` e um `origin` já configurado, esse passo é pulado).
-5. Compila (`Compile.ps1 -Repo SEU_USUARIO/tweakmaxing`), gera `TweakMaxing.ps1` e `SHA256SUMS.txt`.
+4. Roda `gh repo create nikemafia044-a11y/tweakmaxing --public --source . --push` (só porque `origin` ainda não existe — com `-CreateRepo` e um `origin` já configurado, esse passo é pulado).
+5. Compila (`Compile.ps1 -Repo nikemafia044-a11y/tweakmaxing`), gera `TweakMaxing.ps1` e `SHA256SUMS.txt`.
 6. Confere que `docs\release-notes\v0.1.0.md` existe.
 7. Cria a tag anotada `v0.1.0`.
 8. Empurra `main` e a tag, depois publica a release com `gh release create v0.1.0 TweakMaxing.ps1 SHA256SUMS.txt --title "TweakMaxing v0.1.0" --notes-file docs/release-notes/v0.1.0.md`.
@@ -47,7 +47,7 @@ Exatamente dois arquivos como *assets* da release, além do código-fonte (que o
 2. Publique:
 
    ```powershell
-   .\tools\Publish-Release.ps1 -Repo SEU_USUARIO/tweakmaxing -Version 0.2.0
+   .\tools\Publish-Release.ps1 -Repo nikemafia044-a11y/tweakmaxing -Version 0.2.0
    ```
 
    (Sem `-Version`, o script usa o que já estiver em `VERSION` — nesse caso edite o arquivo à mão antes de rodar.)
@@ -57,13 +57,13 @@ Exatamente dois arquivos como *assets* da release, além do código-fonte (que o
 ## Testar sem publicar
 
 ```powershell
-.\tools\Publish-Release.ps1 -Repo SEU_USUARIO/tweakmaxing -DryRun
+.\tools\Publish-Release.ps1 -Repo nikemafia044-a11y/tweakmaxing -DryRun
 ```
 
 Compila, calcula o SHA256 e cria a tag local de verdade, mas só *imprime* os comandos `git push` e `gh release create` em vez de rodá-los — nenhum acesso de rede acontece.
 
 ```powershell
-.\tools\Publish-Release.ps1 -Repo SEU_USUARIO/tweakmaxing -NoPush
+.\tools\Publish-Release.ps1 -Repo nikemafia044-a11y/tweakmaxing -NoPush
 ```
 
 Igual, mas sem sequer criar movimento de rede planejado além do que já rodou (compilação e tag local); também só imprime os comandos que faltariam.
@@ -71,8 +71,8 @@ Igual, mas sem sequer criar movimento de rede planejado além do que já rodou (
 ## Como verificar o SHA256 de uma release já publicada
 
 ```powershell
-irm https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
-irm https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
+irm https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
+irm https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.1.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
 (Get-FileHash .\TweakMaxing.ps1).Hash -eq (Get-Content .\SHA256SUMS.txt).Split(' ')[0]   # True
 ```
 
@@ -85,3 +85,21 @@ git tag -d v0.1.0                                     # remove a tag local
 ```
 
 Se `REPO`/`VERSION` foram commitados por engano numa versão que não deveria ter sido publicada, reverta esse commit específico (`git revert <sha>`) em vez de reescrever o histórico de `main`.
+
+## Lançador curto (Vercel)
+
+`irm "https://tweakmax1ng.vercel.app" | iex` é servido pelo projeto Vercel `tweakmax1ng`, que publica só `launcher/vercel.json`: dois redirects 302 (`/` e `/win`) para `https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/TweakMaxing.ps1`. Não há build nem código; publicar uma release nova no GitHub já atualiza o que o comando baixa.
+
+Redeploy (só é preciso se o `vercel.json` mudar):
+
+```powershell
+npx vercel deploy .\launcher --prod --yes
+```
+
+Conferência ponta a ponta:
+
+```powershell
+$t = irm "https://tweakmax1ng.vercel.app"
+$h = (Get-FileHash -InputStream ([IO.MemoryStream]::new([Text.Encoding]::ASCII.GetBytes($t)))).Hash
+$h -eq (irm https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/SHA256SUMS.txt).Split(' ')[0]   # True
+```
