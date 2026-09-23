@@ -41,13 +41,9 @@ function Get-TmxMicroWinAppCatalog {
     if ($Path) {
         if (-not (Test-Path -LiteralPath $Path)) { throw "appx.json nao encontrado: $Path" }
         $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
-    } elseif ($null -ne $sync -and $null -ne $sync.configs -and $null -ne $sync.configs.appx) {
-        $doc = $sync.configs.appx
-    } elseif ($null -ne $sync -and $sync.webRoot) {
-        $caminho = Join-Path (Split-Path "$($sync.webRoot)" -Parent) 'config\appx.json'
-        if (Test-Path -LiteralPath $caminho) {
-            $doc = Get-Content -LiteralPath $caminho -Raw -Encoding UTF8 | ConvertFrom-Json
-        }
+    } else {
+        # Mesma fonte unica dos outros catalogos ($sync.configs, depois src/config).
+        $doc = Get-TmxConfigDocument -Name 'appx'
     }
 
     if ($null -eq $doc) {

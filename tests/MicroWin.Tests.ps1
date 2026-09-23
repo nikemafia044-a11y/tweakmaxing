@@ -809,4 +809,31 @@ Describe 'MicroWin' -Tag 'MicroWin' {
             @(Get-ChildItem -LiteralPath $script:Falsa.destino -Filter '*.iso' -File).Count | Should -Be 0
         }
     }
+
+    Context 'Get-TmxMicroWinAppCatalog' {
+
+        It 'usa $sync.configs.appx quando carregado (unica origem no artefato compilado)' {
+            $s = New-TmxMicroWinTestSync -TestMode $true
+            $s.webRoot = $null
+            $s.configs['appx'] = [pscustomobject]@{
+                appx = @([pscustomobject]@{ id = 'x1'; nome = 'Nome X'; descricao = 'Desc'; pacote = 'Pacote.X' })
+            }
+            $cat = @(Get-TmxMicroWinAppCatalog)
+            $cat.Count        | Should -Be 1
+            $cat[0].id        | Should -Be 'x1'
+            $cat[0].pacote    | Should -Be 'Pacote.X'
+        }
+
+        It 'sem configs carregados le src/config/appx.json via webRoot' {
+            New-TmxMicroWinTestSync -TestMode $true | Out-Null
+            $esperado = @((Get-Content -LiteralPath $script:TmxAppxJson -Raw -Encoding UTF8 | ConvertFrom-Json).appx).Count
+            @(Get-TmxMicroWinAppCatalog).Count | Should -Be $esperado
+        }
+
+        It 'sem nenhuma origem lanca erro de configuracao' {
+            $s = New-TmxMicroWinTestSync -TestMode $true
+            $s.webRoot = $null
+            { Get-TmxMicroWinAppCatalog } | Should -Throw '*catalogo de appx nao encontrado*'
+        }
+    }
 }
