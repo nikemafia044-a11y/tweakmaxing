@@ -11,10 +11,13 @@
          que chegaria ao usuario nao seria o JSON do repositorio. Aqui o texto
          de cada arquivo entra VERBATIM dentro de @'...'@ e e parseado em
          tempo de execucao com ConvertFrom-Json.
-      2. O arquivo sai em UTF-8 COM BOM. Os JSONs e o HTML/JS sao em portugues,
-         com acento; sem BOM o parser do PowerShell 5.1 leria tudo como ANSI.
-         (Os fontes .ps1 do repositorio continuam ASCII puro e sem BOM - ver
-         tests/Encoding.Tests.ps1.)
+      2. O arquivo sai ASCII PURO e SEM BOM, como os fontes .ps1 do repositorio
+         (ver tests/Encoding.Tests.ps1). Os JSONs e o HTML/JS sao em portugues,
+         com acento: os catalogos entram com \uXXXX (escape do proprio JSON) e
+         a interface e o modelo do MicroWin entram em base64 dos bytes. Assim
+         nenhuma codepage ANSI muda o que o parser le, e o artefato continua
+         servindo para 'iex (irm ...)' - um BOM viraria U+FEFF no inicio do
+         texto e o parser recusaria.
       3. O param() do scripts/main.ps1 e REMOVIDO: no artefato tudo e um unico
          script, e um 'param' fora do inicio e erro de sintaxe. Os parametros
          ja existem, vindos do param() do scripts/start.ps1.
@@ -104,6 +107,39 @@ function Assert-TmxHereStringSafe {
                   'Quebre a linha ou recue o texto antes de compilar.'
         }
     }
+}
+
+function ConvertTo-TmxAsciiJson {
+    <#
+    .SYNOPSIS
+        Mesmo JSON, com todo caractere fora do ASCII trocado pelo escape
+        \uXXXX do proprio JSON.
+    .DESCRIPTION
+        O artefato inteiro tem que ser ASCII (ver a checagem no fim deste
+        arquivo): assim ele pode ser gravado SEM BOM e nenhum PowerShell 5.1
+        com codepage ANSI diferente le acento errado.
+
+        Nao e ConvertTo-Json: aquele reindentaria e reordenaria o documento.
+        Aqui a estrutura, a indentacao e a ordem das chaves continuam sendo as
+        do arquivo do repositorio; so os caracteres acentuados viram \uXXXX,
+        que o ConvertFrom-Json decodifica de volta em tempo de execucao.
+
+        Cada unidade UTF-16 e escapada separadamente - um par substituto
+        (emoji) vira 😀, que e exatamente como o JSON representa
+        caracteres fora do BMP.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [AllowEmptyString()] [string] $Text)
+
+    $saida = New-Object System.Text.StringBuilder ($Text.Length)
+    foreach ($c in $Text.ToCharArray()) {
+        if ([int]$c -gt 127) {
+            [void]$saida.AppendFormat('\u{0:x4}', [int]$c)
+        } else {
+            [void]$saida.Append($c)
+        }
+    }
+    $saida.ToString()
 }
 
 function New-TmxHereString {
@@ -330,18 +366,22 @@ $arquivosConfig = @(Get-ChildItem -LiteralPath $dirConfig -Filter '*.json' -File
 if ($arquivosConfig.Count -eq 0) { throw "Nenhum .json em $dirConfig." }
 
 foreach ($arquivo in $arquivosConfig) {
-    $texto = Get-TmxAssetText -Path $arquivo.FullName
+    $texto = ConvertTo-TmxAsciiJson -Text (Get-TmxAssetText -Path $arquivo.FullName)
     Assert-TmxHereStringSafe -Text $texto -Origem "src\config\$($arquivo.Name)"
-    # Conferencia de sanidade: um JSON quebrado tem que falhar AQUI, nao na
-    # maquina de quem baixou o artefato.
+    # Conferencia de sanidade DEPOIS do escape: um JSON quebrado (ou quebrado
+    # pelo escape) tem que falhar AQUI, nao na maquina de quem baixou.
     $null = $texto | ConvertFrom-Json
     [void]$sb.AppendLine("`$sync.configs['$($arquivo.BaseName)'] = " + (New-TmxHereString -Text $texto) + ' | ConvertFrom-Json')
     [void]$sb.AppendLine()
 }
 
 # --- src/web ----------------------------------------------------------------
+# Base64 dos BYTES do arquivo, nao o texto: assim o artefato inteiro continua
+# ASCII (o HTML/JS/CSS e em portugues, com acento) e o que sai do outro lado e
+# byte a byte o arquivo do repositorio - sem BOM, sem conversao de codepage.
 [void]$sb.AppendLine('# =========================================================================')
-[void]$sb.AppendLine('# TMX-DADOS: interface (src/web), extraida em <home>\ui\<versao>')
+[void]$sb.AppendLine('# TMX-DADOS: interface (src/web) em base64 dos bytes UTF-8,')
+[void]$sb.AppendLine('#            extraida em <home>\ui\<versao> (ver Get-TmxWebRoot)')
 [void]$sb.AppendLine('# =========================================================================')
 [void]$sb.AppendLine('$sync.embedded.web = @{}')
 
@@ -351,28 +391,17 @@ if ($arquivosWeb.Count -eq 0) { throw "Nenhum arquivo em $dirWeb." }
 
 foreach ($arquivo in $arquivosWeb) {
     $nome  = $arquivo.FullName.Substring($dirWeb.Length).TrimStart('\')
-
-    # Tudo em src/web e embutido como TEXTO. Um binario (icone, fonte) sairia
-    # corrompido do outro lado, em silencio: melhor recusar a compilacao e
-    # exigir uma decisao (base64, como as DLLs, ou data: URI no CSS).
-    $bytesWeb = [System.IO.File]::ReadAllBytes($arquivo.FullName)
-    if ($bytesWeb -contains 0) {
-        throw "src\web\$nome parece binario (byte 0x00) e nao pode ser embutido como texto."
-    }
-
-    $texto = Get-TmxAssetText -Path $arquivo.FullName
-    Assert-TmxHereStringSafe -Text $texto -Origem "src\web\$nome"
-    [void]$sb.AppendLine("`$sync.embedded.web['$nome'] = " + (New-TmxHereString -Text $texto))
-    [void]$sb.AppendLine()
+    $bytes = [System.IO.File]::ReadAllBytes($arquivo.FullName)
+    [void]$sb.AppendLine("`$sync.embedded.web['$nome'] = '" + [Convert]::ToBase64String($bytes) + "'")
 }
+[void]$sb.AppendLine()
 
 # --- Modelo do MicroWin -----------------------------------------------------
 $modelo = Join-Path $tmxRaiz 'tools\microwin\autounattend.template.xml'
 if (Test-Path -LiteralPath $modelo) {
-    $textoModelo = Get-TmxAssetText -Path $modelo
-    Assert-TmxHereStringSafe -Text $textoModelo -Origem 'tools\microwin\autounattend.template.xml'
-    [void]$sb.AppendLine('# TMX-DADOS: modelo do autounattend.xml (MicroWin)')
-    [void]$sb.AppendLine('$sync.embedded.microwinTemplate = ' + (New-TmxHereString -Text $textoModelo))
+    [void]$sb.AppendLine('# TMX-DADOS: modelo do autounattend.xml (MicroWin), base64 dos bytes UTF-8')
+    [void]$sb.AppendLine('$sync.embedded.microwinTemplate = ''' +
+                         [Convert]::ToBase64String([System.IO.File]::ReadAllBytes($modelo)) + '''')
     [void]$sb.AppendLine()
 } else {
     Write-Warning 'tools\microwin\autounattend.template.xml ausente: o artefato nao vai gerar ISO do MicroWin.'
@@ -405,9 +434,28 @@ $main = Remove-TmxParamBlock -Text $main -Origem 'scripts\main.ps1'
 # 4. Gravacao e conferencias
 # ---------------------------------------------------------------------------
 
-# UTF-8 COM BOM: o conteudo embutido tem acento e o PS 5.1 le arquivo sem BOM
-# usando a codepage ANSI.
-[System.IO.File]::WriteAllText($Out, $sb.ToString(), (New-Object System.Text.UTF8Encoding($true)))
+$artefato = $sb.ToString()
+
+# ASCII PURO, e por isso SEM BOM. O PS 5.1 le arquivo sem BOM usando a codepage
+# ANSI da maquina; enquanto todo byte for <= 0x7F, ANSI, UTF-8 e ASCII dao
+# exatamente o mesmo texto - em qualquer maquina, com qualquer codepage. O que
+# tem acento (catalogos, interface, modelo) entra escapado (\uXXXX) ou em
+# base64. Um BOM tambem resolveria a leitura, mas quebra o 'iex (irm ...)': o
+# EF BB BF chega como caractere U+FEFF no inicio do texto e o parser recusa.
+$fora = -1
+for ($i = 0; $i -lt $artefato.Length; $i++) {
+    if ([int]$artefato[$i] -gt 127) { $fora = $i; break }
+}
+if ($fora -ge 0) {
+    $linha = 1
+    for ($i = 0; $i -lt $fora; $i++) { if ($artefato[$i] -eq "`n") { $linha++ } }
+    $inicio = [Math]::Max(0, $fora - 40)
+    $trecho = $artefato.Substring($inicio, [Math]::Min(80, $artefato.Length - $inicio))
+    throw ("O artefato tem caractere fora do ASCII na linha {0} (U+{1:X4}): ...{2}..." -f `
+           $linha, [int]$artefato[$fora], $trecho)
+}
+
+[System.IO.File]::WriteAllText($Out, $artefato, (New-Object System.Text.ASCIIEncoding))
 
 $erros = $null
 $null = [System.Management.Automation.Language.Parser]::ParseFile($Out, [ref]$null, [ref]$erros)

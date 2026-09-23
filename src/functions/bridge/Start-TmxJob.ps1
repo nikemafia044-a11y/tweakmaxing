@@ -115,6 +115,16 @@ function New-TmxSessionState {
         (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry -ArgumentList 'sync', $sync, $null)
     )
 
+    # Mesma preferencia da thread principal (scripts/start.ps1): uma runspace
+    # nova nasceria com 'Continue' e engoliria erro nao-terminante no meio de
+    # uma aplicacao de tweaks. Quem realmente garante isso sao as atribuicoes
+    # explicitas no Invoke-TmxJobBody e no scriptblock da janela; esta entrada
+    # e a rede de seguranca para qualquer scriptblock que rode fora dos dois.
+    $iss.Variables.Add(
+        (New-Object System.Management.Automation.Runspaces.SessionStateVariableEntry `
+            -ArgumentList 'ErrorActionPreference', 'Stop', 'Preferencia herdada da thread principal do TweakMaxing')
+    )
+
     $permitidas = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
     foreach ($n in $script:TmxConstantesRunspace) { [void]$permitidas.Add($n) }
     $mutaveis = New-Object 'System.Collections.Generic.HashSet[string]' ([StringComparer]::OrdinalIgnoreCase)
@@ -204,6 +214,13 @@ function Invoke-TmxJobBody {
         $Payload,
         [Parameter(Mandatory)] [string] $HandlerText
     )
+
+    # A runspace do pool nao herda o $ErrorActionPreference da thread principal
+    # (o scripts/start.ps1 define 'Stop' la). Sem isto, um erro NAO-terminante
+    # dentro do handler - um Get-Item num caminho que sumiu, um Remove-Item sem
+    # permissao - seguiria adiante e o trabalho terminaria com ok=true, como se
+    # tivesse dado certo. O escopo desta funcao cobre o handler inteiro.
+    $ErrorActionPreference = 'Stop'
 
     try {
         Send-TmxUiEvent -Event 'job.started' -Payload @{ jobId = $JobId; name = $Name }

@@ -95,6 +95,11 @@ function Get-TmxWebRoot {
         e, junto, o modelo do MicroWin ($sync.embedded.microwinTemplate, que
         NAO e servido pela janela; fica aqui porque esta e a pasta versionada
         que o artefato ja escreve) - para <home>\ui\<versao>.
+
+        Cada valor embutido e o BASE64 DOS BYTES do arquivo original (e assim
+        que o artefato compilado consegue ser ASCII puro): os bytes sao
+        gravados como vieram, sem BOM e sem conversao de codepage - byte a
+        byte o mesmo arquivo de src/web.
     #>
     [CmdletBinding()]
     param()
@@ -120,22 +125,33 @@ function Get-TmxWebRoot {
     $modelo = $sync.embedded['microwinTemplate']
     if ($modelo) { $conteudos['autounattend.template.xml'] = "$modelo" }
 
-    # UTF8 sem BOM: o WebView2 le os arquivos como texto servido por HTTP.
-    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    # SHA256, nao tamanho: dois app.js diferentes com o mesmo numero de bytes
+    # (uma troca de palavra do mesmo comprimento) passariam batido e a janela
+    # continuaria servindo a versao velha depois de uma atualizacao.
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        foreach ($nome in @($conteudos.Keys)) {
+            $alvo = Join-Path $destino $nome
+            $pai  = Split-Path $alvo -Parent
+            if (-not (Test-Path -LiteralPath $pai)) { New-Item -ItemType Directory -Path $pai -Force | Out-Null }
 
-    foreach ($nome in @($conteudos.Keys)) {
-        $alvo = Join-Path $destino $nome
-        $pai  = Split-Path $alvo -Parent
-        if (-not (Test-Path -LiteralPath $pai)) { New-Item -ItemType Directory -Path $pai -Force | Out-Null }
+            $bytes = [Convert]::FromBase64String($conteudos[$nome])
 
-        $bytes = $utf8.GetBytes($conteudos[$nome])
-        # Mesma regra das DLLs: arquivo de mesmo tamanho e considerado igual.
-        # Reescrever a cada abertura so gastaria disco - e um app.js sendo
-        # reescrito enquanto a janela o le seria pior ainda.
-        if (Test-Path -LiteralPath $alvo) {
-            if ((Get-Item -LiteralPath $alvo).Length -eq $bytes.Length) { continue }
+            if (Test-Path -LiteralPath $alvo) {
+                $atual = $null
+                try { $atual = [IO.File]::ReadAllBytes($alvo) } catch { $atual = $null }
+                if ($null -ne $atual -and $atual.Length -eq $bytes.Length) {
+                    $h1 = [BitConverter]::ToString($sha.ComputeHash($atual))
+                    $h2 = [BitConverter]::ToString($sha.ComputeHash($bytes))
+                    # Igual: nao reescreve. Nao e so economia de disco - um
+                    # app.js reescrito enquanto a janela o le e pior.
+                    if ($h1 -eq $h2) { continue }
+                }
+            }
+            [IO.File]::WriteAllBytes($alvo, $bytes)
         }
-        [IO.File]::WriteAllBytes($alvo, $bytes)
+    } finally {
+        $sha.Dispose()
     }
     $destino
 }

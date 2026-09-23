@@ -275,6 +275,25 @@ Describe 'Ponte JSON' -Tag 'Bridge' {
             $lido.payload.result.runId | Should -Be $criado.payload.result.runId
         }
 
+        It 'trata erro NAO-terminante dentro do job como falha (ErrorActionPreference Stop na runspace)' {
+            # Regressao: a runspace do pool nascia com o 'Continue' do host. Um
+            # Get-Item num caminho inexistente so escrevia no stream de erro, o
+            # handler seguia ate o fim e o trabalho terminava com ok=true - o
+            # oposto do que a janela mostra para o usuario.
+            Register-TmxBridgeAction -Name 'teste.async.naoTerminante' -Async -Handler {
+                param($p)
+                Get-Item 'C:\nao\existe\de\jeito\nenhum\tweakmaxing.txt' | Out-Null
+                @{ chegou = $true }
+            }
+            $r = Invoke-TmxBridgeRequest -Json '{"id":"27","action":"teste.async.naoTerminante"}' | ConvertFrom-Json
+            $r.ok | Should -BeTrue
+
+            $pronto = Wait-TmxTestEvent -Nome 'job.done' -TimeoutSeconds 20
+            $pronto | Should -Not -BeNullOrEmpty
+            $pronto.payload.ok | Should -BeFalse
+            $pronto.payload.error.message | Should -Not -BeNullOrEmpty
+        }
+
         It 'reporta erro do handler assincrono em job.done' {
             Register-TmxBridgeAction -Name 'teste.async.boom' -Async -Handler { param($p) throw 'falhou no job' }
             $r = Invoke-TmxBridgeRequest -Json '{"id":"23","action":"teste.async.boom"}' | ConvertFrom-Json

@@ -209,7 +209,10 @@ $sync.UIRunspace.Open()
 
 $uiShell = [powershell]::Create()
 $uiShell.Runspace = $sync.UIRunspace
-[void]$uiShell.AddScript({ Start-TmxUserInterface })
+# $ErrorActionPreference explicito: a runspace da janela nao herda o 'Stop'
+# desta thread. Sem ele, um erro nao-terminante no caminho de abertura vira
+# janela pela metade em vez de erro visivel no log e no console.
+[void]$uiShell.AddScript({ $ErrorActionPreference = 'Stop'; Start-TmxUserInterface })
 
 Write-TmxLog -Level INFO -Message 'Iniciando a thread da interface'
 $uiHandle = $uiShell.BeginInvoke()

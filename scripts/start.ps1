@@ -33,7 +33,11 @@ param(
     [switch] $TestMode,
     [switch] $NoElevate
 )
+# Marcador informativo, para quem abrir o arquivo saber que ele e o artefato
+# compilado (o Compile.ps1 confere que ele continua aqui). Nenhuma decisao de
+# execucao depende dele: sob 'iex' nao da para ler o proprio texto.
 #TMX-COMPILED
+
 # O Start-TmxDev.ps1 ja roda com 'Stop'; o artefato compilado comeca por este
 # arquivo e herdaria o 'Continue' do host. Um erro nao-terminante engolido no
 # meio de uma aplicacao de tweaks e exatamente o que nao pode acontecer, e uma
@@ -85,18 +89,41 @@ if ($precisaElevar) {
     $self = $env:TMX_DEV_ENTRY
     if (-not $self) { $self = $PSCommandPath }
     if (-not $self) {
-        # Invocado por 'iex (irm ...)': nao ha arquivo para o processo elevado
-        # abrir. Usa o proprio texto quando ele e o artefato compilado; senao
-        # baixa o release correspondente a esta versao.
-        $texto = $MyInvocation.MyCommand.ScriptBlock.ToString()
-        if ($texto -notmatch '#TMX-COMPILED') {
-            $url = "https://github.com/$script:TmxRepo/releases/download/v$script:TmxVersion/TweakMaxing.ps1"
-            Write-Host "Baixando o TweakMaxing $script:TmxVersion para elevar..." -ForegroundColor Cyan
-            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-            $texto = Invoke-RestMethod -Uri $url -UseBasicParsing
+        # Invocado por 'iex (irm ...)': nao existe arquivo no disco para o
+        # processo elevado abrir.
+        #
+        # E NAO adianta tentar recuperar o proprio texto: sob 'iex', o
+        # $MyInvocation.MyCommand.ScriptBlock e o do comando ENVOLVENTE (o
+        # 'iex (irm ...)' que o usuario digitou), nao o corpo do artefato. O
+        # caminho unico e honesto e baixar o release desta versao - em bytes,
+        # com -OutFile, sem passar por string - e elevar apontando para o
+        # arquivo.
+        if ($script:TmxRepo -like 'SEU_USUARIO/*') {
+            Write-Host 'Este TweakMaxing foi compilado com o repositorio de exemplo (REPO nao configurado):' -ForegroundColor Red
+            Write-Host 'nao ha release para baixar e elevar. Salve o TweakMaxing.ps1 em disco e rode:' -ForegroundColor Red
+            Write-Host '  powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1' -ForegroundColor Yellow
+            return
         }
+
+        $url  = "https://github.com/$script:TmxRepo/releases/download/v$script:TmxVersion/TweakMaxing.ps1"
         $self = Join-Path $raiz "TweakMaxing-$script:TmxVersion.ps1"
-        Set-Content -LiteralPath $self -Value $texto -Encoding UTF8
+        Write-Host "Baixando o TweakMaxing $script:TmxVersion para elevar..." -ForegroundColor Cyan
+        try {
+            # TLS 1.2 explicito: o default do PS 5.1 ainda e SSL3/TLS1.0 em
+            # maquinas antigas.
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            Invoke-WebRequest -Uri $url -OutFile $self -UseBasicParsing
+        } catch {
+            Write-Host "Nao foi possivel baixar $url" -ForegroundColor Red
+            Write-Host "  $($_.Exception.Message)" -ForegroundColor Red
+            Write-Host 'Sem rede (ou sem esse release), salve o TweakMaxing.ps1 em disco e rode:' -ForegroundColor Yellow
+            Write-Host '  powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1' -ForegroundColor Yellow
+            return
+        }
+        if (-not (Test-Path -LiteralPath $self)) {
+            Write-Host "O download terminou sem gerar $self. Salve o TweakMaxing.ps1 em disco e rode com -File." -ForegroundColor Red
+            return
+        }
     }
 
     # Os parametros viajam como dados serializados, nunca como texto de comando:
