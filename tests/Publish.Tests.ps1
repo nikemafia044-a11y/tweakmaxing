@@ -99,6 +99,10 @@ Describe 'Publish-Release.ps1' -Tag 'Publish' -Skip:(-not $script:TmxTemGit) {
                 $script:Saida = @()
             }
             $script:Texto = ($script:Saida | Out-String)
+            # O host as vezes quebra uma linha longa do Write-Host na largura
+            # do console; achatado (sem quebras de linha) o teste de
+            # substring nao depende de largura nenhuma.
+            $script:TextoAchatado = ($script:Texto -replace '\s+', ' ')
         }
 
         It 'roda sem lancar excecao' {
@@ -135,11 +139,14 @@ Describe 'Publish-Release.ps1' -Tag 'Publish' -Skip:(-not $script:TmxTemGit) {
         }
 
         It 'imprime o plano de git push/gh release create com a tag certa, sem executar' {
-            $script:Texto | Should -Match ([regex]::Escape('[DryRun] git push origin main'))
-            $script:Texto | Should -Match ([regex]::Escape('[DryRun] git push origin v9.9.9'))
-            $script:Texto | Should -Match ([regex]::Escape('release create v9.9.9'))
-            $script:Texto | Should -Match ([regex]::Escape('TweakMaxing v9.9.9'))
-            $script:Texto | Should -Match ([regex]::Escape('--notes-file docs/release-notes/v9.9.9.md'))
+            # Contra a versao achatada (sem quebra de linha): o console pode
+            # quebrar uma linha longa do Write-Host em qualquer largura, o
+            # que partiria uma frase no meio numa comparacao direta.
+            $script:TextoAchatado | Should -Match ([regex]::Escape('[DryRun] git push origin main'))
+            $script:TextoAchatado | Should -Match ([regex]::Escape('[DryRun] git push origin v9.9.9'))
+            $script:TextoAchatado | Should -Match ([regex]::Escape('release create v9.9.9'))
+            $script:TextoAchatado | Should -Match ([regex]::Escape('TweakMaxing v9.9.9'))
+            $script:TextoAchatado | Should -Match ([regex]::Escape('--notes-file docs/release-notes/v9.9.9.md'))
         }
 
         It 'nao publicou de verdade (nenhuma URL de release criada no output)' {
