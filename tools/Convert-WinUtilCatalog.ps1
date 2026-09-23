@@ -559,6 +559,12 @@ function ConvertTo-TmxApplications {
         $descOv = Get-TmxConvProp -Obj $ov -Nome 'descricao' -Padrao $null
         if ($descOv) { $descricao = "$descOv" }
 
+        # icon: nao existe no catalogo do WinUtil - padrao null, so o overlay
+        # pode preencher (mesma ideia de 'descricao' acima).
+        $icon = $null
+        $iconOv = Get-TmxConvProp -Obj $ov -Nome 'icon' -Padrao $null
+        if ($iconOv) { $icon = "$iconOv" }
+
         $saida.Add([ordered]@{
             id        = $id
             nome      = $nome
@@ -567,6 +573,7 @@ function ConvertTo-TmxApplications {
             winget    = Get-TmxConvProp -Obj $v -Nome 'winget' -Padrao $null
             choco     = Get-TmxConvProp -Obj $v -Nome 'choco'  -Padrao $null
             link      = Get-TmxConvProp -Obj $v -Nome 'link'   -Padrao $null
+            icon      = $icon
             foss      = [bool](Get-TmxConvProp -Obj $v -Nome 'foss' -Padrao $false)
         })
     }

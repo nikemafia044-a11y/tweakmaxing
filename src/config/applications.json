@@ -8,6 +8,7 @@
       "winget": "AgileBits.1Password",
       "choco": "1password",
       "link": "https://1password.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -18,6 +19,7 @@
       "winget": "7zip.7zip",
       "choco": "7zip",
       "link": "https://www.7-zip.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -28,6 +30,7 @@
       "winget": "amir1376.ABDownloadManager",
       "choco": "ab-download-manager",
       "link": "https://abdownloadmanager.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -38,6 +41,7 @@
       "winget": "Adobe.Acrobat.Reader.64-bit",
       "choco": "adobereader",
       "link": "https://www.adobe.com/acrobat/pdf-reader.html",
+      "icon": null,
       "foss": false
     },
     {
@@ -48,6 +52,7 @@
       "winget": "Famatech.AdvancedIPScanner",
       "choco": "advanced-ip-scanner",
       "link": "https://www.advanced-ip-scanner.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -58,6 +63,7 @@
       "winget": "AIMP.AIMP",
       "choco": "aimp",
       "link": "https://www.aimp.ru/",
+      "icon": null,
       "foss": false
     },
     {
@@ -68,6 +74,7 @@
       "winget": "angryziber.AngryIPScanner",
       "choco": "angryip",
       "link": "https://angryip.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -78,6 +85,7 @@
       "winget": "AnyDesk.AnyDesk",
       "choco": "anydesk",
       "link": "https://anydesk.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -88,6 +96,7 @@
       "winget": "Audacity.Audacity",
       "choco": "audacity",
       "link": "https://www.audacityteam.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -98,6 +107,7 @@
       "winget": "Microsoft.Sysinternals.Autoruns",
       "choco": "autoruns",
       "link": "https://learn.microsoft.com/en-us/sysinternals/downloads/autoruns",
+      "icon": null,
       "foss": false
     },
     {
@@ -108,6 +118,7 @@
       "winget": "Microsoft.Sysinternals.RDCMan",
       "choco": "rdcman",
       "link": "https://learn.microsoft.com/en-us/sysinternals/downloads/rdcman",
+      "icon": null,
       "foss": false
     },
     {
@@ -118,6 +129,7 @@
       "winget": "AutoHotkey.AutoHotkey",
       "choco": "autohotkey",
       "link": "https://www.autohotkey.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -128,6 +140,7 @@
       "winget": "Blizzard.BattleNet",
       "choco": "na",
       "link": "https://battle.net",
+      "icon": null,
       "foss": false
     },
     {
@@ -138,6 +151,7 @@
       "winget": "Bitwarden.Bitwarden",
       "choco": "bitwarden",
       "link": "https://bitwarden.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -148,6 +162,7 @@
       "winget": "BlenderFoundation.Blender",
       "choco": "blender",
       "link": "https://www.blender.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -158,6 +173,7 @@
       "winget": "Brave.Brave",
       "choco": "brave",
       "link": "https://www.brave.com",
+      "icon": null,
       "foss": true
     },
     {
@@ -168,6 +184,7 @@
       "winget": "Bruno.Bruno",
       "choco": "bruno",
       "link": "https://www.usebruno.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -178,6 +195,7 @@
       "winget": "Klocman.BulkCrapUninstaller",
       "choco": "bulk-crap-uninstaller",
       "link": "https://www.bcuninstaller.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -188,6 +206,7 @@
       "winget": "Blur009.BlurAutoClicker",
       "choco": "na",
       "link": "https://blur009.vercel.app/projects/blur-autoclicker/",
+      "icon": null,
       "foss": true
     },
     {
@@ -198,6 +217,7 @@
       "winget": "calibre.calibre",
       "choco": "calibre",
       "link": "https://calibre-ebook.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -208,6 +228,7 @@
       "winget": "Cemu.Cemu",
       "choco": "cemu",
       "link": "https://cemu.info/",
+      "icon": null,
       "foss": true
     },
     {
@@ -218,6 +239,7 @@
       "winget": "msstore:9NT1R1C2HH7J",
       "choco": "na",
       "link": "https://openai.com/chatgpt/download/",
+      "icon": null,
       "foss": false
     },
     {
@@ -228,6 +250,7 @@
       "winget": "ChatterinoTeam.Chatterino",
       "choco": "chatterino",
       "link": "https://www.chatterino.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -238,6 +261,7 @@
       "winget": "Google.Chrome",
       "choco": "googlechrome",
       "link": "https://www.google.com/chrome/",
+      "icon": null,
       "foss": false
     },
     {
@@ -248,6 +272,7 @@
       "winget": "Hibbiki.Chromium",
       "choco": "chromium",
       "link": "https://www.chromium.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -258,6 +283,7 @@
       "winget": "Maxon.CinebenchR23",
       "choco": "na",
       "link": "https://www.maxon.net/en/cinebench",
+      "icon": null,
       "foss": false
     },
     {
@@ -268,6 +294,7 @@
       "winget": "Anthropic.Claude",
       "choco": "claude",
       "link": "https://claude.ai/download",
+      "icon": null,
       "foss": false
     },
     {
@@ -278,6 +305,7 @@
       "winget": "Anthropic.ClaudeCode",
       "choco": "claude-code",
       "link": "https://code.claude.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -288,6 +316,7 @@
       "winget": "Kitware.CMake",
       "choco": "cmake",
       "link": "https://cmake.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -298,6 +327,7 @@
       "winget": "OpenAI.Codex",
       "choco": "codex",
       "link": "https://developers.openai.com/codex/cli",
+      "icon": null,
       "foss": true
     },
     {
@@ -308,6 +338,7 @@
       "winget": "CPUID.CPU-Z",
       "choco": "cpu-z",
       "link": "https://www.cpuid.com/softwares/cpu-z.html",
+      "icon": null,
       "foss": false
     },
     {
@@ -318,6 +349,7 @@
       "winget": "CrystalDewWorld.CrystalDiskInfo",
       "choco": "crystaldiskinfo",
       "link": "https://crystalmark.info/en/software/crystaldiskinfo/",
+      "icon": null,
       "foss": true
     },
     {
@@ -328,6 +360,7 @@
       "winget": "CrystalDewWorld.CrystalDiskMark",
       "choco": "crystaldiskmark",
       "link": "https://crystalmark.info/en/software/crystaldiskmark/",
+      "icon": null,
       "foss": true
     },
     {
@@ -338,6 +371,7 @@
       "winget": "Anysphere.Cursor",
       "choco": "cursoride",
       "link": "https://cursor.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -348,6 +382,7 @@
       "winget": "Wagnardsoft.DisplayDriverUninstaller",
       "choco": "ddu",
       "link": "https://www.wagnardsoft.com/display-driver-uninstaller-DDU-",
+      "icon": null,
       "foss": true
     },
     {
@@ -358,6 +393,7 @@
       "winget": "Discord.Discord",
       "choco": "discord",
       "link": "https://discord.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -368,6 +404,7 @@
       "winget": "CodingWondersSoftware.DISMTools.Stable",
       "choco": "dismtools",
       "link": "https://github.com/CodingWonders/DISMTools",
+      "icon": null,
       "foss": true
     },
     {
@@ -378,6 +415,7 @@
       "winget": "Nlitesoft.NTLite",
       "choco": "ntlite-free",
       "link": "https://ntlite.com",
+      "icon": null,
       "foss": false
     },
     {
@@ -388,6 +426,7 @@
       "winget": "SpikeHD.Dorion",
       "choco": "dorion",
       "link": "https://spikehd.dev/projects/dorion/",
+      "icon": null,
       "foss": true
     },
     {
@@ -398,6 +437,7 @@
       "winget": "Docker.DockerDesktop",
       "choco": "docker-desktop",
       "link": "https://www.docker.com/products/docker-desktop/",
+      "icon": null,
       "foss": false
     },
     {
@@ -408,6 +448,7 @@
       "winget": "Microsoft.DotNet.DesktopRuntime.6",
       "choco": "dotnet-6.0-runtime",
       "link": "https://dotnet.microsoft.com/download/dotnet/6.0",
+      "icon": null,
       "foss": true
     },
     {
@@ -418,6 +459,7 @@
       "winget": "Microsoft.DotNet.DesktopRuntime.8",
       "choco": "dotnet-8.0-runtime",
       "link": "https://dotnet.microsoft.com/download/dotnet/8.0",
+      "icon": null,
       "foss": true
     },
     {
@@ -428,6 +470,7 @@
       "winget": "Microsoft.DotNet.DesktopRuntime.9",
       "choco": "dotnet-9.0-runtime",
       "link": "https://dotnet.microsoft.com/download/dotnet/9.0",
+      "icon": null,
       "foss": true
     },
     {
@@ -438,6 +481,7 @@
       "winget": "Microsoft.DotNet.DesktopRuntime.10",
       "choco": "dotnet-10.0-runtime",
       "link": "https://dotnet.microsoft.com/download/dotnet/10.0",
+      "icon": null,
       "foss": true
     },
     {
@@ -448,6 +492,7 @@
       "winget": "Dropbox.Dropbox",
       "choco": "dropbox",
       "link": "https://www.dropbox.com/desktop",
+      "icon": null,
       "foss": false
     },
     {
@@ -458,6 +503,7 @@
       "winget": "ElectronicArts.EADesktop",
       "choco": "ea-app",
       "link": "https://www.ea.com/ea-app",
+      "icon": null,
       "foss": false
     },
     {
@@ -468,6 +514,7 @@
       "winget": "File-New-Project.EarTrumpet",
       "choco": "eartrumpet",
       "link": "https://eartrumpet.app/",
+      "icon": null,
       "foss": true
     },
     {
@@ -478,6 +525,7 @@
       "winget": "Microsoft.Edge",
       "choco": "microsoft-edge",
       "link": "https://www.microsoft.com/edge",
+      "icon": null,
       "foss": false
     },
     {
@@ -488,6 +536,7 @@
       "winget": "ES-DE.EmulationStation-DE",
       "choco": "",
       "link": "https://es-de.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -498,6 +547,7 @@
       "winget": "ente-io.auth-desktop",
       "choco": "ente-auth",
       "link": "https://ente.io/auth/",
+      "icon": null,
       "foss": true
     },
     {
@@ -508,6 +558,7 @@
       "winget": "EpicGames.EpicGamesLauncher",
       "choco": "epicgameslauncher",
       "link": "https://www.epicgames.com/store/en-US/",
+      "icon": null,
       "foss": false
     },
     {
@@ -518,6 +569,7 @@
       "winget": "FilesCommunity.Files",
       "choco": "files",
       "link": "https://files.community",
+      "icon": null,
       "foss": true
     },
     {
@@ -528,6 +580,7 @@
       "winget": "AdrienAllard.FileConverter",
       "choco": "file-converter",
       "link": "https://file-converter.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -538,6 +591,7 @@
       "winget": "Mozilla.Firefox",
       "choco": "firefox",
       "link": "https://www.mozilla.org/en-US/firefox/new/",
+      "icon": null,
       "foss": true
     },
     {
@@ -548,6 +602,7 @@
       "winget": "Mozilla.Firefox.ESR",
       "choco": "FirefoxESR",
       "link": "https://www.mozilla.org/en-US/firefox/enterprise/",
+      "icon": null,
       "foss": true
     },
     {
@@ -558,6 +613,7 @@
       "winget": "Ablaze.Floorp",
       "choco": "floorp",
       "link": "https://floorp.app/",
+      "icon": null,
       "foss": true
     },
     {
@@ -568,6 +624,7 @@
       "winget": "flux.flux",
       "choco": "flux",
       "link": "https://justgetflux.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -578,6 +635,7 @@
       "winget": "PeterPawlowski.foobar2000",
       "choco": "foobar2000",
       "link": "https://www.foobar2000.org/",
+      "icon": null,
       "foss": false
     },
     {
@@ -588,6 +646,7 @@
       "winget": "Schniz.fnm",
       "choco": "fnm",
       "link": "https://github.com/Schniz/fnm",
+      "icon": null,
       "foss": true
     },
     {
@@ -598,6 +657,7 @@
       "winget": "Foxit.FoxitReader",
       "choco": "foxitreader",
       "link": "https://www.foxit.com/pdf-reader/",
+      "icon": null,
       "foss": false
     },
     {
@@ -608,6 +668,7 @@
       "winget": "Nvidia.GeForceNow",
       "choco": "nvidia-geforce-now",
       "link": "https://www.nvidia.com/en-us/geforce-now/",
+      "icon": null,
       "foss": false
     },
     {
@@ -618,6 +679,7 @@
       "winget": "GIMP.GIMP.3",
       "choco": "gimp",
       "link": "https://www.gimp.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -628,6 +690,7 @@
       "winget": "Git.Git",
       "choco": "git",
       "link": "https://git-scm.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -638,6 +701,7 @@
       "winget": "GitExtensionsTeam.GitExtensions",
       "choco": "gitextensions",
       "link": "https://gitextensions.github.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -648,6 +712,7 @@
       "winget": "GitHub.cli",
       "choco": "gh",
       "link": "https://cli.github.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -658,6 +723,7 @@
       "winget": "GitHub.GitHubDesktop",
       "choco": "git;github-desktop",
       "link": "https://desktop.github.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -668,6 +734,7 @@
       "winget": "GOG.Galaxy",
       "choco": "goggalaxy",
       "link": "https://www.gog.com/galaxy",
+      "icon": null,
       "foss": false
     },
     {
@@ -678,6 +745,7 @@
       "winget": "GoLang.Go",
       "choco": "golang",
       "link": "https://go.dev/",
+      "icon": null,
       "foss": true
     },
     {
@@ -688,6 +756,7 @@
       "winget": "Google.GoogleDrive",
       "choco": "googledrive",
       "link": "https://www.google.com/drive/",
+      "icon": null,
       "foss": false
     },
     {
@@ -698,6 +767,7 @@
       "winget": "TechPowerUp.GPU-Z",
       "choco": "gpu-z",
       "link": "https://www.techpowerup.com/gpuz/",
+      "icon": null,
       "foss": false
     },
     {
@@ -708,6 +778,7 @@
       "winget": "gerardog.gsudo",
       "choco": "gsudo",
       "link": "https://github.com/gerardog/gsudo",
+      "icon": null,
       "foss": true
     },
     {
@@ -718,6 +789,7 @@
       "winget": "ImputNet.Helium",
       "choco": "helium",
       "link": "https://helium.computer",
+      "icon": null,
       "foss": true
     },
     {
@@ -728,6 +800,7 @@
       "winget": "Hugo.Hugo.Extended",
       "choco": "hugo-extended",
       "link": "https://gohugo.io",
+      "icon": null,
       "foss": true
     },
     {
@@ -738,6 +811,7 @@
       "winget": "HandBrake.HandBrake",
       "choco": "handbrake",
       "link": "https://handbrake.fr/",
+      "icon": null,
       "foss": true
     },
     {
@@ -748,6 +822,7 @@
       "winget": "HeroicGamesLauncher.HeroicGamesLauncher",
       "choco": "heroic-games-launcher",
       "link": "https://heroicgameslauncher.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -758,6 +833,7 @@
       "winget": "REALiX.HWiNFO",
       "choco": "hwinfo",
       "link": "https://www.hwinfo.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -768,6 +844,7 @@
       "winget": "CPUID.HWMonitor",
       "choco": "hwmonitor",
       "link": "https://www.cpuid.com/softwares/hwmonitor.html",
+      "icon": null,
       "foss": false
     },
     {
@@ -778,6 +855,7 @@
       "winget": "DuongDieuPhap.ImageGlass",
       "choco": "imageglass",
       "link": "https://imageglass.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -788,6 +866,7 @@
       "winget": "Tonec.InternetDownloadManager",
       "choco": "internet-download-manager",
       "link": "https://www.internetdownloadmanager.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -798,6 +877,7 @@
       "winget": "IrfanSkiljan.IrfanView",
       "choco": "irfanview",
       "link": "https://irfanview.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -808,6 +888,7 @@
       "winget": "ItchIo.Itch",
       "choco": "itch",
       "link": "https://itch.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -818,6 +899,7 @@
       "winget": "Apple.iTunes",
       "choco": "itunes",
       "link": "https://www.apple.com/itunes/",
+      "icon": null,
       "foss": false
     },
     {
@@ -828,6 +910,7 @@
       "winget": "Amazon.Corretto.8.JDK",
       "choco": "corretto8jdk",
       "link": "https://aws.amazon.com/corretto",
+      "icon": null,
       "foss": true
     },
     {
@@ -838,6 +921,7 @@
       "winget": "Amazon.Corretto.21.JDK",
       "choco": "corretto21jdk",
       "link": "https://aws.amazon.com/corretto",
+      "icon": null,
       "foss": true
     },
     {
@@ -848,6 +932,7 @@
       "winget": "Amazon.Corretto.25.JDK",
       "choco": "corretto25jdk",
       "link": "https://aws.amazon.com/corretto",
+      "icon": null,
       "foss": true
     },
     {
@@ -858,6 +943,7 @@
       "winget": "Jellyfin.JellyfinMediaPlayer",
       "choco": "jellyfin-media-player",
       "link": "https://jellyfin.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -868,6 +954,7 @@
       "winget": "Jellyfin.Server",
       "choco": "jellyfin",
       "link": "https://jellyfin.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -878,6 +965,7 @@
       "winget": "JetBrains.Toolbox",
       "choco": "jetbrainstoolbox",
       "link": "https://www.jetbrains.com/toolbox/",
+      "icon": null,
       "foss": false
     },
     {
@@ -888,6 +976,7 @@
       "winget": "sylikc.JPEGView",
       "choco": "jpegview",
       "link": "https://github.com/sylikc/jpegview",
+      "icon": null,
       "foss": true
     },
     {
@@ -898,6 +987,7 @@
       "winget": "Joplin.Joplin",
       "choco": "joplin",
       "link": "https://joplinapp.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -908,6 +998,7 @@
       "winget": "KeePassXCTeam.KeePassXC",
       "choco": "keepassxc",
       "link": "https://keepassxc.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -918,6 +1009,7 @@
       "winget": "CodecGuide.K-LiteCodecPack.Standard",
       "choco": "k-litecodecpack-standard",
       "link": "https://www.codecguide.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -928,6 +1020,7 @@
       "winget": "XBMCFoundation.Kodi",
       "choco": "kodi",
       "link": "https://kodi.tv/",
+      "icon": null,
       "foss": true
     },
     {
@@ -938,6 +1031,7 @@
       "winget": "JesseDuffield.lazygit",
       "choco": "lazygit",
       "link": "https://github.com/jesseduffield/lazygit/",
+      "icon": null,
       "foss": true
     },
     {
@@ -948,6 +1042,7 @@
       "winget": "TheDocumentFoundation.LibreOffice",
       "choco": "libreoffice-fresh",
       "link": "https://www.libreoffice.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -958,6 +1053,7 @@
       "winget": "LibreWolf.LibreWolf",
       "choco": "librewolf",
       "link": "https://librewolf.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -968,6 +1064,7 @@
       "winget": "LocalSend.LocalSend",
       "choco": "localsend.install",
       "link": "https://localsend.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -978,6 +1075,7 @@
       "winget": "mpc-qt.mpc-qt",
       "choco": "mediainfo",
       "link": "https://mpc-qt.github.io",
+      "icon": null,
       "foss": true
     },
     {
@@ -988,6 +1086,7 @@
       "winget": "shinchiro.mpv",
       "choco": null,
       "link": "https://mpv.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -998,6 +1097,7 @@
       "winget": "Element.Element",
       "choco": "element-desktop",
       "link": "https://element.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1008,6 +1108,7 @@
       "winget": "MiniTool.PartitionWizard.Free",
       "choco": "minitoolpartitionwizard",
       "link": "https://www.partitionwizard.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1018,6 +1119,7 @@
       "winget": "Modrinth.ModrinthApp",
       "choco": "modrinth-app",
       "link": "https://modrinth.com/app",
+      "icon": null,
       "foss": true
     },
     {
@@ -1028,6 +1130,7 @@
       "winget": "MoonlightGameStreamingProject.Moonlight",
       "choco": "moonlight-qt",
       "link": "https://moonlight-stream.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1038,6 +1141,7 @@
       "winget": "clsid2.mpc-hc",
       "choco": "mpc-hc-clsid2",
       "link": "https://mpc-hc.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1048,6 +1152,7 @@
       "winget": "rcmaehl.MSEdgeRedirect",
       "choco": "msedgeredirect",
       "link": "https://github.com/rcmaehl/MSEdgeRedirect",
+      "icon": null,
       "foss": true
     },
     {
@@ -1058,6 +1163,7 @@
       "winget": "Guru3D.Afterburner",
       "choco": "msiafterburner",
       "link": "https://www.msi.com/Landing/afterburner",
+      "icon": null,
       "foss": false
     },
     {
@@ -1068,6 +1174,7 @@
       "winget": "MullvadVPN.MullvadVPN",
       "choco": "mullvad-app",
       "link": "https://mullvad.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1078,6 +1185,7 @@
       "winget": "MullvadVPN.MullvadBrowser",
       "choco": "na",
       "link": "https://mullvad.net/browser",
+      "icon": null,
       "foss": true
     },
     {
@@ -1088,6 +1196,7 @@
       "winget": "nomacs.nomacs",
       "choco": "nomacs",
       "link": "https://nomacs.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1098,6 +1207,7 @@
       "winget": "M2Team.NanaZip",
       "choco": "nanazip",
       "link": "https://nanazip.org",
+      "icon": null,
       "foss": true
     },
     {
@@ -1108,6 +1218,7 @@
       "winget": "Netbird.Netbird",
       "choco": "netbird",
       "link": "https://netbird.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1118,6 +1229,7 @@
       "winget": "Tailscale.Tailscale",
       "choco": "tailscale",
       "link": "https://tailscale.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1128,6 +1240,7 @@
       "winget": "Cyanfish.NAPS2",
       "choco": "naps2",
       "link": "https://www.naps2.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1138,6 +1251,7 @@
       "winget": "Neovim.Neovim",
       "choco": "neovim",
       "link": "https://neovim.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1148,6 +1262,7 @@
       "winget": "Nextcloud.NextcloudDesktop",
       "choco": "nextcloud-client",
       "link": "https://nextcloud.com/install/#install-clients",
+      "icon": null,
       "foss": true
     },
     {
@@ -1158,6 +1273,7 @@
       "winget": "Insecure.Nmap",
       "choco": "nmap",
       "link": "https://nmap.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1168,6 +1284,7 @@
       "winget": "OpenJS.NodeJS",
       "choco": "nodejs",
       "link": "https://nodejs.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1178,6 +1295,7 @@
       "winget": "OpenJS.NodeJS.LTS",
       "choco": "nodejs-lts",
       "link": "https://nodejs.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1188,6 +1306,7 @@
       "winget": "pnpm.pnpm",
       "choco": null,
       "link": "https://pnpm.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1198,6 +1317,7 @@
       "winget": "Notepad++.Notepad++",
       "choco": "notepadplusplus",
       "link": "https://notepad-plus-plus.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1208,6 +1328,7 @@
       "winget": "Microsoft.NuGet",
       "choco": "nuget.commandline",
       "link": "https://www.nuget.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1218,6 +1339,7 @@
       "winget": "TechPowerUp.NVCleanstall",
       "choco": "na",
       "link": "https://www.techpowerup.com/nvcleanstall/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1228,6 +1350,7 @@
       "winget": "OBSProject.OBSStudio",
       "choco": "obs-studio",
       "link": "https://obsproject.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1238,6 +1361,7 @@
       "winget": "Obsidian.Obsidian",
       "choco": "obsidian",
       "link": "https://obsidian.md/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1248,6 +1372,7 @@
       "winget": "KDE.Okular",
       "choco": "okular",
       "link": "https://okular.kde.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1258,6 +1383,7 @@
       "winget": "Microsoft.OneDrive",
       "choco": "onedrive",
       "link": "https://onedrive.live.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1268,6 +1394,7 @@
       "winget": "ONLYOFFICE.DesktopEditors",
       "choco": "onlyoffice",
       "link": "https://www.onlyoffice.com/desktop.aspx",
+      "icon": null,
       "foss": true
     },
     {
@@ -1278,6 +1405,7 @@
       "winget": "OPAutoClicker.OPAutoClicker",
       "choco": "autoclicker",
       "link": "https://www.opautoclicker.com",
+      "icon": null,
       "foss": false
     },
     {
@@ -1288,6 +1416,7 @@
       "winget": "OpenRGB.OpenRGB",
       "choco": "openrgb",
       "link": "https://openrgb.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1298,6 +1427,7 @@
       "winget": "OpenVPNTechnologies.OpenVPNConnect",
       "choco": "openvpn-connect",
       "link": "https://openvpn.net/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1308,6 +1438,7 @@
       "winget": "Oracle.VirtualBox",
       "choco": "virtualbox",
       "link": "https://www.virtualbox.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1318,6 +1449,7 @@
       "winget": "Fleex255.PolicyPlus",
       "choco": "na",
       "link": "https://github.com/Fleex255/PolicyPlus",
+      "icon": null,
       "foss": true
     },
     {
@@ -1328,6 +1460,7 @@
       "winget": "Microsoft.Sysinternals.ProcessExplorer",
       "choco": "procexp",
       "link": "https://learn.microsoft.com/sysinternals/downloads/process-explorer",
+      "icon": null,
       "foss": false
     },
     {
@@ -1338,6 +1471,7 @@
       "winget": "dotPDN.PaintDotNet",
       "choco": "paint.net",
       "link": "https://www.getpaint.net/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1348,6 +1482,7 @@
       "winget": "Parsec.Parsec",
       "choco": "parsec",
       "link": "https://parsec.app/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1358,6 +1493,7 @@
       "winget": "Giorgiotani.Peazip",
       "choco": "peazip",
       "link": "https://peazip.github.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1368,6 +1504,7 @@
       "winget": "TrackerSoftware.PDF-XChangeEditor",
       "choco": "pdfxchangeeditor",
       "link": "https://www.pdf-xchange.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1378,6 +1515,7 @@
       "winget": "geeksoftwareGmbH.PDF24Creator",
       "choco": "pdf24",
       "link": "https://tools.pdf24.org/en/creator",
+      "icon": null,
       "foss": false
     },
     {
@@ -1388,6 +1526,7 @@
       "winget": "PDFgear.PDFgear",
       "choco": "pdfgear",
       "link": "https://www.pdfgear.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1398,6 +1537,7 @@
       "winget": "PDFsam.PDFsam",
       "choco": "pdfsam",
       "link": "https://pdfsam.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1408,6 +1548,7 @@
       "winget": "Playnite.Playnite",
       "choco": "playnite",
       "link": "https://playnite.link/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1418,6 +1559,7 @@
       "winget": "Plex.PlexMediaServer",
       "choco": "plexmediaserver",
       "link": "https://www.plex.tv/your-media/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1428,6 +1570,7 @@
       "winget": "Plex.Plex",
       "choco": "plex",
       "link": "https://www.plex.tv",
+      "icon": null,
       "foss": false
     },
     {
@@ -1438,6 +1581,7 @@
       "winget": "JanDeDobbeleer.OhMyPosh",
       "choco": "oh-my-posh",
       "link": "https://ohmyposh.dev/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1448,6 +1592,7 @@
       "winget": "Postman.Postman",
       "choco": "postman",
       "link": "https://www.postman.com/downloads/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1458,6 +1603,7 @@
       "winget": "Microsoft.PowerShell",
       "choco": "powershell-core",
       "link": "https://github.com/PowerShell/PowerShell",
+      "icon": null,
       "foss": true
     },
     {
@@ -1468,6 +1614,7 @@
       "winget": "Microsoft.PowerToys",
       "choco": "powertoys",
       "link": "https://github.com/microsoft/PowerToys",
+      "icon": null,
       "foss": true
     },
     {
@@ -1478,6 +1625,7 @@
       "winget": "PrismLauncher.PrismLauncher",
       "choco": "prismlauncher",
       "link": "https://prismlauncher.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1488,6 +1636,7 @@
       "winget": "BitSum.ProcessLasso",
       "choco": "plasso",
       "link": "https://bitsum.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1498,6 +1647,7 @@
       "winget": "Proton.ProtonAuthenticator",
       "choco": "protonauth",
       "link": "https://proton.me/authenticator",
+      "icon": null,
       "foss": true
     },
     {
@@ -1508,6 +1658,7 @@
       "winget": "Proton.ProtonMail",
       "choco": "protonmail",
       "link": "https://proton.me/mail",
+      "icon": null,
       "foss": true
     },
     {
@@ -1518,6 +1669,7 @@
       "winget": "Proton.ProtonDrive",
       "choco": "protondrive",
       "link": "https://proton.me/drive",
+      "icon": null,
       "foss": true
     },
     {
@@ -1528,6 +1680,7 @@
       "winget": "Proton.ProtonPass",
       "choco": "protonpass",
       "link": "https://proton.me/pass",
+      "icon": null,
       "foss": true
     },
     {
@@ -1538,6 +1691,7 @@
       "winget": "Proton.ProtonVPN",
       "choco": "protonvpn",
       "link": "https://protonvpn.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1548,6 +1702,7 @@
       "winget": "Microsoft.Sysinternals.ProcessMonitor",
       "choco": "procexp",
       "link": "https://docs.microsoft.com/en-us/sysinternals/downloads/procmon",
+      "icon": null,
       "foss": false
     },
     {
@@ -1558,6 +1713,7 @@
       "winget": "PuTTY.PuTTY",
       "choco": "putty",
       "link": "https://www.chiark.greenend.org.uk/~sgtatham/putty/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1568,6 +1724,7 @@
       "winget": "Python.Python.3.14",
       "choco": "python",
       "link": "https://www.python.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1578,6 +1735,7 @@
       "winget": "qBittorrent.qBittorrent",
       "choco": "qbittorrent",
       "link": "https://www.qbittorrent.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1588,6 +1746,7 @@
       "winget": "pbek.QOwnNotes",
       "choco": "qownnotes",
       "link": "https://www.qownnotes.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1598,6 +1757,7 @@
       "winget": "Tox.qTox",
       "choco": "qtox",
       "link": "https://qtox.github.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1608,6 +1768,7 @@
       "winget": "RevoUninstaller.RevoUninstaller",
       "choco": "revo-uninstaller",
       "link": "https://www.revouninstaller.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1618,6 +1779,7 @@
       "winget": "WiseCleaner.WiseProgramUninstaller",
       "choco": "na",
       "link": "https://www.wisecleaner.com/wise-program-uninstaller.html",
+      "icon": null,
       "foss": false
     },
     {
@@ -1628,6 +1790,7 @@
       "winget": "Rufus.Rufus",
       "choco": "rufus",
       "link": "https://rufus.ie/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1638,6 +1801,7 @@
       "winget": "Rustlang.Rust.MSVC",
       "choco": "rust",
       "link": "https://www.rust-lang.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1648,6 +1812,7 @@
       "winget": "GlennDelahoy.SnappyDriverInstallerOrigin",
       "choco": "sdio",
       "link": "https://www.glenn.delahoy.com/snappy-driver-installer-origin/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1658,6 +1823,7 @@
       "winget": "ShareX.ShareX",
       "choco": "sharex",
       "link": "https://getsharex.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1668,6 +1834,7 @@
       "winget": "Nilesoft.Shell",
       "choco": "nilesoft-shell",
       "link": "https://nilesoft.org/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1678,6 +1845,7 @@
       "winget": "WinsiderSS.SystemInformer",
       "choco": "systeminformer",
       "link": "https://systeminformer.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1688,6 +1856,7 @@
       "winget": "OpenWhisperSystems.Signal",
       "choco": "signal",
       "link": "https://signal.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1698,6 +1867,7 @@
       "winget": "WhirlwindFX.SignalRgb",
       "choco": "na",
       "link": "https://www.signalrgb.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1708,6 +1878,7 @@
       "winget": "Automattic.Simplenote",
       "choco": "simplenote",
       "link": "https://simplenote.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1718,6 +1889,7 @@
       "winget": "Henry++.simplewall",
       "choco": "simplewall",
       "link": "https://github.com/henrypp/simplewall",
+      "icon": null,
       "foss": true
     },
     {
@@ -1728,6 +1900,7 @@
       "winget": "SlackTechnologies.Slack",
       "choco": "slack",
       "link": "https://slack.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1738,6 +1911,7 @@
       "winget": "StartIsBack.StartAllBack",
       "choco": "StartAllBack",
       "link": "https://www.startallback.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1748,6 +1922,7 @@
       "winget": "Starship.Starship",
       "choco": "starship",
       "link": "https://starship.rs/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1758,6 +1933,7 @@
       "winget": "Valve.Steam",
       "choco": "steam-client",
       "link": "https://store.steampowered.com/about/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1768,6 +1944,7 @@
       "winget": "Roblox.Roblox",
       "choco": "na",
       "link": "https://www.roblox.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1778,6 +1955,7 @@
       "winget": "SublimeHQ.SublimeText.4",
       "choco": "sublimetext4",
       "link": "https://www.sublimetext.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1788,6 +1966,7 @@
       "winget": "SumatraPDF.SumatraPDF",
       "choco": "sumatrapdf",
       "link": "https://www.sumatrapdfreader.org/free-pdf-reader.html",
+      "icon": null,
       "foss": true
     },
     {
@@ -1798,6 +1977,7 @@
       "winget": "LizardByte.Sunshine",
       "choco": "sunshine",
       "link": "https://app.lizardbyte.dev/Sunshine/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1808,6 +1988,7 @@
       "winget": "GermanCoding.SyncTrayzor",
       "choco": "synctrayzor",
       "link": "https://github.com/GermanCoding/SyncTrayzor",
+      "icon": null,
       "foss": false
     },
     {
@@ -1818,6 +1999,7 @@
       "winget": "Syncthing.Syncthing",
       "choco": "syncthing",
       "link": "https://syncthing.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1828,6 +2010,7 @@
       "winget": "Microsoft.Sysinternals.TCPView",
       "choco": "tcpview",
       "link": "https://docs.microsoft.com/en-us/sysinternals/downloads/tcpview",
+      "icon": null,
       "foss": false
     },
     {
@@ -1838,6 +2021,7 @@
       "winget": "Microsoft.Teams",
       "choco": "microsoft-teams",
       "link": "https://www.microsoft.com/en-us/microsoft-teams/group-chat-software",
+      "icon": null,
       "foss": false
     },
     {
@@ -1848,6 +2032,7 @@
       "winget": "TeamViewer.TeamViewer",
       "choco": "teamviewer9",
       "link": "https://www.teamviewer.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1858,6 +2043,7 @@
       "winget": "TeamSpeakSystems.TeamSpeakClient",
       "choco": "teamspeak",
       "link": "https://www.teamspeak.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1868,6 +2054,7 @@
       "winget": "TeamSpeakSystems.TeamSpeakClient.Beta.6",
       "choco": "na",
       "link": "https://www.teamspeak.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1878,6 +2065,7 @@
       "winget": "Telegram.TelegramDesktop",
       "choco": "telegram",
       "link": "https://telegram.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1888,6 +2076,7 @@
       "winget": "Microsoft.WindowsTerminal",
       "choco": "microsoft-windows-terminal",
       "link": "https://aka.ms/terminal",
+      "icon": null,
       "foss": true
     },
     {
@@ -1898,6 +2087,7 @@
       "winget": "Mozilla.Thunderbird",
       "choco": "thunderbird",
       "link": "https://www.thunderbird.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1908,6 +2098,7 @@
       "winget": "Betterbird.Betterbird",
       "choco": "betterbird",
       "link": "https://www.betterbird.eu/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1918,6 +2109,7 @@
       "winget": "TorProject.TorBrowser",
       "choco": "tor-browser",
       "link": "https://www.torproject.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -1928,6 +2120,7 @@
       "winget": "Ghisler.TotalCommander",
       "choco": "TotalCommander",
       "link": "https://www.ghisler.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1938,6 +2131,7 @@
       "winget": "JAMSoftware.TreeSize.Free",
       "choco": "treesizefree",
       "link": "https://www.jam-software.com/treesize_free/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1948,6 +2142,7 @@
       "winget": "CharlesMilette.TranslucentTB",
       "choco": "translucenttb",
       "link": "https://translucenttb.github.io",
+      "icon": null,
       "foss": true
     },
     {
@@ -1958,6 +2153,7 @@
       "winget": "Ubisoft.Connect",
       "choco": "ubisoft-connect",
       "link": "https://ubisoftconnect.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1968,6 +2164,7 @@
       "winget": "eloston.ungoogled-chromium",
       "choco": "ungoogled-chromium",
       "link": "https://github.com/Eloston/ungoogled-chromium",
+      "icon": null,
       "foss": true
     },
     {
@@ -1978,6 +2175,7 @@
       "winget": "Unity.UnityHub",
       "choco": "unityhub",
       "link": "https://unity.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -1988,6 +2186,7 @@
       "winget": "Hashicorp.Vagrant",
       "choco": "vagrant",
       "link": "https://developer.hashicorp.com/vagrant",
+      "icon": null,
       "foss": false
     },
     {
@@ -1998,6 +2197,7 @@
       "winget": "voidtools.Everything",
       "choco": "everything",
       "link": "https://www.voidtools.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2008,6 +2208,7 @@
       "winget": "Microsoft.VCRedist.2015+.x86",
       "choco": "vcredist2015",
       "link": "https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads",
+      "icon": null,
       "foss": false
     },
     {
@@ -2018,6 +2219,7 @@
       "winget": "Microsoft.VCRedist.2015+.x64",
       "choco": "vcredist2015",
       "link": "https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads",
+      "icon": null,
       "foss": false
     },
     {
@@ -2028,6 +2230,7 @@
       "winget": "Ventoy.Ventoy",
       "choco": "ventoy",
       "link": "https://www.ventoy.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2038,6 +2241,7 @@
       "winget": "Vencord.Vesktop",
       "choco": "na",
       "link": "https://vesktop.dev",
+      "icon": null,
       "foss": true
     },
     {
@@ -2048,6 +2252,7 @@
       "winget": "Rakuten.Viber",
       "choco": "viber",
       "link": "https://www.viber.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2058,6 +2263,7 @@
       "winget": "Microsoft.VisualStudio.2022.Community",
       "choco": "visualstudio2022community",
       "link": "https://visualstudio.microsoft.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2068,6 +2274,7 @@
       "winget": "Microsoft.VisualStudio.Community",
       "choco": "visualstudio2026community",
       "link": "https://visualstudio.microsoft.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2078,6 +2285,7 @@
       "winget": "Vivaldi.Vivaldi",
       "choco": "vivaldi",
       "link": "https://vivaldi.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2088,6 +2296,7 @@
       "winget": "VideoLAN.VLC",
       "choco": "vlc",
       "link": "https://www.videolan.org/vlc/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2098,6 +2307,7 @@
       "winget": "VirtualDesktop.Streamer",
       "choco": "na",
       "link": "https://www.vrdesktop.net/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2108,6 +2318,7 @@
       "winget": "Microsoft.VisualStudioCode",
       "choco": "vscode",
       "link": "https://code.visualstudio.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2118,6 +2329,7 @@
       "winget": "VSCodium.VSCodium",
       "choco": "vscodium",
       "link": "https://vscodium.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2128,6 +2340,7 @@
       "winget": "Waterfox.Waterfox",
       "choco": "waterfox",
       "link": "https://www.waterfox.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2138,6 +2351,7 @@
       "winget": "msstore:9NKSQGP7F2NH",
       "choco": "na",
       "link": "https://www.whatsapp.com/download",
+      "icon": null,
       "foss": false
     },
     {
@@ -2148,6 +2362,7 @@
       "winget": "Devolutions.UniGetUI",
       "choco": "wingetui",
       "link": "https://devolutions.net/unigetui/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2158,6 +2373,7 @@
       "winget": "RARLab.WinRAR",
       "choco": "winrar",
       "link": "https://www.win-rar.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2168,6 +2384,7 @@
       "winget": "WinSCP.WinSCP",
       "choco": "winscp",
       "link": "https://winscp.net/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2178,6 +2395,7 @@
       "winget": "WireGuard.WireGuard",
       "choco": "wireguard",
       "link": "https://www.wireguard.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2188,6 +2406,7 @@
       "winget": "WiresharkFoundation.Wireshark",
       "choco": "wireshark",
       "link": "https://www.wireshark.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2198,6 +2417,7 @@
       "winget": "AntibodySoftware.WizTree",
       "choco": "wiztree",
       "link": "https://wiztreefree.com/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2208,6 +2428,7 @@
       "winget": "MHNexus.HxD",
       "choco": "HxD",
       "link": "https://mh-nexus.de/en/hxd/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2218,6 +2439,7 @@
       "winget": "Xournal++.Xournal++",
       "choco": "xournalplusplus",
       "link": "https://xournalpp.github.io/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2228,6 +2450,7 @@
       "winget": "Yarn.Yarn",
       "choco": "yarn",
       "link": "https://yarnpkg.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2238,6 +2461,7 @@
       "winget": "Zoom.Zoom",
       "choco": "zoom",
       "link": "https://zoom.us/",
+      "icon": null,
       "foss": false
     },
     {
@@ -2248,6 +2472,7 @@
       "winget": "astral-sh.uv",
       "choco": "uv",
       "link": "https://docs.astral.sh/uv/getting-started/installation/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2258,6 +2483,7 @@
       "winget": "GlavSoft.TightVNC",
       "choco": "TightVNC",
       "link": "https://www.tightvnc.com/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2268,6 +2494,7 @@
       "winget": "glzr-io.glazewm",
       "choco": "glazewm",
       "link": "https://github.com/glzr-io/glazewm",
+      "icon": null,
       "foss": true
     },
     {
@@ -2278,6 +2505,7 @@
       "winget": "Overwolf.CurseForge",
       "choco": null,
       "link": "https://www.overwolf.com/app/overwolf-curseforge",
+      "icon": null,
       "foss": false
     },
     {
@@ -2288,6 +2516,7 @@
       "winget": "xM4ddy.OFGB",
       "choco": "ofgb",
       "link": "https://github.com/xM4ddy/OFGB",
+      "icon": null,
       "foss": true
     },
     {
@@ -2298,6 +2527,7 @@
       "winget": "Zen-Team.Zen-Browser",
       "choco": "zen-browser",
       "link": "https://zen-browser.app/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2308,6 +2538,7 @@
       "winget": "ZedIndustries.Zed",
       "choco": "zed",
       "link": "https://zed.dev/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2318,6 +2549,7 @@
       "winget": "DigitalScholar.Zotero",
       "choco": "zotero",
       "link": "https://www.zotero.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2328,6 +2560,7 @@
       "winget": "Deskflow.Deskflow",
       "choco": "deskflow",
       "link": "https://github.com/deskflow/deskflow",
+      "icon": null,
       "foss": true
     },
     {
@@ -2338,6 +2571,7 @@
       "winget": "RubyInstallerTeam.Ruby.4.0",
       "choco": "ruby",
       "link": "https://rubyinstaller.org/",
+      "icon": null,
       "foss": true
     },
     {
@@ -2348,6 +2582,7 @@
       "winget": "rjpcomputing.luaforwindows",
       "choco": "lua",
       "link": "https://github.com/rjpcomputing/luaforwindows",
+      "icon": null,
       "foss": true
     },
     {
@@ -2358,6 +2593,7 @@
       "winget": "Cloudflare.Warp",
       "choco": "warp",
       "link": "https://one.one.one.one",
+      "icon": null,
       "foss": false
     }
   ]

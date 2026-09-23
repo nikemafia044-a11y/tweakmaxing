@@ -1,7 +1,7 @@
 # functions/bridge/Actions.Install.ps1
 # Acoes da ponte para a aba Instalar: catalogo, gerenciadores, instalar,
 # desinstalar, atualizar tudo, listar instalados, reparar winget, instalar
-# Chocolatey.
+# Chocolatey, logos dos apps.
 #
 # Instalar/desinstalar app NAO exige sessao/ponto de restauracao (ao
 # contrario dos tweaks): desinstalar e a propria reversao natural de um
@@ -115,5 +115,35 @@ function Register-TmxInstallActions {
         # instalador oficial antes de chamar esta acao com consentido:true.
         if ($payload.consentido -ne $true) { throw 'consentimento pendente' }
         Install-TmxChoco
+    }
+
+    Register-TmxBridgeAction -Name 'apps.icons' -Async -Handler {
+        param($payload)
+        # Assincrono como os outros apps.* demorados: um icone pode envolver
+        # download de rede (site oficial), e a janela nao pode travar por
+        # isso. install.js chama em lotes de ate 40 ids (IntersectionObserver
+        # + debounce), entao o limite aqui e so uma trava de sanidade contra
+        # um payload malformado.
+        $ids = @($payload.ids)
+        if ($ids.Count -gt 40) { throw 'apps.icons aceita no maximo 40 ids por chamada' }
+        foreach ($idBruto in $ids) {
+            if ($idBruto -isnot [string]) { throw 'apps.icons: cada id precisa ser texto' }
+        }
+
+        $catalogo = Get-TmxAppCatalog
+        # Lida UMA vez por lote (nao por app): Get-TmxUninstallEntries varre
+        # o registro de desinstalar inteiro (HKLM + WOW6432Node + HKCU), e um
+        # lote pode ter ate 40 ids - repetir a varredura por app deixaria um
+        # lote cheio visivelmente lento.
+        $entradasDesinstalar = Get-TmxUninstallEntries
+        $icones = [ordered]@{}
+        foreach ($id in $ids) {
+            if ([string]::IsNullOrWhiteSpace("$id")) { continue }
+            $app = @($catalogo | Where-Object { "$($_.id)" -ieq "$id" }) | Select-Object -First 1
+            if (-not $app) { continue }
+            $achado = Get-TmxAppIcon -App $app -UninstallEntries $entradasDesinstalar
+            if ($achado) { $icones["$($achado.id)"] = @{ src = $achado.src; origem = $achado.origem } }
+        }
+        @{ icons = $icones }
     }
 }

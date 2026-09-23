@@ -48,7 +48,10 @@
       '#tab-instalar table.resultado-instalacao th, #tab-instalar table.resultado-instalacao td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--linha); }',
       '#tab-instalar table.resultado-instalacao tr.res-ok td:nth-child(3) { color:var(--ok); }',
       '#tab-instalar table.resultado-instalacao tr.res-pulado td:nth-child(3) { color:var(--warn); }',
-      '#tab-instalar table.resultado-instalacao tr.res-falha td:nth-child(3) { color:var(--danger); }'
+      '#tab-instalar table.resultado-instalacao tr.res-falha td:nth-child(3) { color:var(--danger); }',
+      '#tab-instalar .app-icone { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; min-width:32px; border-radius:50%; background:var(--elevated); color:var(--fg); font-weight:600; font-size:11px; letter-spacing:0.02em; flex:0 0 auto; overflow:hidden; }',
+      '#tab-instalar .app-icone.tem-imagem { background:transparent; border-radius:6px; }',
+      '#tab-instalar .app-icone img { width:32px; height:32px; object-fit:contain; border-radius:6px; display:block; }'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -198,6 +201,117 @@
     });
   }
 
+  /* ---------------- logos dos apps ---------------- */
+
+  // Cache/estado em memoria (sobrevive a re-render da lista, nao a um
+  // recarregamento da pagina): nunca pede o mesmo id duas vezes.
+  var iconesEstado = {
+    cache: {},        // id -> { src, origem }
+    solicitados: {},  // id -> true (ja foi pedido - com ou sem sucesso)
+    fila: [],
+    timer: null,
+    observer: null,
+    elementos: {}      // id -> elemento <span class="app-icone">
+  };
+
+  function calcularIniciais(nome) {
+    var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
+    var texto = '';
+    if (partes.length >= 2) {
+      texto = (partes[0].charAt(0) || '') + (partes[1].charAt(0) || '');
+    } else if (partes.length === 1) {
+      texto = partes[0].substring(0, 2);
+    }
+    return texto.toUpperCase();
+  }
+
+  function aplicarIconeNoElemento(span, dados) {
+    if (!span || !dados || !dados.src) { return; }
+    var img = document.createElement('img');
+    img.width = 32;
+    img.height = 32;
+    img.alt = '';
+    img.src = dados.src;
+    span.innerHTML = '';
+    span.appendChild(img);
+    span.classList.add('tem-imagem');
+  }
+
+  function obterObserverIcones() {
+    if (iconesEstado.observer) { return iconesEstado.observer; }
+    if (typeof IntersectionObserver === 'undefined') { return null; }
+    iconesEstado.observer = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (!entry.isIntersecting) { return; }
+        iconesEstado.observer.unobserve(entry.target);
+        enfileirarIcone(entry.target.dataset.id);
+      });
+    }, { root: null, rootMargin: '200px 0px', threshold: 0.01 });
+    return iconesEstado.observer;
+  }
+
+  function enfileirarIcone(id) {
+    if (!id || iconesEstado.cache[id] || iconesEstado.solicitados[id]) { return; }
+    if (iconesEstado.fila.indexOf(id) >= 0) { return; }
+    iconesEstado.fila.push(id);
+    agendarLoteIcones();
+  }
+
+  function agendarLoteIcones() {
+    if (iconesEstado.timer) { return; }
+    // Debounce de ~150ms: junta varios ids que ficaram visiveis quase juntos
+    // (scroll, expandir categoria) num unico lote em vez de um apps.icons por app.
+    iconesEstado.timer = window.setTimeout(function () {
+      iconesEstado.timer = null;
+      processarLoteIcones();
+    }, 150);
+  }
+
+  function processarLoteIcones() {
+    if (!iconesEstado.fila.length) { return; }
+    var lote = iconesEstado.fila.splice(0, 40);
+    lote.forEach(function (id) { iconesEstado.solicitados[id] = true; });
+
+    chamarAcaoAssincrona('apps.icons', { ids: lote }).then(function (r) {
+      var icons = (r && r.icons) || {};
+      Object.keys(icons).forEach(function (id) {
+        var dados = icons[id];
+        if (!dados || !dados.src) { return; }
+        iconesEstado.cache[id] = dados;
+        aplicarIconeNoElemento(iconesEstado.elementos[id], dados);
+      });
+    }).catch(function () {
+      // Silencioso de proposito (spec): falha de rede/lote nunca vira toast
+      // nem bloqueia a lista - o app so fica com as iniciais.
+    });
+
+    if (iconesEstado.fila.length) { agendarLoteIcones(); }
+  }
+
+  function criarIconeApp(app) {
+    var span = document.createElement('span');
+    span.className = 'app-icone';
+    span.setAttribute('aria-hidden', 'true');
+    span.dataset.id = app.id;
+    iconesEstado.elementos[app.id] = span;
+
+    var cacheado = iconesEstado.cache[app.id];
+    if (cacheado) {
+      aplicarIconeNoElemento(span, cacheado);
+    } else {
+      span.textContent = calcularIniciais(app.nome);
+      var obs = obterObserverIcones();
+      if (obs) {
+        obs.observe(span);
+      } else {
+        // Sem IntersectionObserver (ambiente muito antigo): pede direto, sem
+        // esperar visibilidade - nunca deixa a linha sem tentativa de icone.
+        enfileirarIcone(app.id);
+      }
+    }
+    return span;
+  }
+
   /* ---------------- catalogo ---------------- */
 
   function criarLinhaApp(app) {
@@ -217,6 +331,7 @@
       atualizarContagemSelecionados();
     });
     label.appendChild(cb);
+    label.appendChild(criarIconeApp(app));
 
     var nomeSpan = document.createElement('span');
     nomeSpan.className = 'nome-app';

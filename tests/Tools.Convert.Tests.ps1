@@ -383,6 +383,58 @@ Describe 'Convert-WinUtilCatalog conversao de valor de registro' -Tag 'Convert' 
     }
 }
 
+Describe 'Convert-WinUtilCatalog aplicativos: campo icon' -Tag 'Convert' {
+
+    BeforeAll {
+        # -SomenteDefinicoes carrega as funcoes do conversor sem converter
+        # nada, para exercitar ConvertTo-TmxApplications isolada (mesmo
+        # padrao da Describe 'serializador' acima).
+        . $script:Conversor -Reference 'ignorado' -Out 'ignorado' -SomenteDefinicoes
+        Set-StrictMode -Off
+    }
+
+    It 'icon e null quando nao ha overlay' {
+        $winutil = [pscustomobject]@{
+            WPFInstallExemplo = [pscustomobject]@{
+                content = 'Exemplo'; description = 'desc'; category = 'Utilities'
+                winget = 'Vendor.Exemplo'; link = 'https://exemplo.org'
+            }
+        }
+        $apps = ConvertTo-TmxApplications -Winutil $winutil -Overlay $null
+        $apps.Count | Should -Be 1
+        # ConvertTo-TmxApplications devolve [ordered]@{} (nao pscustomobject);
+        # .Contains() e o jeito certo de provar que a CHAVE existe com valor
+        # null, em vez de simplesmente estar ausente (um indexador/dot-access
+        # devolveria $null nos dois casos).
+        $apps[0].Contains('icon') | Should -BeTrue -Because 'a chave icon precisa existir mesmo quando o valor e null'
+        $apps[0].icon | Should -BeNullOrEmpty
+    }
+
+    It 'overlay icon sobrescreve o padrao null, igual descricao' {
+        $winutil = [pscustomobject]@{
+            WPFInstallExemplo = [pscustomobject]@{
+                content = 'Exemplo'; description = 'desc'; category = 'Utilities'
+                winget = 'Vendor.Exemplo'; link = 'https://exemplo.org'
+            }
+        }
+        $overlay = [pscustomobject]@{
+            WPFInstallExemplo = [pscustomobject]@{
+                descricao = 'Descricao editorial'
+                icon      = 'https://exemplo.org/icone.png'
+            }
+        }
+        $apps = ConvertTo-TmxApplications -Winutil $winutil -Overlay $overlay
+        $apps[0].descricao | Should -Be 'Descricao editorial'
+        $apps[0].icon | Should -Be 'https://exemplo.org/icone.png'
+    }
+
+    It 'catalogo gerado de verdade traz a chave icon em todo aplicativo' {
+        foreach ($a in $script:Apps) {
+            $a.PSObject.Properties['icon'] | Should -Not -BeNullOrEmpty -Because "$($a.id) precisa ter a chave icon"
+        }
+    }
+}
+
 Describe 'Convert-WinUtilCatalog distribuicao editorial' -Tag 'Convert' {
 
     It 'mantem a distribuicao de tier acordada' {
