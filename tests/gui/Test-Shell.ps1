@@ -72,8 +72,8 @@ try {
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
 
-    $logo = Invoke-AB 'get' 'text' 'header .logo'
-    Assert-Tmx -Nome 'cabecalho mostra TweakMaxing' -Condicao ($logo -like '*TweakMaxing*') -Detalhe "obtido: '$logo'"
+    $logo = Invoke-AB 'get' 'text' '#sidebar .logo'
+    Assert-Tmx -Nome 'barra lateral mostra TweakMaxing' -Condicao ($logo -like '*TweakMaxing*') -Detalhe "obtido: '$logo'"
 
     $versao = ''
     $fim = (Get-Date).AddSeconds(15)
@@ -120,7 +120,7 @@ try {
                -Condicao ("$urlDepois" -like '*app.tweakmaxing*') -Detalhe "obtido: '$urlDepois'"
 
     # A pagina tem que continuar viva depois do cancelamento.
-    $logoDepois = Invoke-AB 'get' 'text' 'header .logo'
+    $logoDepois = Invoke-AB 'get' 'text' '#sidebar .logo'
     Assert-Tmx -Nome 'a interface segue de pe apos a navegacao bloqueada' `
                -Condicao ($logoDepois -like '*TweakMaxing*') -Detalhe "obtido: '$logoDepois'"
 

@@ -34,7 +34,7 @@
 
 .upd-card-ativa,
 .upd-card-selecionada {
-  border-color: var(--accent);
+  border-color: var(--active);
 }
 
 .upd-card-topo {
@@ -48,7 +48,7 @@
 .upd-card-topo input[type="radio"] {
   margin-top: 3px;
   flex: 0 0 auto;
-  accent-color: var(--accent);
+  accent-color: var(--active);
 }
 
 .upd-nome {

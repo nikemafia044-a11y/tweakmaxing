@@ -112,13 +112,13 @@
 }
 
 .switch[aria-checked="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--active);
+  border-color: var(--active);
 }
 
 .switch[aria-checked="true"]::after {
   transform: translateX(20px);
-  background: var(--accent-fg);
+  background: var(--active-fg);
 }
 
 .switch:disabled { opacity: 0.45; cursor: default; }
