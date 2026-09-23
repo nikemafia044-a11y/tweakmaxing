@@ -88,7 +88,7 @@ Se `REPO`/`VERSION` foram commitados por engano numa versão que não deveria te
 
 ## Lançador curto (Vercel)
 
-`irm "https://tweakmax1ng.vercel.app" | iex` é servido pelo projeto Vercel `tweakmax1ng`, que publica só `launcher/vercel.json`: dois redirects 302 (`/` e `/win`) para `https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/TweakMaxing.ps1`. Não há build nem código; publicar uma release nova no GitHub já atualiza o que o comando baixa.
+`irm "https://tweakmax1ng.vercel.app" | iex` é servido pelo projeto Vercel `tweakmax1ng`, que publica só `launcher/vercel.json`: dois redirects temporarios (307) (`/` e `/win`) para `https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/TweakMaxing.ps1`. Não há build nem código; publicar uma release nova no GitHub já atualiza o que o comando baixa.
 
 Redeploy (só é preciso se o `vercel.json` mudar):
 

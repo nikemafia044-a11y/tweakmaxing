@@ -15,7 +15,7 @@ irm "https://tweakmax1ng.vercel.app" | iex
 
 ```
 irm https://tweakmax1ng.vercel.app            (ou /win)
-  -> Vercel, redirect 302 ->
+  -> Vercel, redirect temporario (307) ->
      https://github.com/nikemafia044-a11y/tweakmaxing/releases/latest/download/TweakMaxing.ps1
   -> iex executa o artefato compilado (ASCII puro, sem BOM)
   -> sem admin: pede UAC, baixa o release DA MESMA VERSAO (tag fixa) e reabre elevado
@@ -40,7 +40,7 @@ irm https://tweakmax1ng.vercel.app            (ou /win)
 ## Contratos
 
 - `launcher/vercel.json`: `redirects[]` com `source` `/` e `/win`, `destination` = URL `latest` do
-  asset, `permanent: false` (302, para o destino poder mudar sem cache permanente em cliente).
+  asset, `permanent: false` (307 temporario, para o destino poder mudar sem cache permanente em cliente).
 - O artefato continua ASCII puro: o `irm` do PS 5.1 devolve `System.String` para o asset do GitHub
   (verificado com o release do WinUtil), e ASCII não depende de codepage.
 
