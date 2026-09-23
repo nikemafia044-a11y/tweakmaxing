@@ -170,6 +170,12 @@ function Stop-TmxGui {
 
     Clear-TmxGuiLeftovers -Port $Port
 
+    # Os processos filhos do msedgewebview2 podem levar alguns segundos para
+    # soltar a porta depois do kill; checar uma vez so gerava falso FAIL.
+    $limite = (Get-Date).AddSeconds(10)
+    while ((Test-TmxPortOpen -Port $Port) -and (Get-Date) -lt $limite) {
+        Start-Sleep -Milliseconds 250
+    }
     if (Test-TmxPortOpen -Port $Port) {
         Write-Warning "A porta $Port continua ocupada depois do Stop-TmxGui."
         return $false
