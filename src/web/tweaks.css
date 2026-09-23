@@ -35,8 +35,8 @@
 #tab-ajustes .tw-preset:hover { background: var(--panel-2); color: var(--fg); }
 
 #tab-ajustes .tw-preset[aria-pressed="true"] {
-  background: var(--accent);
-  color: var(--accent-fg);
+  background: var(--active);
+  color: var(--active-fg);
   font-weight: 650;
 }
 
@@ -272,13 +272,18 @@
 }
 
 #tab-ajustes .tw-switch[aria-checked="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
+  background: var(--active);
+  border-color: var(--active);
+}
+
+#tab-ajustes .tw-switch[aria-checked="true"]:hover {
+  background: var(--active-hover);
+  border-color: var(--active-hover);
 }
 
 #tab-ajustes .tw-switch[aria-checked="true"]::after {
   left: 20px;
-  background: var(--accent-fg);
+  background: var(--active-fg);
 }
 
 #tab-ajustes .tw-switch:disabled { opacity: 0.45; cursor: not-allowed; }
@@ -391,7 +396,7 @@
   display: block;
   height: 100%;
   width: 0;
-  background: var(--accent);
+  background: var(--active);
   transition: width 0.2s ease;
 }
 
