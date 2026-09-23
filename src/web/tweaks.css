@@ -105,19 +105,25 @@
   padding: 2px 10px 10px;
 }
 
-/* ---------- linha de um ajuste ---------- */
+/* ---------- cartão de um ajuste ---------- */
+/* Cada .tweak é um cartão compacto e didático: linha 1 (.tw-cabecalho) tem o
+   controle + nome + ações; linha 2 é a descrição resumida; linha 3
+   (.tw-badges) traz os selos; e .tw-mais é o <details> "Saiba mais". */
 
 #tab-ajustes .tweak {
   display: flex;
-  flex-wrap: wrap;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 8px 10px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  border: 1px solid var(--linha);
   border-left: 3px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--raio);
+  background: var(--panel);
 }
 
-#tab-ajustes .tweak:hover { background: var(--panel-2); }
+#tab-ajustes .tweak:last-child { margin-bottom: 0; }
+#tab-ajustes .tweak:hover { background: var(--elevated); }
 #tab-ajustes .tweak[hidden] { display: none; }
 
 #tab-ajustes .tweak.tw-folclore {
@@ -127,12 +133,18 @@
 
 #tab-ajustes .tweak.tw-bloqueado { opacity: 0.6; }
 
+#tab-ajustes .tw-cabecalho {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
 #tab-ajustes .tw-controle {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
   min-height: 22px;
-  padding-top: 2px;
 }
 
 #tab-ajustes .tw-controle input[type="checkbox"],
@@ -144,18 +156,6 @@
 }
 
 #tab-ajustes .tw-controle input:disabled { cursor: not-allowed; }
-
-#tab-ajustes .tw-corpo {
-  flex: 1 1 320px;
-  min-width: 0;
-}
-
-#tab-ajustes .tw-titulo {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  align-items: center;
-}
 
 #tab-ajustes .tw-nome {
   font-weight: 600;
@@ -169,16 +169,47 @@
 }
 
 #tab-ajustes .tw-desc {
-  margin: 2px 0 0;
+  margin: 0;
   color: var(--muted);
   font-size: 12.5px;
 }
 
+#tab-ajustes .tw-desc-principal {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 #tab-ajustes .tw-motivo {
-  margin: 3px 0 0;
+  margin: 1px 0 0;
   color: var(--warn);
   font-size: 12px;
 }
+
+#tab-ajustes .tw-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin-top: 1px;
+}
+
+#tab-ajustes .tw-mais {
+  margin-top: 1px;
+  font-size: 12.5px;
+}
+
+#tab-ajustes .tw-mais > summary {
+  cursor: pointer;
+  color: var(--accent);
+  font-weight: 600;
+  list-style: none;
+}
+
+#tab-ajustes .tw-mais > summary::-webkit-details-marker { display: none; }
+#tab-ajustes .tw-mais > summary::before { content: "▸ "; }
+#tab-ajustes .tw-mais[open] > summary::before { content: "▾ "; }
+#tab-ajustes .tw-mais .tw-bloco:first-of-type { margin-top: 8px; }
 
 #tab-ajustes .tw-acoes {
   flex: 0 0 auto;
@@ -189,6 +220,14 @@
 }
 
 /* ---------- selos e estado ---------- */
+
+/* Selos de risco e reversibilidade: mesma família visual dos .selo-medido /
+   .selo-tecnico / .selo-folclore / .selo-parcial / .selo-irreversivel /
+   .selo-reboot definidos (sem prefixo de aba, de propósito) no app.css. */
+.selo-risco-baixo { color: var(--ok); }
+.selo-risco-medio { color: var(--warn); }
+.selo-risco-alto  { color: var(--danger); }
+.selo-reversivel  { color: var(--ok); }
 
 #tab-ajustes .estado {
   display: inline-block;

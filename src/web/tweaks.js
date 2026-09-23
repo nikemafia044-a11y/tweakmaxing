@@ -152,7 +152,7 @@
         '<span><span class="selo selo-folclore">FOLCLORE</span>sem evidência: nunca entra em preset</span>' +
         '<span><span class="selo selo-parcial">Parcial</span>reversão incompleta</span>' +
         '<span><span class="selo selo-irreversivel">Irreversível</span>não tem volta</span>' +
-        '<span><span class="selo selo-reboot">Reboot</span>exige reiniciar</span>' +
+        '<span><span class="selo selo-reboot">Reinício</span>exige reiniciar</span>' +
       '</p>' +
       '<div id="tw-categorias"><p class="vazio">Lendo o catálogo e o estado atual do sistema…</p></div>' +
       '<div class="tw-rodape">' +
@@ -185,17 +185,39 @@
 
   /* ---------------- desenho da lista ---------------- */
 
+  var ROTULO_RISCO = { baixo: 'Risco baixo', medio: 'Risco médio', alto: 'Risco alto' };
+
   function selosDe(t) {
     var html = '';
     if (t.tier === 'MEDIDO') { html += '<span class="selo selo-medido">MEDIDO</span>'; }
     else if (t.tier === 'TECNICO') { html += '<span class="selo selo-tecnico">TÉCNICO</span>'; }
     else if (t.tier === 'FOLCLORE') { html += '<span class="selo selo-folclore">FOLCLORE</span>'; }
 
+    html += '<span class="selo selo-risco-' + esc(t.risco || 'baixo') + '">' +
+            esc(ROTULO_RISCO[t.risco] || ('Risco ' + t.risco)) + '</span>';
+
     if (t.reversivel === 'nenhuma') { html += '<span class="selo selo-irreversivel">Irreversível</span>'; }
     else if (t.reversivel === 'parcial') { html += '<span class="selo selo-parcial">Parcial</span>'; }
-    else { html += '<span class="selo">Total</span>'; }
+    else { html += '<span class="selo selo-reversivel">Reversível</span>'; }
 
-    if (t.requerReboot) { html += '<span class="selo selo-reboot">Reboot</span>'; }
+    if (t.requerReboot) { html += '<span class="selo selo-reboot">Reinício</span>'; }
+    return html;
+  }
+
+  /* Blocos de "por quê" / evidência / folclore, reusados tanto no <details>
+     compacto de cada cartão quanto no modal de detalhes (abrirDetalhes). */
+  function blocosPorQueEvidencia(t) {
+    var html = '<div class="tw-bloco"><h4>Por quê</h4><p>' + esc(t.porque) + '</p></div>' +
+               '<div class="tw-bloco"><h4>Evidência</h4><p>' + esc(t.evidencia) + '</p></div>';
+    if (t.folclore) {
+      html += '<div class="tw-consentimento">' +
+                '<h4>Por que está na seção anti-folclore</h4>' +
+                '<div class="tw-bloco"><h4>O que é</h4><p>' + esc(t.folclore.oQueE) + '</p></div>' +
+                '<div class="tw-bloco"><h4>Por que circula</h4><p>' + esc(t.folclore.porqueCircula) + '</p></div>' +
+                '<div class="tw-bloco"><h4>Por que não recomendamos</h4><p>' +
+                  esc(t.folclore.porqueNaoRecomendamos) + '</p></div>' +
+              '</div>';
+    }
     return html;
   }
 
@@ -267,14 +289,21 @@
       extra += '<p class="tw-desc">' + esc(t.instrucoes) + '</p>';
     }
 
+    // Cartão compacto e didático: linha 1 = controle + nome + ações; linha 2 =
+    // descrição (uma linha, com reticências — texto completo no title); linha
+    // 3 = selos (evidência, risco, reversibilidade, reinício); e um <details>
+    // "Saiba mais" com os blocos de por-quê/evidência/folclore (mesmo builder
+    // usado no modal de abrirDetalhes, sem duplicar texto).
     return '<div class="' + classes.join(' ') + '" data-id="' + esc(t.id) + '"' +
              (titulo ? ' title="' + esc(titulo) + '"' : '') + '>' +
-             '<span class="tw-controle">' + controleDe(t) + '</span>' +
-             '<div class="tw-corpo">' +
-               '<div class="tw-titulo">' + rotulo + '<span class="tw-id">' + esc(t.id) + '</span>' + selosDe(t) + '</div>' +
-               '<p class="tw-desc">' + esc(t.descricao) + '</p>' + extra +
+             '<div class="tw-cabecalho">' +
+               '<span class="tw-controle">' + controleDe(t) + '</span>' +
+               rotulo + '<span class="tw-id">' + esc(t.id) + '</span>' +
+               '<span class="tw-acoes">' + acoesDe(t) + '</span>' +
              '</div>' +
-             '<div class="tw-acoes">' + acoesDe(t) + '</div>' +
+             '<p class="tw-desc tw-desc-principal" title="' + esc(t.descricao) + '">' + esc(t.descricao) + '</p>' + extra +
+             '<div class="tw-badges">' + selosDe(t) + '</div>' +
+             '<details class="tw-mais"><summary>Saiba mais</summary>' + blocosPorQueEvidencia(t) + '</details>' +
            '</div>';
   }
 
@@ -478,18 +507,7 @@
 
     var html = '<p class="tw-titulo">' + selosDe(t) + '</p>' +
                '<div class="tw-bloco"><h4>O que faz</h4><p>' + esc(t.descricao) + '</p></div>' +
-               '<div class="tw-bloco"><h4>Por quê</h4><p>' + esc(t.porque) + '</p></div>' +
-               '<div class="tw-bloco"><h4>Evidência</h4><p>' + esc(t.evidencia) + '</p></div>';
-
-    if (t.folclore) {
-      html += '<div class="tw-consentimento">' +
-                '<h4>Por que está na seção anti-folclore</h4>' +
-                '<div class="tw-bloco"><h4>O que é</h4><p>' + esc(t.folclore.oQueE) + '</p></div>' +
-                '<div class="tw-bloco"><h4>Por que circula</h4><p>' + esc(t.folclore.porqueCircula) + '</p></div>' +
-                '<div class="tw-bloco"><h4>Por que não recomendamos</h4><p>' +
-                  esc(t.folclore.porqueNaoRecomendamos) + '</p></div>' +
-              '</div>';
-    }
+               blocosPorQueEvidencia(t);
 
     if (t.instrucoes) {
       html += '<div class="tw-bloco"><h4>Instruções</h4><p>' + esc(t.instrucoes) + '</p></div>';
