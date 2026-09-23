@@ -74,7 +74,11 @@ try {
     $filtrado = "$(Invoke-AB 'get' 'count' '.app')".Trim()
     $filtradoNum = 999
     [int]::TryParse($filtrado, [ref]$filtradoNum) | Out-Null
-    Assert-Tmx -Nome 'busca "firefox" deixa no maximo 5 apps visiveis (.app)' -Condicao ($filtradoNum -le 5) -Detalhe "obtido: '$filtrado'"
+    # Esperado = apps do catalogo cujo nome ou descricao contem "firefox" (a busca
+    # olha os dois). Um numero fixo quebrava a cada descricao nova que cita o Firefox.
+    $catApps = @((Get-Content -LiteralPath (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'src\config\applications.json') -Raw -Encoding UTF8 | ConvertFrom-Json).aplicativos)
+    $esperado = @($catApps | Where-Object { "$($_.nome) $($_.descricao)" -match 'firefox' }).Count
+    Assert-Tmx -Nome 'busca "firefox" mostra exatamente os apps que citam firefox no nome ou descricao' -Condicao ($filtradoNum -eq $esperado -and $esperado -ge 2 -and $esperado -lt $totalNum) -Detalhe "obtido: '$filtrado', esperado: $esperado"
 
     Invoke-AB 'scrollintoview' '#app-firefox' | Out-Null
     Invoke-AB 'check' '#app-firefox' | Out-Null
