@@ -80,6 +80,28 @@
     });
   }
 
+  /* A ponte aceita UM job por vez em todo o aplicativo, nao so nesta aba: um
+     lote de apps.icons rodando em segundo plano (disparado pelo
+     IntersectionObserver, sem o usuario pedir) pode estar ocupando o unico
+     slot bem na hora em que o usuario clica em Instalar/Desinstalar/etc.
+     Sem espera, esse clique falharia na hora com "ja existe um trabalho em
+     andamento" por causa de um lote de icone que nem apareceu na tela.
+     Mesmo padrao de src/web/configure.js (chamarJobComEspera), portado
+     aqui: tenta, e se a falha for especificamente "trabalho em andamento",
+     espera um pouco e tenta de novo, ate ~20s. Qualquer outro erro
+     repropaga na hora. */
+  function chamarAcaoAssincronaComEspera(nome, payload) {
+    var limite = Date.now() + 20000;
+
+    function tentar() {
+      return chamarAcaoAssincrona(nome, payload).catch(function (e) {
+        if (!/trabalho em andamento/i.test(e.message) || Date.now() > limite) { throw e; }
+        return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(tentar);
+      });
+    }
+    return tentar();
+  }
+
   /* ---------------- esqueleto ---------------- */
 
   function montarEsqueleto() {
@@ -167,7 +189,7 @@
         {
           rotulo: 'Reparar', classe: 'btn btn-primary', onClick: function () {
             tmx.toast('Reparando o winget...', 'aviso');
-            chamarAcaoAssincrona('apps.repairWinget', { consentido: true }).then(function (r) {
+            chamarAcaoAssincronaComEspera('apps.repairWinget', { consentido: true }).then(function (r) {
               tmx.toast(r && r.ok ? ('winget: ' + r.detalhe) : ('Falha ao reparar o winget: ' + (r && r.detalhe)), r && r.ok ? 'ok' : 'erro');
               return atualizarGerenciadores();
             }).catch(function (e) {
@@ -189,7 +211,7 @@
         {
           rotulo: 'Instalar', classe: 'btn btn-primary', onClick: function () {
             tmx.toast('Instalando o Chocolatey...', 'aviso');
-            chamarAcaoAssincrona('apps.installChoco', { consentido: true }).then(function (r) {
+            chamarAcaoAssincronaComEspera('apps.installChoco', { consentido: true }).then(function (r) {
               tmx.toast(r && r.ok ? 'Chocolatey instalado' : ('Falha ao instalar o Chocolatey: ' + (r && r.detalhe)), r && r.ok ? 'ok' : 'erro');
               return atualizarGerenciadores();
             }).catch(function (e) {
@@ -201,18 +223,35 @@
     });
   }
 
-  /* ---------------- logos dos apps ---------------- */
+  /* ---------------- logos dos apps ----------------
+   *
+   * Regra central (decisao do time): icone NUNCA bloqueia acao do usuario e
+   * NUNCA perde id. Isso significa:
+   *   - no maximo UM lote de apps.icons em voo por vez (variavel local
+   *     'processando' abaixo) - nunca dispara um segundo antes do primeiro
+   *     terminar;
+   *   - um id so vira 'solicitado' (nunca mais pedido de novo) quando o
+   *     LOTE INTEIRO responde com sucesso - numa rejeicao (rede, ou "ja
+   *     existe um trabalho em andamento" por causa de outra acao do
+   *     usuario ocupando o slot), os ids voltam pra fila e a proxima
+   *     tentativa espera um backoff crescente (1s, 2s, 4s, ... ate 15s);
+   *   - lote de 10 no front (o back-end aceita ate 40, mas um lote grande
+   *     demora mais e atrasa a descoberta de que o slot esta ocupado).
+   */
 
-  // Cache/estado em memoria (sobrevive a re-render da lista, nao a um
-  // recarregamento da pagina): nunca pede o mesmo id duas vezes.
   var iconesEstado = {
     cache: {},        // id -> { src, origem }
-    solicitados: {},  // id -> true (ja foi pedido - com ou sem sucesso)
+    solicitados: {},  // id -> true (so em sucesso - nunca marca em falha)
     fila: [],
     timer: null,
     observer: null,
-    elementos: {}      // id -> elemento <span class="app-icone">
+    elementos: {},     // id -> elemento <span class="app-icone">
+    processando: false,
+    backoffMs: 1000
   };
+
+  var ICONES_LOTE_MAX = 10;
+  var ICONES_BACKOFF_MAX_MS = 15000;
 
   function calcularIniciais(nome) {
     var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
@@ -226,7 +265,10 @@
   }
 
   function aplicarIconeNoElemento(span, dados) {
-    if (!span || !dados || !dados.src) { return; }
+    if (!span || !dados || typeof dados.src !== 'string') { return; }
+    // So aceita data URI de PNG: nunca joga o que veio da ponte direto num
+    // atributo src sem checar a forma esperada.
+    if (dados.src.indexOf('data:image/png;base64,') !== 0) { return; }
     var img = document.createElement('img');
     img.width = 32;
     img.height = 32;
@@ -254,38 +296,70 @@
     if (!id || iconesEstado.cache[id] || iconesEstado.solicitados[id]) { return; }
     if (iconesEstado.fila.indexOf(id) >= 0) { return; }
     iconesEstado.fila.push(id);
-    agendarLoteIcones();
+    agendarLoteIcones(150);
   }
 
-  function agendarLoteIcones() {
+  function agendarLoteIcones(atrasoMs) {
     if (iconesEstado.timer) { return; }
-    // Debounce de ~150ms: junta varios ids que ficaram visiveis quase juntos
-    // (scroll, expandir categoria) num unico lote em vez de um apps.icons por app.
     iconesEstado.timer = window.setTimeout(function () {
       iconesEstado.timer = null;
       processarLoteIcones();
-    }, 150);
+    }, atrasoMs);
   }
 
   function processarLoteIcones() {
+    if (iconesEstado.processando) { return; } // no maximo um lote em voo
     if (!iconesEstado.fila.length) { return; }
-    var lote = iconesEstado.fila.splice(0, 40);
-    lote.forEach(function (id) { iconesEstado.solicitados[id] = true; });
+
+    var lote = iconesEstado.fila.slice(0, ICONES_LOTE_MAX);
+    iconesEstado.processando = true;
 
     chamarAcaoAssincrona('apps.icons', { ids: lote }).then(function (r) {
+      // Sucesso do LOTE: agora sim tira esses ids da fila e marca como
+      // solicitados - mesmo os que nao vieram com icone (o back-end so
+      // devolve o que achou; ausencia e resposta valida, nao falha).
+      iconesEstado.fila = iconesEstado.fila.filter(function (id) { return lote.indexOf(id) < 0; });
+      lote.forEach(function (id) { iconesEstado.solicitados[id] = true; });
+      iconesEstado.backoffMs = 1000; // reseta o backoff apos um sucesso
+
       var icons = (r && r.icons) || {};
       Object.keys(icons).forEach(function (id) {
         var dados = icons[id];
-        if (!dados || !dados.src) { return; }
+        if (!dados) { return; }
         iconesEstado.cache[id] = dados;
         aplicarIconeNoElemento(iconesEstado.elementos[id], dados);
       });
-    }).catch(function () {
-      // Silencioso de proposito (spec): falha de rede/lote nunca vira toast
-      // nem bloqueia a lista - o app so fica com as iniciais.
-    });
 
-    if (iconesEstado.fila.length) { agendarLoteIcones(); }
+      iconesEstado.processando = false;
+      if (iconesEstado.fila.length) { agendarLoteIcones(50); }
+    }).catch(function () {
+      // Falha do LOTE (rede, ou o slot de job estava ocupado por outra
+      // acao): os ids CONTINUAM na fila (nunca saem - nada foi marcado
+      // 'solicitado'). So espera um backoff crescente e tenta nesses
+      // mesmos ids de novo. Silencioso de proposito: nunca vira toast, o
+      // app so continua com as iniciais ate a proxima tentativa.
+      iconesEstado.processando = false;
+      var espera = iconesEstado.backoffMs;
+      iconesEstado.backoffMs = Math.min(iconesEstado.backoffMs * 2, ICONES_BACKOFF_MAX_MS);
+      agendarLoteIcones(espera);
+    });
+  }
+
+  var iconesOuvinteSlotLigado = false;
+
+  function ligarEsperaDeSlotLivreIcones() {
+    // Assim que QUALQUER job termina (o global job.done - nao so os desta
+    // aba), o slot unico da ponte fica livre: se ha ids esperando e nenhum
+    // lote em voo, tenta na hora em vez de esperar o backoff todo. So
+    // acelera - o backoff continua sendo a rede de seguranca se isso nunca
+    // disparar (ex.: pagina carregada antes deste listener existir).
+    if (iconesOuvinteSlotLigado || !window.tmx || !tmx.bridge || typeof tmx.bridge.on !== 'function') { return; }
+    iconesOuvinteSlotLigado = true;
+    tmx.bridge.on('job.done', function () {
+      if (iconesEstado.processando || !iconesEstado.fila.length) { return; }
+      if (iconesEstado.timer) { window.clearTimeout(iconesEstado.timer); iconesEstado.timer = null; }
+      processarLoteIcones();
+    });
   }
 
   function criarIconeApp(app) {
@@ -382,6 +456,15 @@
   function renderCategorias() {
     var cont = document.getElementById('app-categorias');
     if (!cont) { return; }
+
+    // Re-render (recarga do catalogo): os elementos antigos vao sumir do
+    // DOM - desconecta o observer deles antes (senao ele continua
+    // "observando" nos vazios) e limpa o mapa de elementos, que sera
+    // repovoado pelas novas linhas abaixo. cache/solicitados/fila
+    // continuam (sao por id de app, nao por elemento DOM).
+    if (iconesEstado.observer) { iconesEstado.observer.disconnect(); }
+    iconesEstado.elementos = {};
+
     cont.innerHTML = '';
 
     var categorias = (estado.catalogo && estado.catalogo.categorias) || [];
@@ -449,7 +532,7 @@
   /* ---------------- instalados ---------------- */
 
   function carregarInstalados() {
-    return chamarAcaoAssincrona('apps.installed').then(function (r) {
+    return chamarAcaoAssincronaComEspera('apps.installed').then(function (r) {
       var mapa = {};
       var itens = (r && r.itens) || [];
       itens.forEach(function (it) {
@@ -495,7 +578,7 @@
   function rodarAcaoPacotes(acao, ids, rotulo) {
     var payload = ids ? { ids: ids } : null;
     tmx.toast(rotulo + '...', 'aviso');
-    chamarAcaoAssincrona(acao, payload).then(function (resultado) {
+    chamarAcaoAssincronaComEspera(acao, payload).then(function (resultado) {
       mostrarResultados(rotulo, resultado);
       return carregarInstalados();
     }).catch(function (e) {
@@ -560,6 +643,7 @@
       injetarEstilo();
       montarEsqueleto();
       ligarEventosToolbar();
+      ligarEsperaDeSlotLivreIcones();
       // aguardarTodas (e não Promise.all): espera as duas terminarem antes
       // de rejeitar, para que um retry de tabs.show não comece com a outra
       // carga ainda no ar.

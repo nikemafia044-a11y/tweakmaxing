@@ -121,29 +121,42 @@ function Register-TmxInstallActions {
         param($payload)
         # Assincrono como os outros apps.* demorados: um icone pode envolver
         # download de rede (site oficial), e a janela nao pode travar por
-        # isso. install.js chama em lotes de ate 40 ids (IntersectionObserver
-        # + debounce), entao o limite aqui e so uma trava de sanidade contra
-        # um payload malformado.
-        $ids = @($payload.ids)
-        if ($ids.Count -gt 40) { throw 'apps.icons aceita no maximo 40 ids por chamada' }
-        foreach ($idBruto in $ids) {
-            if ($idBruto -isnot [string]) { throw 'apps.icons: cada id precisa ser texto' }
+        # isso. install.js chama em lotes de ate 10 ids (IntersectionObserver
+        # + debounce), entao o limite de 40 aqui e so uma trava de sanidade
+        # contra um payload malformado - o back-end aceita ate 40 mesmo que
+        # o front-end nunca peca mais que 10 por vez.
+        #
+        # Payload ausente ou sem 'ids' vira lista vazia (icons:{}), nao erro:
+        # um pedido vazio nao e um pedido malformado.
+        $ids = New-Object 'System.Collections.Generic.List[string]'
+        if ($null -ne $payload -and $null -ne $payload.ids) {
+            foreach ($idBruto in @($payload.ids)) {
+                if ($null -eq $idBruto) { continue }
+                if ($idBruto -isnot [string]) { throw 'apps.icons: cada id precisa ser texto' }
+                $ids.Add($idBruto)
+            }
         }
+        if ($ids.Count -gt 40) { throw 'apps.icons aceita no maximo 40 ids por chamada' }
+        if ($ids.Count -eq 0) { return @{ icons = [ordered]@{} } }
 
         $catalogo = Get-TmxAppCatalog
+        $apps = New-Object 'System.Collections.Generic.List[object]'
+        foreach ($id in $ids) {
+            if ([string]::IsNullOrWhiteSpace($id)) { continue }
+            $app = @($catalogo | Where-Object { "$($_.id)" -ieq "$id" }) | Select-Object -First 1
+            if ($app) { $apps.Add($app) }
+        }
+
         # Lida UMA vez por lote (nao por app): Get-TmxUninstallEntries varre
         # o registro de desinstalar inteiro (HKLM + WOW6432Node + HKCU), e um
         # lote pode ter ate 40 ids - repetir a varredura por app deixaria um
         # lote cheio visivelmente lento.
         $entradasDesinstalar = Get-TmxUninstallEntries
-        $icones = [ordered]@{}
-        foreach ($id in $ids) {
-            if ([string]::IsNullOrWhiteSpace("$id")) { continue }
-            $app = @($catalogo | Where-Object { "$($_.id)" -ieq "$id" }) | Select-Object -First 1
-            if (-not $app) { continue }
-            $achado = Get-TmxAppIcon -App $app -UninstallEntries $entradasDesinstalar
-            if ($achado) { $icones["$($achado.id)"] = @{ src = $achado.src; origem = $achado.origem } }
-        }
+
+        # Orcamento de 8s pro lote INTEIRO (nao por app): ids que nao
+        # couberem saem sem icone (front-end so mantem as iniciais) - nunca
+        # travam o slot de job unico do app.
+        $icones = Invoke-TmxAppIconBatch -Apps $apps.ToArray() -UninstallEntries $entradasDesinstalar -BudgetMs 8000
         @{ icons = $icones }
     }
 }

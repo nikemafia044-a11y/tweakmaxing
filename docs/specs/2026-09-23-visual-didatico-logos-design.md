@@ -74,26 +74,57 @@ Prévia e resultado com Desfazer continuam como estão; só herdam a paleta.
 
 ### Back-end (novo: `src/functions/install/Get-TmxAppIcon.ps1`)
 - `Get-TmxAppIconCacheDir`: `<home do TweakMaxing>\icons` (mesma raiz de `runs`, respeitando `TWEAKMAXING_HOME`).
-- `Get-TmxAppIcon -App <obj> [-Offline]` devolve `@{ id; src = 'data:image/png;base64,...'; origem = 'cache'|'exe'|'site' }` ou `$null`.
+- `Get-TmxAppIcon -App <obj> [-Offline] [-UninstallEntries <lista>]` devolve
+  `@{ id; src = 'data:image/png;base64,...'; origem = 'cache'|'exe'|'site' }` ou `$null`. Nunca lança.
   Ordem: cache (`<id>.png`) → exe instalado (entradas de Desinstalar em HKLM/HKCU/WOW6432Node cujo `DisplayName`
-  contém o nome do app, sem diferenciar maiúsculas; `DisplayIcon` sem o sufixo `,N`; `ExtractAssociatedIcon`) → site
+  é **igual ao nome do app** (sem diferenciar maiúsculas) **ou começa por `"<nome> "`** — ex.: `Git` casa `Git` e
+  `Git 2.40`, mas não casa `GitHub Desktop`; `DisplayIcon` sem o sufixo `,N`; `ExtractAssociatedIcon`) → site
   (`icon` do catálogo; senão, `https://<host de link>/favicon.ico` e, se falhar, o primeiro `<link rel="icon"|"apple-touch-icon">`
-  do HTML da página; só https; timeout de 5 s; no máximo 512 KB).
-  A imagem é redimensionada para **64×64 PNG** (2× de 32 px) e gravada em cache.
-- Todo acesso externo passa por wrappers mockáveis (`Invoke-TmxIconDownload`, `Get-TmxUninstallEntries`, `Get-TmxExeIconBitmap`).
+  do HTML da página; só https, nunca um IP literal privado/loopback; timeout de 5 s (`ReadWriteTimeout` também,
+  e um cronômetro por download cobre o corpo inteiro, não só cada leitura); no máximo 512 KB; redirect (3xx) é
+  seguido **na mão**, no máximo 3 saltos, revalidando https + IP não-privado a cada salto — um salto https→http
+  para a cadeia na hora).
+  A imagem decodificada é revalidada por dimensão (**recusa lado > 1024px ou mais de 1.048.576 pixels** —
+  guarda contra "decompression bomb": um arquivo pequeno pode descomprimir enorme) e desenhada **direto** da
+  fonte para o destino 64×64 (sem cópia intermediária em tamanho cheio), virando **64×64 PNG** gravado em cache.
+  `id` é validado (`^[A-Za-z0-9_.-]+$`, sem `..`) antes de virar nome de arquivo.
+- Cache negativo: quando exe **e** site foram tentados de verdade (não pulados por offline/testMode/orçamento) e
+  nenhum achou nada, grava `<id>.none` e para de tentar rede por esse id por 7 dias.
+- Todo acesso externo passa por wrappers mockáveis (`Invoke-TmxHttpRequestOnce`, `Invoke-TmxIconDownload`,
+  `Get-TmxUninstallEntries`, `Get-TmxExeIconBitmap`).
 - Em `-TestMode`/`$sync.testMode` ou com `-Offline`: sem rede (só cache e exe).
-- Ação da ponte `apps.icons`, payload `{ ids: [...] }` (no máximo 40 por chamada), que roda em job assíncrono como as outras ações
-  demoradas e devolve `{ icons: { <id>: { src, origem } } }`. Id desconhecido ou sem ícone fica de fora.
+- `Invoke-TmxAppIconBatch -Apps <lista> [-UninstallEntries] [-BudgetMs 8000]`: resolve uma lista de apps já
+  resolvidos (não ids) respeitando um **orçamento de tempo total do lote** (padrão 8 s) — ids que não couberem
+  saem sem ícone (front-end mantém as iniciais) e **sem** cache negativo (a função simplesmente não roda pra eles).
+- Ação da ponte `apps.icons`, payload `{ ids: [...] }` (no máximo 40 por chamada; payload ausente ou sem `ids`
+  vira lista vazia, não erro), que roda em job assíncrono como as outras ações demoradas, lê o registro de
+  desinstalar uma vez por lote e devolve `{ icons: { <id>: { src, origem } } }`. Id desconhecido ou sem ícone
+  fica de fora.
 
 ### Front-end (src/web/install.js)
 - Cada `.app-row` ganha, antes do nome, `<span class="app-icone">`: primeiro com as iniciais (1–2 letras) num círculo `--elevated`.
-- Um `IntersectionObserver` junta os ids visíveis em lotes de até 40 e chama `apps.icons`; o `<img width=32 height=32>`
-  substitui as iniciais quando chega. A resposta é guardada em memória. A lista nunca espera ícone.
+- Um `IntersectionObserver` junta os ids visíveis em lotes de **até 10** (back-end aceita até 40, mas o front nunca
+  pede mais que 10 por vez) e chama `apps.icons`; o `<img width=32 height=32>` substitui as iniciais quando chega
+  (só se `src` começar literalmente com `data:image/png;base64,`). A resposta é guardada em memória.
+- **No máximo um lote em voo por vez.** Um id só vira "já pedido" (nunca mais solicitado) quando o **lote inteiro**
+  responde com sucesso; numa rejeição (rede, ou "já existe um trabalho em andamento" porque outra ação do usuário
+  está usando o único slot de job da ponte), os ids voltam pra fila e a próxima tentativa espera um backoff
+  crescente (1 s, 2 s, 4 s, ... até 15 s). Um evento `job.done` global acorda a fila na hora, sem esperar o backoff.
+  A lista nunca espera ícone e nunca perde um id.
+- Ações do usuário que disparam job assíncrono (instalar, desinstalar, atualizar tudo, listar instalados, reparar
+  winget, instalar Chocolatey) esperam e tentam de novo (~20 s) quando o slot está ocupado, em vez de falhar na
+  hora — mesmo padrão de `chamarJobComEspera` (`src/web/configure.js`).
+- Em cada re-render da lista (recarga do catálogo), o `IntersectionObserver` antigo é desconectado antes de criar
+  as linhas novas.
 
 ## Erros
 
-- Falha de rede, HTML sem ícone, arquivo inválido ou maior que 512 KB: item sem ícone (fica com as iniciais) e log em WARN, sem toast.
-- Uma falha em um ícone não derruba o lote.
+- Falha de rede, HTML sem ícone, arquivo inválido, maior que 512 KB, redirect inválido/http, IP privado, dimensão
+  grande demais, ou id não reservado pelo orçamento do lote: item sem ícone (fica com as iniciais) e log em WARN,
+  sem toast. Só o caso "site tentado de verdade e não achou nada" grava cache negativo — nunca o corte por
+  orçamento.
+- Uma falha em um ícone não derruba o lote; uma falha do lote inteiro (rede, ou slot ocupado) não perde os ids,
+  só adia a tentativa.
 
 ## Testes
 

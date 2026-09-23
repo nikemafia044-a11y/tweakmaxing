@@ -69,6 +69,61 @@ try {
     [int]::TryParse($total, [ref]$totalNum) | Out-Null
     Assert-Tmx -Nome 'catalogo renderiza pelo menos 200 apps (.app)' -Condicao ($totalNum -ge 200) -Detalhe "obtido: '$total'"
 
+    # Logos: pelo menos um .app-icone (iniciais ou imagem) por linha renderizada.
+    $totalIcones = "$(Invoke-AB 'get' 'count' '.app-icone')".Trim()
+    $totalIconesNum = 0
+    [int]::TryParse($totalIcones, [ref]$totalIconesNum) | Out-Null
+    Assert-Tmx -Nome 'pelo menos um .app-icone presente' -Condicao ($totalIconesNum -ge 1) -Detalhe "obtido: '$totalIcones'"
+
+    Invoke-AB 'errors' '--clear' | Out-Null
+    Invoke-AB 'scrollintoview' '#app-firefox' | Out-Null
+    Invoke-AB 'scroll' 'down' '1200' | Out-Null
+    Start-Sleep -Milliseconds 500
+    Invoke-AB 'scroll' 'down' '1200' | Out-Null
+    Start-Sleep -Milliseconds 1000
+    $erros = "$(Invoke-AB 'errors')".Trim()
+    Assert-Tmx -Nome 'nenhum erro de JS depois de rolar a lista (icones lazy)' -Condicao ([string]::IsNullOrWhiteSpace($erros) -or $erros -match '(?i)no errors|nenhum erro') -Detalhe "obtido: '$erros'"
+
+    # Icone real (nao so iniciais) num app de fato instalado nesta maquina, se
+    # houver um: casa DisplayName do registro de Desinstalar (igual ou "nome +
+    # espaco", mesma regra do back-end) contra o catalogo. So roda se achar
+    # candidato - "se viavel", como o pedido de revisao descreve.
+    $raizRepo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+    $catalogoApps = @((Get-Content -LiteralPath (Join-Path $raizRepo 'src\config\applications.json') -Raw -Encoding UTF8 | ConvertFrom-Json).aplicativos)
+    $nomesInstalados = @(
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
+        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
+    ) | ForEach-Object {
+        Get-ItemProperty -Path $_ -ErrorAction SilentlyContinue |
+            Where-Object { $_.DisplayName -and $_.DisplayIcon } |
+            Select-Object -ExpandProperty DisplayName
+    }
+    $candidato = $null
+    foreach ($app in $catalogoApps) {
+        $nomeApp = "$($app.nome)"
+        if (-not $nomeApp) { continue }
+        $bate = @($nomesInstalados | Where-Object { $_ -ieq $nomeApp -or $_.StartsWith("$nomeApp ", [System.StringComparison]::OrdinalIgnoreCase) })
+        if ($bate.Count -gt 0) { $candidato = $app.id; break }
+    }
+
+    if ($candidato) {
+        Write-Host "Candidato a icone real (app instalado nesta maquina): $candidato"
+        Invoke-AB 'scrollintoview' "#app-$candidato" | Out-Null
+
+        $limiteIcone = (Get-Date).AddSeconds(20)
+        $temImagem = '0'
+        while ((Get-Date) -lt $limiteIcone) {
+            $temImagem = "$(Invoke-AB 'get' 'count' "[data-id=$candidato] .app-icone img")".Trim()
+            if ($temImagem -eq '1') { break }
+            Start-Sleep -Milliseconds 500
+        }
+        Assert-Tmx -Nome "icone real (<img>) aparece para '$candidato' (instalado nesta maquina) dentro de 20s" `
+            -Condicao ($temImagem -eq '1') -Detalhe "obtido: '$temImagem'"
+    } else {
+        Write-Host 'Nenhum app do catalogo bate com um instalado nesta maquina - pulando o teste de icone real.' -ForegroundColor DarkYellow
+    }
+
     Invoke-AB 'fill' '#app-busca' 'firefox' | Out-Null
     Start-Sleep -Milliseconds 400
     $filtrado = "$(Invoke-AB 'get' 'count' '.app')".Trim()
