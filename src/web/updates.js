@@ -269,6 +269,11 @@
     }).catch(function (e) {
       var raiz = document.getElementById('upd-cartoes');
       if (raiz) { raiz.innerHTML = '<p class="vazio">Não foi possível ler as políticas de atualização: ' + escapar(e.message) + '</p>'; }
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -276,7 +281,7 @@
 
   window.tmxTabs.atualizacoes = {
     init: function () {
-      carregarLista();
+      return carregarLista();
     }
   };
 })();

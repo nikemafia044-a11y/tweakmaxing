@@ -280,6 +280,11 @@
     }).catch(function (e) {
       var raiz = document.getElementById('cfg-recursos');
       if (raiz) { raiz.innerHTML = '<p class="vazio">Não foi possível ler os recursos: ' + escapar(e.message) + '</p>'; }
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -396,6 +401,11 @@
     }).catch(function (e) {
       var raiz = document.getElementById('cfg-correcoes');
       if (raiz) { raiz.innerHTML = '<p class="vazio">' + escapar(e.message) + '</p>'; }
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -430,6 +440,11 @@
     }).catch(function (e) {
       var raiz = document.getElementById('cfg-paineis');
       if (raiz) { raiz.innerHTML = '<p class="vazio">' + escapar(e.message) + '</p>'; }
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -549,6 +564,11 @@
     }).catch(function (e) {
       var raiz = document.getElementById('cfg-dns');
       if (raiz) { raiz.innerHTML = '<p class="vazio">' + escapar(e.message) + '</p>'; }
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -559,11 +579,14 @@
       /* As três síncronas primeiro: a ponte serializa um job por vez, e
          features.list (que lê o DISM) pode demorar segundos - deixar as
          colunas de painéis e correções esperando por ela seria tela vazia
-         à toa. */
-      carregarCorrecoes();
-      carregarPaineis();
-      carregarDns();
-      carregarRecursos();
+         à toa. A ordem de disparo continua a mesma: aguardarTodas só espera
+         o desfecho, não serializa nada. */
+      return tmx.aguardarTodas([
+        carregarCorrecoes(),
+        carregarPaineis(),
+        carregarDns(),
+        carregarRecursos()
+      ]);
     }
   };
 })();

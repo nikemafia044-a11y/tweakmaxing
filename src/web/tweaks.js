@@ -370,6 +370,11 @@
       document.getElementById('tw-categorias').innerHTML =
         '<p class="vazio">Não foi possível ler o catálogo: ' + esc(e.message) + '</p>';
       tmx.toast('Catálogo: ' + e.message, 'erro');
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -881,7 +886,9 @@
     init: function () {
       montarEsqueleto();
       ligarOuvinteModal();
-      carregar();
+      // Devolve a Promise: tabs.show (ver app.js) só marca a aba como
+      // iniciada quando o catálogo chega.
+      return carregar();
     }
   };
 })();

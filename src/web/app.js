@@ -1,8 +1,13 @@
 /* app.js - casca da interface.
  *
- * Expõe window.tmx = { bridge, modal, toast, tabs, status, session, esc }.
+ * Expõe window.tmx = { bridge, modal, toast, tabs, status, session, esc,
+ * aguardarTodas }.
  * As abas (tasks 9-13) registram window.tmxTabs.<nome> = { init() {} } e são
- * inicializadas na primeira vez que ficam visíveis.
+ * inicializadas na primeira vez que ficam visíveis. init() pode ser síncrono
+ * ou devolver uma Promise; quando devolve, ela TEM que rejeitar se a carga
+ * falhou - é assim que tabs.show sabe que precisa tentar de novo na próxima
+ * vez que a aba for aberta (a mensagem inline e o toast continuam sendo
+ * responsabilidade da aba).
  *
  * Contrato da ponte (docs/specs 3):
  *   JS  -> PS : { id, action, payload }
@@ -166,6 +171,7 @@
   /* ---------------- abas ---------------- */
 
   var iniciadas = {};
+  var iniciando = {};
 
   var tabs = {
     atual: null,
@@ -182,17 +188,34 @@
       tabs.atual = nome;
 
       var mod = window.tmxTabs[nome];
-      if (mod && typeof mod.init === 'function' && !iniciadas[nome]) {
-        // A marca só entra DEPOIS de init() voltar sem erro: marcar antes
-        // deixava uma aba que falhou na primeira abertura (ponte fora do ar,
-        // catálogo quebrado) vazia para sempre, porque a segunda visita já
-        // encontrava iniciadas[nome] === true e não tentava de novo.
-        try {
-          mod.init();
-          iniciadas[nome] = true;
-        } catch (e) {
+      if (mod && typeof mod.init === 'function' && !iniciadas[nome] && !iniciando[nome]) {
+        // A marca só entra quando a carga TERMINA bem. Quase todo init() é
+        // assíncrono (pede catálogo à ponte), então o retorno é tratado como
+        // possível Promise: marcar no retorno síncrono de um init assíncrono
+        // seria marcar antes de saber se deu certo, e uma aba que falhou na
+        // primeira abertura (ponte fora do ar, catálogo quebrado) ficaria
+        // vazia para sempre - a segunda visita já encontraria
+        // iniciadas[nome] === true e não tentaria de novo.
+        //
+        // iniciando[nome] cobre a janela entre o disparo e o desfecho: sem
+        // ele, dois cliques rápidos na mesma aba iniciariam a carga duas
+        // vezes. init() é idempotente (o esqueleto é remontado), então o
+        // retry de uma visita seguinte é seguro.
+        iniciando[nome] = true;
+        var encerrar = function () { iniciando[nome] = false; };
+        var falhar = function (e) {
           console.error(e);
-          toast('Falha ao abrir a aba ' + nome, 'erro');
+          toast('Falha ao abrir a aba ' + nome + ': ' + ((e && e.message) || e), 'erro');
+        };
+        try {
+          Promise.resolve(mod.init())
+            .then(function () { iniciadas[nome] = true; })
+            .catch(falhar)
+            .then(encerrar, encerrar);
+        } catch (e) {
+          // init() que lança de forma síncrona nem chega a virar Promise.
+          encerrar();
+          falhar(e);
         }
       }
     }
@@ -232,6 +255,25 @@
       });
     }
   };
+
+  /* aguardarTodas([p1, p2, ...])
+   *
+   * Como Promise.all, com uma diferença que importa para init() de aba:
+   * espera TODAS terminarem antes de decidir, e só então rejeita com o
+   * primeiro erro. Promise.all rejeita no primeiro tropeço e deixa as irmãs
+   * correndo - o que faria tabs.show liberar um retry enquanto a carga
+   * anterior ainda estava no ar, com duas chamadas da mesma ação na ponte.
+   */
+  function aguardarTodas(promessas) {
+    var primeiroErro = null;
+    return Promise.all((promessas || []).map(function (p) {
+      return Promise.resolve(p).catch(function (e) {
+        if (!primeiroErro) { primeiroErro = e; }
+      });
+    })).then(function () {
+      if (primeiroErro) { throw primeiroErro; }
+    });
+  }
 
   function textoJob(p, fase) {
     if (fase === 'done') { return 'Concluído: ' + (p.name || ''); }
@@ -600,9 +642,12 @@
 
   // esc: o escapador que modal.open({html}) exige para qualquer texto vindo
   // do catálogo, de um job ou de uma mensagem de erro do PowerShell.
+  // aguardarTodas: usado pelo init() das abas que carregam várias coisas em
+  // paralelo e precisam rejeitar se QUALQUER uma falhar (ver tabs.show).
   window.tmx = {
     bridge: bridge, modal: modal, toast: toast, tabs: tabs,
-    status: status, session: session, esc: escaparHtml
+    status: status, session: session, esc: escaparHtml,
+    aguardarTodas: aguardarTodas
   };
 
   if (document.readyState === 'loading') {

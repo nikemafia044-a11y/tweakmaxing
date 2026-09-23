@@ -146,6 +146,11 @@
   function atualizarGerenciadores() {
     return tmx.bridge.call('apps.managers').then(renderGerenciadores).catch(function (e) {
       tmx.toast('Falha ao consultar winget/choco: ' + e.message, 'erro');
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -292,6 +297,11 @@
     }).catch(function (e) {
       var cont = document.getElementById('app-categorias');
       if (cont) { cont.innerHTML = '<p class="vazio">Falha ao carregar o catálogo: ' + escapeHtml(e.message) + '</p>'; }
+      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
+      // usuário, mas tabs.show precisa SABER que a carga falhou para
+      // deixar a aba como não iniciada e tentar de novo na próxima
+      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      throw e;
     });
   }
 
@@ -435,8 +445,10 @@
       injetarEstilo();
       montarEsqueleto();
       ligarEventosToolbar();
-      atualizarGerenciadores();
-      carregarCatalogo();
+      // aguardarTodas (e não Promise.all): espera as duas terminarem antes
+      // de rejeitar, para que um retry de tabs.show não comece com a outra
+      // carga ainda no ar.
+      return tmx.aguardarTodas([atualizarGerenciadores(), carregarCatalogo()]);
     }
   };
 })();

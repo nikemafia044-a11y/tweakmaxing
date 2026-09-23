@@ -713,8 +713,9 @@ function Test-TmxAction {
             'funcao' {
                 $fn = "$($Action.nome)"
                 if ($fn -notmatch '^Set-Tmx[A-Za-z0-9]+$') { $out.detalhe = "nome de funcao nao permitido: '$fn'"; break }
-                $teste = $fn -replace '^Set-', 'Test-'
-                if (-not (Get-Command -Name $teste -CommandType Function -ErrorAction SilentlyContinue)) {
+                $teste    = $fn -replace '^Set-', 'Test-'
+                $cmdTeste = Get-Command -Name $teste -CommandType Function -ErrorAction SilentlyContinue
+                if ($null -eq $cmdTeste) {
                     $out.detalhe = "sem funcao de verificacao ($teste)"
                     break
                 }
@@ -724,8 +725,7 @@ function Test-TmxAction {
                 # teste, por exemplo). Passa so quando a Test- declara o
                 # parametro - as que so aceitam -Tweak/-Profile continuam
                 # sendo chamadas como antes.
-                $cmdTeste = Get-Command -Name $teste -CommandType Function -ErrorAction SilentlyContinue
-                $r = if ($null -ne $cmdTeste -and $cmdTeste.Parameters.ContainsKey('Parametros')) {
+                $r = if ($cmdTeste.Parameters.ContainsKey('Parametros')) {
                     & $teste -Tweak $Tweak -Profile $Profile -Parametros (Get-TmxActionProp -Action $Action -Nome 'parametros' -Padrao $null)
                 } else {
                     & $teste -Tweak $Tweak -Profile $Profile

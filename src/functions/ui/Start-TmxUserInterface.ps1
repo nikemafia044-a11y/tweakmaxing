@@ -101,6 +101,11 @@ function Test-TmxUiNavegacaoPermitida {
     } catch {
         return $false
     }
+    # IsAbsoluteUri explicito: '/index.html' converte SEM lancar (vira uma Uri
+    # relativa) e, numa Uri relativa, .Scheme/.Host lancam no getter. O
+    # PowerShell engole essa excecao e devolve $null, o que daria o resultado
+    # certo por acidente; aqui a recusa e deliberada.
+    if (-not $u.IsAbsoluteUri) { return $false }
     ($u.Scheme -ieq 'https' -and $u.Host -ieq 'app.tweakmaxing')
 }
 
@@ -229,23 +234,19 @@ function Start-TmxUserInterface {
         }.GetNewClosure())
 
         # window.open / target=_blank: o WebView2 abriria uma segunda janela
-        # SEM nenhuma das restricoes acima. Handled = $true mata essa janela;
-        # um destino https vai para o navegador do usuario pela mesma regra
-        # de shell.openUrl (lista de permissao: so https).
+        # SEM nenhuma das restricoes acima. Handled = $true mata essa janela -
+        # e nada e aberto no lugar.
+        #
+        # Decisao de produto: abrir o destino no navegador padrao daqui seria
+        # transformar qualquer window.open da pagina (inclusive um vindo de
+        # texto de catalogo) em Start-Process sem passar por nenhuma revisao.
+        # Link externo da interface tem UM caminho, explicito e auditavel: a
+        # acao shell.openUrl da ponte, que so aceita https. Aqui fica so o
+        # registro de que alguem tentou.
         $core.add_NewWindowRequested({
             param($remetenteNw, $eventoNw)
             $eventoNw.Handled = $true
-            $destino = "$($eventoNw.Uri)"
-            if ($destino -match '^https://') {
-                try {
-                    Start-Process $destino
-                    Write-TmxLog -Level INFO -Message 'Link aberto no navegador padrao' -Data @{ uri = $destino }
-                } catch {
-                    Write-TmxLog -Level WARN -Message "Link nao pode ser aberto: $($_.Exception.Message)" -Data @{ uri = $destino }
-                }
-            } else {
-                Write-TmxLog -Level WARN -Message 'Nova janela recusada' -Data @{ uri = $destino }
-            }
+            Write-TmxLog -Level WARN -Message 'Nova janela recusada (use shell.openUrl)' -Data @{ uri = "$($eventoNw.Uri)" }
         }.GetNewClosure())
 
         $core.add_WebMessageReceived({
