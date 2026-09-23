@@ -11,9 +11,63 @@ Utilitário de otimização e manutenção do Windows 10/11, em português, com 
 3. **Selo de evidência** em todo item: `MEDIDO` (efeito verificável), `TECNICO` (mecanismo plausível, ganho depende do contexto) ou `FOLCLORE` (sem sustentação — continua no catálogo, mas desmarcado e com aviso). Itens sem reversão possível levam o selo `Irreversível` e exigem confirmação digitada.
 4. **Prévia antes de aplicar:** cada ação mostra chave/valor `antes → depois`, lidos ao vivo.
 
-## Lançador
+## Como usar
 
-(publicado na fase 10)
+> O repositório publicado é lido de `REPO`. Enquanto esse arquivo ainda tiver o placeholder `SEU_USUARIO/tweakmaxing`, substitua-o pelo dono real do repositório nos comandos abaixo — `tools/Publish-Release.ps1` grava o valor definitivo automaticamente a cada publicação.
+
+### Rápido
+
+```powershell
+irm https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 | iex
+```
+
+### Verificado (recomendado)
+
+Baixa o arquivo, confere o SHA256 publicado em `SHA256SUMS.txt` e só então executa:
+
+```powershell
+Invoke-WebRequest -Uri https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
+Invoke-WebRequest -Uri https://github.com/SEU_USUARIO/tweakmaxing/releases/download/v0.1.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
+(Get-FileHash .\TweakMaxing.ps1).Hash -eq (Get-Content .\SHA256SUMS.txt).Split(' ')[0]   # tem que imprimir True
+powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1
+```
+
+**Por que uma tag fixa (`v0.1.0`), não `latest`:** o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável; um `latest` mudaria de conteúdo sem aviso embaixo do link publicado em algum lugar. Apenas HTTPS é usado (GitHub Releases). O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
+
+### Desfazer
+
+```powershell
+.\TweakMaxing.ps1 -Headless -Undo latest                    # desfaz a última execução
+.\TweakMaxing.ps1 -Headless -Undo 20260922-120000-1a2b       # desfaz uma execução específica
+```
+
+As execuções ficam registradas em `%LOCALAPPDATA%\TweakMaxing\runs`.
+
+### Modo headless
+
+```powershell
+.\TweakMaxing.ps1 -Headless -Preset desktop -DryRun -NoElevate   # simula, não altera nada, não eleva
+.\TweakMaxing.ps1 -Headless -Preset notebook                      # aplica o preset "notebook" (eleva sozinho)
+.\TweakMaxing.ps1 -Headless -Preset minimo
+```
+
+### Antivírus e `iex`
+
+Alguns antivírus marcam o padrão `irm ... | iex` como suspeito, mesmo quando o conteúdo é inofensivo — é o padrão em si, não este script, que costuma disparar heurísticas. O caminho **Verificado** acima baixa o arquivo primeiro, confere o SHA256 e só executa depois, o que evita esse alarme.
+
+### Chocolatey
+
+O instalador do Chocolatey só é baixado depois de um consentimento explícito na interface (nada roda em segundo plano sem essa confirmação), é executado num processo separado, e o SHA256 do instalador baixado fica registrado no log para auditoria — a Chocolatey Software não publica um hash fixo esperado para comparar, então esse valor não é um controle de integridade que bloqueia a instalação, é só evidência para investigar depois se algo parecer errado.
+
+### Capturas de tela
+
+| Ajustes | Prévia | Instalar |
+|---|---|---|
+| ![Aba Ajustes, com o catálogo de tweaks e os selos de evidência](docs/img/ajustes.png) | ![Modal de prévia mostrando chave/valor antes → depois antes de aplicar](docs/img/previa.png) | ![Aba Instalar, com a lista de aplicativos via winget/Chocolatey](docs/img/instalar.png) |
+
+| Configurar | Atualizações | MicroWin |
+|---|---|---|
+| ![Aba Configurar, com recursos do Windows e correções](docs/img/configurar.png) | ![Aba Atualizações, com pacotes appx e provedores DNS](docs/img/atualizacoes.png) | ![Aba MicroWin, geração de ISO customizada do Windows](docs/img/microwin.png) |
 
 ## Rodar a partir do código-fonte
 
