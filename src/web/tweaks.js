@@ -88,7 +88,9 @@
      correspondente (correlacionado pelo jobId, porque a ponte não amarra id de
      pedido a evento). onProgresso recebe { pct, status }. */
   function chamarJob(nome, payload, onProgresso) {
-    return tmx.bridge.call(nome, payload).then(function (resp) {
+    // callComEspera: o slot de job pode estar com uma carga de outra aba ou
+    // com um lote de icones; a acao do usuario espera em vez de falhar.
+    return tmx.bridge.callComEspera(nome, payload).then(function (resp) {
       var jobId = resp && resp.jobId;
       if (!jobId) { return resp; }
       return new Promise(function (resolve, reject) {

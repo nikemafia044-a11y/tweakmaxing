@@ -24,6 +24,17 @@ param(
 
 $script:Falhas = 0
 
+# Chave de teste que o modo de teste usa no lugar da politica real. Uma rodada
+# anterior deixa UPD-003 aplicada ali; a aplicacao seguinte vira "jaAplicado",
+# nada entra no state e o cartao nunca ganha Desfazer. Limpa antes e depois.
+$script:ChaveTesteUpdates = 'HKCU:\Software\TweakMaxing_Tests\Updates'
+function Clear-TmxUpdatesTestKey {
+    if (Test-Path -LiteralPath $script:ChaveTesteUpdates) {
+        Remove-Item -LiteralPath $script:ChaveTesteUpdates -Recurse -Force -Confirm:$false -ErrorAction SilentlyContinue
+    }
+}
+Clear-TmxUpdatesTestKey
+
 function Assert-Tmx {
     param(
         [Parameter(Mandatory)] [string] $Nome,
@@ -214,6 +225,7 @@ try {
     Write-Host 'Fechando a GUI...' -ForegroundColor Cyan
     $limpo = Stop-TmxGui -Port $Port
     Assert-Tmx -Nome 'porta CDP liberada no fim' -Condicao ([bool]$limpo)
+    Clear-TmxUpdatesTestKey
 }
 
 Write-Host ''

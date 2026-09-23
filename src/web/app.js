@@ -62,6 +62,21 @@
       });
     },
 
+    /* Como call(), mas quando a ponte recusa porque o unico slot de job esta
+       ocupado ("ja existe um trabalho em andamento") espera e tenta de novo
+       ate esperaMs. Repetir e seguro: nessa recusa nenhum job chegou a nascer.
+       Qualquer outro erro sobe na hora. */
+    callComEspera: function (action, payload, esperaMs) {
+      var limite = Date.now() + (esperaMs || 30000);
+      function tentar() {
+        return bridge.call(action, payload).catch(function (e) {
+          if (!/trabalho em andamento/i.test((e && e.message) || '') || Date.now() > limite) { throw e; }
+          return new Promise(function (r) { setTimeout(r, 400); }).then(tentar);
+        });
+      }
+      return tentar();
+    },
+
     on: function (evento, fn) {
       (ouvintes[evento] = ouvintes[evento] || []).push(fn);
       return fn;
@@ -390,7 +405,21 @@
       bridge.on('job.progress', aoProgredir);
       bridge.on('job.done', aoTerminar);
 
-      bridge.call('session.start', payload).then(function (r) {
+      /* A ponte aceita um job por vez e as abas carregam dados por job logo na
+         abertura (catalogo, recursos, atualizacoes, apps, icones). Um "Iniciar
+         sessao" nesse intervalo recebia "ja existe um trabalho em andamento" e
+         o usuario via o ponto de restauracao "falhar". Mesmo padrao de
+         configure.js (chamarJobComEspera): espera e tenta de novo, ate 30 s. */
+      var limite = Date.now() + 30000;
+      function chamarComEspera() {
+        return bridge.call('session.start', payload).catch(function (e) {
+          if (!/trabalho em andamento/i.test((e && e.message) || '') || Date.now() > limite) { throw e; }
+          pintarProgresso('Esperando outro trabalho terminar…');
+          return new Promise(function (r) { setTimeout(r, 500); }).then(chamarComEspera);
+        });
+      }
+
+      chamarComEspera().then(function (r) {
         jobId = (r && r.jobId) || null;
         if (!jobId) {
           fechado = true;

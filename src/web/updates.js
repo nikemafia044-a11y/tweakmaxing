@@ -35,7 +35,7 @@
   /* ---------------- ponte: correlaciona job.done pelo jobId ---------------- */
 
   function chamarJob(nome, payload, aoProgredir) {
-    return tmx.bridge.call(nome, payload).then(function (resp) {
+    return tmx.bridge.callComEspera(nome, payload).then(function (resp) {
       var jobId = resp && resp.jobId;
       if (!jobId) { throw new Error('resposta sem jobId'); }
       return new Promise(function (resolve, reject) {
