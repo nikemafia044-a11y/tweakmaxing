@@ -354,7 +354,8 @@ try {
     $launcher = "https://github.com/$Repo/releases/download/$tag/TweakMaxing.ps1"
     Write-Host ''
     Write-Host 'Lancador:' -ForegroundColor Green
-    Write-Host "  irm $launcher | iex"
+    Write-Host '  irm "https://tweakmax1ng.vercel.app" | iex      (segue o release mais recente; ver launcher/vercel.json)'
+    Write-Host "  irm $launcher | iex      (versao fixa)"
     Write-Host ("SHA256: {0}" -f $hash)
 } finally {
     Pop-Location
