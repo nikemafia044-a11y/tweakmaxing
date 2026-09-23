@@ -235,23 +235,35 @@
    *     existe um trabalho em andamento" por causa de outra acao do
    *     usuario ocupando o slot), os ids voltam pra fila e a proxima
    *     tentativa espera um backoff crescente (1s, 2s, 4s, ... ate 15s);
+   *   - dentro de um lote com sucesso, os ids que o back-end devolveu em
+   *     'pendentes' (cortados pelo orcamento de tempo do LOTE, nao
+   *     resolvidos) NAO viram 'solicitados' - continuam na fila pro proximo
+   *     lote, so os processados de verdade saem;
+   *   - se o MESMO lote (a cabeca da fila) falhar de verdade 3 vezes
+   *     seguidas (nao contando "trabalho em andamento", que e esperado e
+   *     transitorio - ate a propria carga inicial da aba Ajustes pode
+   *     segurar o slot por varios segundos), desiste desses ids por esta
+   *     sessao (ficam com as iniciais) pra nao travar os ids atras deles
+   *     pra sempre (bloqueio de cabeca de fila);
    *   - lote de 10 no front (o back-end aceita ate 40, mas um lote grande
    *     demora mais e atrasa a descoberta de que o slot esta ocupado).
    */
 
   var iconesEstado = {
     cache: {},        // id -> { src, origem }
-    solicitados: {},  // id -> true (so em sucesso - nunca marca em falha)
+    solicitados: {},  // id -> true (em sucesso, ou apos desistir - nunca em falha simples)
     fila: [],
     timer: null,
     observer: null,
     elementos: {},     // id -> elemento <span class="app-icone">
     processando: false,
-    backoffMs: 1000
+    backoffMs: 1000,
+    falhasConsecutivas: 0
   };
 
   var ICONES_LOTE_MAX = 10;
   var ICONES_BACKOFF_MAX_MS = 15000;
+  var ICONES_MAX_FALHAS_CONSECUTIVAS = 3;
 
   function calcularIniciais(nome) {
     var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
@@ -315,12 +327,22 @@
     iconesEstado.processando = true;
 
     chamarAcaoAssincrona('apps.icons', { ids: lote }).then(function (r) {
-      // Sucesso do LOTE: agora sim tira esses ids da fila e marca como
-      // solicitados - mesmo os que nao vieram com icone (o back-end so
-      // devolve o que achou; ausencia e resposta valida, nao falha).
-      iconesEstado.fila = iconesEstado.fila.filter(function (id) { return lote.indexOf(id) < 0; });
-      lote.forEach(function (id) { iconesEstado.solicitados[id] = true; });
+      // Sucesso do LOTE: os ids que o back-end PROCESSOU (nao devolvidos em
+      // 'pendentes' - cortados pelo orcamento de tempo do lote) saem da fila
+      // e viram 'solicitados', mesmo sem icone (ausencia e resposta valida,
+      // nao falha). Os 'pendentes' continuam na fila do jeito que estao -
+      // nunca marcados, vao no proximo lote.
+      var pendentesSet = {};
+      ((r && r.pendentes) || []).forEach(function (id) { pendentesSet[id] = true; });
+
+      iconesEstado.fila = iconesEstado.fila.filter(function (id) {
+        return lote.indexOf(id) < 0 || pendentesSet[id];
+      });
+      lote.forEach(function (id) {
+        if (!pendentesSet[id]) { iconesEstado.solicitados[id] = true; }
+      });
       iconesEstado.backoffMs = 1000; // reseta o backoff apos um sucesso
+      iconesEstado.falhasConsecutivas = 0;
 
       var icons = (r && r.icons) || {};
       Object.keys(icons).forEach(function (id) {
@@ -332,13 +354,39 @@
 
       iconesEstado.processando = false;
       if (iconesEstado.fila.length) { agendarLoteIcones(50); }
-    }).catch(function () {
-      // Falha do LOTE (rede, ou o slot de job estava ocupado por outra
-      // acao): os ids CONTINUAM na fila (nunca saem - nada foi marcado
-      // 'solicitado'). So espera um backoff crescente e tenta nesses
-      // mesmos ids de novo. Silencioso de proposito: nunca vira toast, o
-      // app so continua com as iniciais ate a proxima tentativa.
+    }).catch(function (e) {
+      // Falha do LOTE: os ids CONTINUAM na fila (nunca saem - nada foi
+      // marcado 'solicitado'), e a proxima tentativa espera um backoff
+      // crescente. Silencioso de proposito: nunca vira toast, o app so
+      // continua com as iniciais ate a proxima tentativa.
       iconesEstado.processando = false;
+
+      // "Ja existe um trabalho em andamento" e uma rejeicao ESPERADA e
+      // TRANSITORIA (outra acao - ate o carregamento inicial da propria
+      // aba Ajustes - esta usando o unico slot de job da ponte no
+      // momento; a doc do proprio chamarJobComEspera em configure.js
+      // registra que isso pode levar "varios segundos"). Isso NUNCA conta
+      // pro contador de desistencia - so um erro de verdade (bridge quebrada,
+      // resposta malformada) e que indica que o LOTE em si tem algo errado.
+      // Sem essa distincao, a contencao normal do slot no arranque da
+      // janela sozinha ja bastava pra desistir de icones que teriam
+      // funcionado com so mais um pouco de espera.
+      var ocupado = e && /trabalho em andamento/i.test(e.message);
+      if (!ocupado) {
+        iconesEstado.falhasConsecutivas++;
+        if (iconesEstado.falhasConsecutivas >= ICONES_MAX_FALHAS_CONSECUTIVAS) {
+          // Bloqueio de cabeca de fila: o MESMO lote falhou (de verdade) 3
+          // vezes seguidas. Desiste DESTA SESSAO (ficam com as iniciais,
+          // nunca mais pedidos) pra nao travar os ids atras deles pra sempre.
+          lote.forEach(function (id) { iconesEstado.solicitados[id] = true; });
+          iconesEstado.fila = iconesEstado.fila.filter(function (id) { return lote.indexOf(id) < 0; });
+          iconesEstado.falhasConsecutivas = 0;
+          iconesEstado.backoffMs = 1000;
+          if (iconesEstado.fila.length) { agendarLoteIcones(50); }
+          return;
+        }
+      }
+
       var espera = iconesEstado.backoffMs;
       iconesEstado.backoffMs = Math.min(iconesEstado.backoffMs * 2, ICONES_BACKOFF_MAX_MS);
       agendarLoteIcones(espera);

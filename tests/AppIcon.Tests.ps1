@@ -300,6 +300,48 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
             Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneg1.none') | Should -BeTrue
         }
 
+        It 'falha de rede (mock seta ErroRede) NAO grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -MockWith {
+                param($Url, $TimeoutMs, $MaxBytes, $MaxRedirects, $PrazoMs, $ErroRede, $OrcamentoEsgotado)
+                if ($ErroRede) { $ErroRede.Value = $true }
+                $null
+            }
+
+            $app = [pscustomobject]@{ id = 'appneterr1'; nome = 'App Net Err 1'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr1.none') | Should -BeFalse `
+                -Because 'uma falha de rede transitoria nao prova que o app nao tem icone'
+        }
+
+        It 'falha de rede direto em Invoke-TmxHttpRequestOnce (retorno $null) tambem NAO grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            # Sem mockar Invoke-TmxIconDownload: deixa a implementacao real
+            # rodar, so o nivel mais baixo (Invoke-TmxHttpRequestOnce) e que
+            # simula "nenhuma resposta chegou" (DNS/timeout/recusa).
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith { $null }
+
+            $app = [pscustomobject]@{ id = 'appneterr2'; nome = 'App Net Err 2'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr2.none') | Should -BeFalse
+        }
+
+        It 'orcamento esgotado (PrazoRestanteMs=0) NAO grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -MockWith { throw 'nao deveria ser chamado com orcamento zerado' }
+
+            $app = [pscustomobject]@{ id = 'appneterr3'; nome = 'App Net Err 3'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app -PrazoRestanteMs 0
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr3.none') | Should -BeFalse
+            Should -Invoke -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -Times 0
+        }
+
         It 'com o marcador fresco (< 7 dias), pula o site sem chamar Invoke-TmxIconDownload' {
             Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
             Mock -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -MockWith { New-TmxTestPngBytes }
@@ -388,6 +430,15 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             @{ Url = 'https://172.31.255.255/x' }
             @{ Url = 'https://192.168.1.1/x' }
             @{ Url = 'https://169.254.1.1/x' }
+            @{ Url = 'https://0.0.0.0/x' }
+            @{ Url = 'https://[::1]/x' }
+            @{ Url = 'https://[fe80::1]/x' }
+            @{ Url = 'https://[fe80::abcd:1234]/x' }
+            @{ Url = 'https://[fc00::1]/x' }
+            @{ Url = 'https://[fd12:3456::1]/x' }
+            @{ Url = 'https://[::ffff:127.0.0.1]/x' }
+            @{ Url = 'https://[::ffff:10.0.0.5]/x' }
+            @{ Url = 'https://[::ffff:192.168.1.1]/x' }
         ) {
             Test-TmxIconUrlPrivateHost -Url $Url | Should -BeTrue
         }
@@ -397,6 +448,8 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             @{ Url = 'https://8.8.8.8/x' }
             @{ Url = 'https://172.15.0.1/x' }
             @{ Url = 'https://172.32.0.1/x' }
+            @{ Url = 'https://[2001:4860:4860::8888]/x' }
+            @{ Url = 'https://[::ffff:8.8.8.8]/x' }
         ) {
             Test-TmxIconUrlPrivateHost -Url $Url | Should -BeFalse
         }
@@ -445,6 +498,69 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             $r | Should -BeNullOrEmpty
             # 1 inicial + 3 saltos permitidos = 4 tentativas; a 5a nunca acontece.
             $script:chamadas | Should -Be 4
+        }
+
+        It 'recusa quando o redirect aponta pra um IP privado' {
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ statusCode = 302; location = 'https://192.168.1.1/roubado'; bytes = $null }
+            }
+            $r = Invoke-TmxIconDownload -Url 'https://example.org/a'
+            $r | Should -BeNullOrEmpty
+            Should -Invoke -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -Times 1
+        }
+
+        It 'resolve um Location RELATIVO contra a URL atual' {
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                param($Url)
+                if ($Url -eq 'https://example.org/pasta/a') {
+                    # Location relativo (sem esquema/host) - tem que virar
+                    # https://example.org/pasta/b, nao ser tratado como invalido.
+                    [pscustomobject]@{ statusCode = 302; location = 'b'; bytes = $null }
+                } elseif ($Url -eq 'https://example.org/pasta/b') {
+                    [pscustomobject]@{ statusCode = 200; location = $null; bytes = [byte[]]@(9,9) }
+                } else {
+                    [pscustomobject]@{ statusCode = 404; location = $null; bytes = $null }
+                }
+            }
+            $r = Invoke-TmxIconDownload -Url 'https://example.org/pasta/a'
+            ($r -join ',') | Should -Be '9,9'
+        }
+    }
+
+    Context 'Invoke-TmxIconDownload: orcamento de tempo (PrazoMs) propagado de verdade' {
+
+        It 'aborta a cadeia (sem tentar mais) quando o restante chega a zero' {
+            $script:chamadas = 0
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                $script:chamadas++
+                Start-Sleep -Milliseconds 60
+                [pscustomobject]@{ statusCode = 302; location = "https://example.org/salto$script:chamadas"; bytes = $null }
+            }
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            $erroLocal = $false
+            $esgotadoLocal = $false
+            $r = Invoke-TmxIconDownload -Url 'https://example.org/a' -TimeoutMs 5000 -PrazoMs 100 `
+                -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+            $sw.Stop()
+
+            $r | Should -BeNullOrEmpty
+            $esgotadoLocal | Should -BeTrue
+            $erroLocal | Should -BeFalse
+            # Orcamento de 100ms: nao pode ter deixado a cadeia inteira (4
+            # saltos x 60ms = 240ms) rodar ate o fim.
+            $sw.Elapsed.TotalMilliseconds | Should -BeLessThan 240
+        }
+
+        It 'capa o Timeout de cada salto ao restante, nunca ao TimeoutMs cheio' {
+            $script:temposVistos = New-Object 'System.Collections.Generic.List[int]'
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                param($Url, $TimeoutMs)
+                $script:temposVistos.Add($TimeoutMs)
+                [pscustomobject]@{ statusCode = 200; location = $null; bytes = [byte[]]@(1) }
+            }
+            Invoke-TmxIconDownload -Url 'https://example.org/a' -TimeoutMs 5000 -PrazoMs 300 | Out-Null
+            $script:temposVistos.Count | Should -Be 1
+            $script:temposVistos[0] | Should -BeLessOrEqual 300
         }
     }
 
@@ -580,8 +696,14 @@ Describe 'Ponte: apps.icons' -Tag 'AppIcon' {
         It 'payload $null devolve icons vazio, sem lancar' {
             Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith { throw 'nao deveria ser chamado' }
             $entry = Get-TmxBridgeAction -Name 'apps.icons'
+            # NAO usar '{ $r = & ... } | Should -Not -Throw': o scriptblock
+            # roda em escopo filho e a atribuicao a $r nao propaga pra fora -
+            # o Should seguinte acabaria conferindo o $r ANTIGO (ou $null),
+            # nunca o retorno de verdade do handler. Chama fora, direto.
+            $erro = $null
             $r = $null
-            { $r = & $entry.handler $null } | Should -Not -Throw
+            try { $r = & $entry.handler $null } catch { $erro = $_ }
+            $erro | Should -BeNullOrEmpty -Because 'apps.icons(payload=$null) nao deveria lancar'
             $r.icons.Keys.Count | Should -Be 0
         }
 
@@ -648,17 +770,18 @@ Describe 'Invoke-TmxAppIconBatch' -Tag 'AppIcon' {
         Remove-TmxTestHome
     }
 
-    It 'resolve todo mundo quando cabe no orcamento' {
+    It 'resolve todo mundo quando cabe no orcamento, sem pendentes' {
         Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith {
             param($App)
             [pscustomobject]@{ id = $App.id; src = 'data:image/png;base64,QQ=='; origem = 'site' }
         }
         $apps = 1..5 | ForEach-Object { [pscustomobject]@{ id = "batch$_"; nome = "Batch $_" } }
         $r = Invoke-TmxAppIconBatch -Apps $apps -BudgetMs 8000
-        $r.Keys.Count | Should -Be 5
+        $r.Icones.Keys.Count | Should -Be 5
+        $r.Pendentes.Count | Should -Be 0
     }
 
-    It 'para de processar assim que o orcamento estoura, sem chamar Get-TmxAppIcon pros ids restantes' {
+    It 'para de processar assim que o orcamento estoura, devolve o resto em Pendentes' {
         Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith {
             param($App)
             Start-Sleep -Milliseconds 60
@@ -671,13 +794,66 @@ Describe 'Invoke-TmxAppIconBatch' -Tag 'AppIcon' {
         # Com 60ms por app e orcamento de 150ms, no maximo uns 3 apps rodam
         # (o cronometro e checado ANTES de cada chamada) - com certeza nao
         # os 10.
-        $r.Keys.Count | Should -BeLessThan 10
-        Should -Invoke -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -Times $r.Keys.Count
+        $r.Icones.Keys.Count | Should -BeLessThan 10
+        $r.Pendentes.Count | Should -Be (10 - $r.Icones.Keys.Count)
+        Should -Invoke -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -Times $r.Icones.Keys.Count
     }
 
     It 'lista vazia devolve icons vazio sem chamar Get-TmxAppIcon' {
         Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith { throw 'nao deveria ser chamado' }
         $r = Invoke-TmxAppIconBatch -Apps @() -BudgetMs 8000
-        $r.Keys.Count | Should -Be 0
+        $r.Icones.Keys.Count | Should -Be 0
+        $r.Pendentes.Count | Should -Be 0
+    }
+
+    It 'repassa o orcamento RESTANTE (nao o total) pra Get-TmxAppIcon a cada app' {
+        $script:prazosVistos = New-Object 'System.Collections.Generic.List[int]'
+        Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith {
+            param($App, $PrazoRestanteMs)
+            $script:prazosVistos.Add($PrazoRestanteMs)
+            Start-Sleep -Milliseconds 40
+            $null
+        }
+        $apps = 1..3 | ForEach-Object { [pscustomobject]@{ id = "prazo$_"; nome = "Prazo $_" } }
+        Invoke-TmxAppIconBatch -Apps $apps -BudgetMs 1000 | Out-Null
+
+        $script:prazosVistos.Count | Should -Be 3
+        # Cada prazo visto tem que ser MENOR que o anterior (o orcamento vai
+        # encolhendo a cada app, nunca fica fixo em 1000).
+        for ($i = 1; $i -lt $script:prazosVistos.Count; $i++) {
+            $script:prazosVistos[$i] | Should -BeLessThan $script:prazosVistos[$i - 1]
+        }
+    }
+
+    It 'o orcamento propagado ate Invoke-TmxHttpRequestOnce limita o tempo TOTAL da cadeia, nao so entre apps' {
+        # Sem mockar Get-TmxAppIcon/Get-TmxAppIconFromSite/Invoke-TmxIconDownload:
+        # a cadeia inteira roda de verdade, so o nivel mais baixo (uma
+        # requisicao) e mockado - e o unico jeito de provar que o orcamento
+        # chega ate la (um mock mais alto so provaria que ELE recebeu o
+        # parametro, nao que o valor de verdade limita o tempo de rede).
+        Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+        Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+            param($Url)
+            Start-Sleep -Milliseconds 150
+            # Redireciona pra sempre (nunca acha nada): sem o orcamento
+            # propagado por requisicao, uma unica candidata (favicon, por
+            # exemplo) so para nos 3 saltos permitidos (4 tentativas x 150ms
+            # = 600ms), e cada app tenta 2 candidatas - quase 1.2s por app
+            # SO de olhar o relogio entre apps, pra 5 apps isso passaria
+            # de 5s mesmo com um orcamento de lote de 500ms.
+            [pscustomobject]@{ statusCode = 302; location = "$Url#x"; bytes = $null }
+        }
+
+        $apps = 1..5 | ForEach-Object {
+            [pscustomobject]@{ id = "budgetreal$_"; nome = "Budget Real $_"; link = "https://example$_.org/"; icon = $null }
+        }
+
+        $sw = [System.Diagnostics.Stopwatch]::StartNew()
+        $r = Invoke-TmxAppIconBatch -Apps $apps -BudgetMs 500
+        $sw.Stop()
+
+        $r.Icones.Keys.Count | Should -Be 0
+        $sw.Elapsed.TotalMilliseconds | Should -BeLessThan 900 `
+            -Because 'o orcamento tem que ser checado a cada tentativa de download (nao so entre apps) - sem isso um unico app ja passaria de 900ms'
     }
 }

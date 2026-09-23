@@ -137,7 +137,7 @@ function Register-TmxInstallActions {
             }
         }
         if ($ids.Count -gt 40) { throw 'apps.icons aceita no maximo 40 ids por chamada' }
-        if ($ids.Count -eq 0) { return @{ icons = [ordered]@{} } }
+        if ($ids.Count -eq 0) { return @{ icons = [ordered]@{}; pendentes = @() } }
 
         $catalogo = Get-TmxAppCatalog
         $apps = New-Object 'System.Collections.Generic.List[object]'
@@ -155,8 +155,10 @@ function Register-TmxInstallActions {
 
         # Orcamento de 8s pro lote INTEIRO (nao por app): ids que nao
         # couberem saem sem icone (front-end so mantem as iniciais) - nunca
-        # travam o slot de job unico do app.
-        $icones = Invoke-TmxAppIconBatch -Apps $apps.ToArray() -UninstallEntries $entradasDesinstalar -BudgetMs 8000
-        @{ icons = $icones }
+        # travam o slot de job unico do app. Ids do payload que nao existem
+        # no catalogo nunca entram em 'pendentes' (nunca chegam a virar um
+        # item de $apps) - ficam so de fora de 'icons', como sempre.
+        $resultado = Invoke-TmxAppIconBatch -Apps $apps.ToArray() -UninstallEntries $entradasDesinstalar -BudgetMs 8000
+        @{ icons = $resultado.Icones; pendentes = $resultado.Pendentes }
     }
 }

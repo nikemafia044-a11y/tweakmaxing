@@ -111,8 +111,10 @@ function Test-TmxIconUrlPrivateHost {
     <#
     .SYNOPSIS
         Guarda leve contra SSRF: recusa quando o host da URL e um IP LITERAL
-        (nao um dominio) dentro de faixa privada/loopback/link-local
-        (10/8, 172.16/12, 192.168/16, 127/8, 169.254/16, ::1).
+        (nao um dominio) dentro de faixa privada/loopback/link-local/reservada
+        (0.0.0.0/8, 10/8, 172.16/12, 192.168/16, 127/8, 169.254/16; em IPv6:
+        ::1, fe80::/10, fc00::/7 - e o mapeamento IPv4 dentro de IPv6,
+        ::ffff:a.b.c.d, reaplicando as mesmas faixas de IPv4).
     .DESCRIPTION
         So olha o literal escrito na URL - nao resolve DNS. Protege contra o
         caso obvio (icon do catalogo ou favicon.ico apontando direto pra um IP
@@ -126,10 +128,16 @@ function Test-TmxIconUrlPrivateHost {
         $ip = $null
         if (-not [System.Net.IPAddress]::TryParse($uri.Host, [ref]$ip)) { return $false }
 
+        # ::ffff:a.b.c.d e o mesmo IPv4 disfarcado dentro de um literal IPv6 -
+        # sem isso, ::ffff:127.0.0.1 passaria batido pelas checagens de IPv4
+        # abaixo (AddressFamily seria InterNetworkV6, nao InterNetwork).
+        if ($ip.IsIPv4MappedToIPv6) { $ip = $ip.MapToIPv4() }
+
         if ([System.Net.IPAddress]::IsLoopback($ip)) { return $true }
 
         if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) {
             $b = $ip.GetAddressBytes()
+            if ($b[0] -eq 0) { return $true }   # 0.0.0.0/8 ("esta rede", usado como curinga por alguns servicos)
             if ($b[0] -eq 10) { return $true }
             if ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) { return $true }
             if ($b[0] -eq 192 -and $b[1] -eq 168) { return $true }
@@ -137,7 +145,13 @@ function Test-TmxIconUrlPrivateHost {
             return $false
         }
         if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6) {
-            return [bool]$ip.Equals([System.Net.IPAddress]::IPv6Loopback)
+            if ($ip.Equals([System.Net.IPAddress]::IPv6Loopback)) { return $true }
+            $b6 = $ip.GetAddressBytes()
+            # fe80::/10 (link-local): primeiro byte 0xFE, dois bits mais altos do segundo byte = '10'.
+            if ($b6[0] -eq 0xFE -and ($b6[1] -band 0xC0) -eq 0x80) { return $true }
+            # fc00::/7 (unique local, o "10/8" do IPv6): primeiro byte 0xFC ou 0xFD.
+            if (($b6[0] -band 0xFE) -eq 0xFC) { return $true }
+            return $false
         }
         $false
     } catch {
@@ -298,13 +312,36 @@ function Invoke-TmxIconDownload {
         resolvido contra a URL atual (pode vir relativo) e revalidado (https
         + nao IP privado) antes de seguir - um redirect https->http, ou pra
         um IP interno, para a cadeia na hora.
+    .PARAMETER PrazoMs
+        Orcamento TOTAL desta chamada (todos os saltos de redirect somados),
+        vindo de quem chama (Get-TmxAppIconFromSite, que por sua vez recebeu
+        de Invoke-TmxAppIconBatch). 0 = sem orcamento externo, usa TimeoutMs
+        cheio em cada salto (uso direto/testes). Com orcamento: aborta a
+        cadeia (sem tentar mais nada) assim que o restante chega a zero, e
+        cada salto usa o MENOR entre TimeoutMs e o restante - sem isso, 3
+        saltos de 5s cada podiam gastar 15s+ mesmo com um orcamento de lote
+        de so 8s.
+    .PARAMETER ErroRede
+        [ref] opcional: setado como $true quando a causa de nao ter bytes foi
+        uma falha de rede/tempo esgotado (DNS, timeout, recusa de conexao) -
+        NUNCA quando o servidor respondeu (mesmo com 404) ou quando a
+        recusa foi por regra nossa (https/IP privado/redirect demais). Quem
+        chama usa isso pra NAO gravar cache negativo numa falha transitoria.
+    .PARAMETER OrcamentoEsgotado
+        [ref] opcional: setado como $true quando a cadeia foi abortada por
+        falta de tempo (PrazoMs), nao por uma resposta de verdade. Mesma
+        ideia do ErroRede: orcamento estourado nao e "sem icone", e "nao deu
+        tempo de saber".
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [string] $Url,
         [int] $TimeoutMs = 5000,
         [int] $MaxBytes = 524288,
-        [int] $MaxRedirects = 3
+        [int] $MaxRedirects = 3,
+        [int] $PrazoMs = 0,
+        [ref] $ErroRede,
+        [ref] $OrcamentoEsgotado
     )
 
     if (-not (Test-TmxIconUrlAllowed -Url $Url)) { return $null }
@@ -316,11 +353,28 @@ function Invoke-TmxIconDownload {
         Write-Verbose "Nao foi possivel forcar TLS 1.2: $($_.Exception.Message)"
     }
 
+    $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
     $urlAtual = $Url
     $saltos   = 0
     while ($true) {
-        $r = Invoke-TmxHttpRequestOnce -Url $urlAtual -TimeoutMs $TimeoutMs -MaxBytes $MaxBytes
-        if ($null -eq $r) { return $null }
+        $tempoSalto = $TimeoutMs
+        if ($PrazoMs -gt 0) {
+            $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
+            if ($restante -le 0) {
+                if ($OrcamentoEsgotado) { $OrcamentoEsgotado.Value = $true }
+                return $null
+            }
+            $tempoSalto = [Math]::Min($TimeoutMs, [int]$restante)
+        }
+
+        $r = Invoke-TmxHttpRequestOnce -Url $urlAtual -TimeoutMs $tempoSalto -MaxBytes $MaxBytes
+        if ($null -eq $r) {
+            # Invoke-TmxHttpRequestOnce so devolve $null quando nenhuma
+            # resposta chegou (DNS, timeout, conexao recusada, TLS) - e
+            # exatamente a definicao de falha de rede/transitoria aqui.
+            if ($ErroRede) { $ErroRede.Value = $true }
+            return $null
+        }
 
         if ($r.statusCode -ge 200 -and $r.statusCode -lt 300) { return $r.bytes }
 
@@ -597,13 +651,39 @@ function Get-TmxAppIconFromSite {
         Tenta baixar o icone do site oficial: icon do catalogo (se https) ->
         favicon.ico do host de link -> <link rel=icon> da propria pagina.
         $null se nada funcionar.
+    .PARAMETER PrazoMs
+        Orcamento TOTAL desta etapa inteira (todas as tentativas: catalogo,
+        favicon, pagina HTML, icone resolvido do HTML - cada uma pode
+        envolver ate 3 saltos de redirect). Repassado pra cada
+        Invoke-TmxIconDownload como o RESTANTE na hora daquela tentativa
+        especifica, nao o valor cheio de novo.
+    .PARAMETER ErroRede
+        [ref] opcional: $true se QUALQUER tentativa bateu em falha de
+        rede/tempo esgotado (nao serve pra decidir "sem icone" - so pra quem
+        chama saber que nao foi uma resposta de verdade).
+    .PARAMETER OrcamentoEsgotado
+        [ref] opcional: $true se o orcamento acabou antes de esgotar todas
+        as tentativas possiveis (idem: nao e "sem icone", e "nao deu tempo").
     #>
     [CmdletBinding()]
     param(
         [string] $IconCatalogo,
-        [string] $Link
+        [string] $Link,
+        [int] $PrazoMs = 20000,
+        [ref] $ErroRede,
+        [ref] $OrcamentoEsgotado
     )
 
+    $cronometro   = [System.Diagnostics.Stopwatch]::StartNew()
+    $teveErroRede = $false
+    $teveEsgotado = $false
+
+    # Sem funcao aninhada de proposito (evita depender de escopo dinamico pra
+    # enxergar $cronometro/$PrazoMs de dentro dela): cada tentativa repete o
+    # mesmo trio "calcula restante -> chama com refs -> acumula sinalizadores"
+    # na mao. Mais linhas, zero ambiguidade de escopo.
+
+    $resultado = $null
     $candidatas = New-Object 'System.Collections.Generic.List[string]'
     if (Test-TmxIconUrlHttps -Url $IconCatalogo) { $candidatas.Add($IconCatalogo) }
 
@@ -612,26 +692,53 @@ function Get-TmxAppIconFromSite {
     if ($hostLink) { $candidatas.Add("https://$hostLink/favicon.ico") }
 
     foreach ($url in $candidatas) {
-        $bytes = Invoke-TmxIconDownload -Url $url
-        if ($bytes -and $bytes.Length -gt 0) { return $bytes }
+        $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
+        if ($restante -le 0) { $teveEsgotado = $true; break }
+        $erroLocal = $false
+        $esgotadoLocal = $false
+        $bytes = Invoke-TmxIconDownload -Url $url -PrazoMs ([int]$restante) -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+        if ($erroLocal) { $teveErroRede = $true }
+        if ($esgotadoLocal) { $teveEsgotado = $true }
+        if ($bytes -and $bytes.Length -gt 0) { $resultado = $bytes; break }
     }
 
-    if (Test-TmxIconUrlHttps -Url $Link) {
-        $htmlBytes = Invoke-TmxIconDownload -Url $Link
-        if ($htmlBytes -and $htmlBytes.Length -gt 0) {
-            $html = [System.Text.Encoding]::UTF8.GetString($htmlBytes)
-            $href = Find-TmxHtmlIconHref -Html $html
-            if ($href) {
-                $resolvida = ConvertTo-TmxIconAbsoluteUrl -Base $Link -Href $href
-                if (Test-TmxIconUrlHttps -Url $resolvida) {
-                    $bytes = Invoke-TmxIconDownload -Url $resolvida
-                    if ($bytes -and $bytes.Length -gt 0) { return $bytes }
+    if (-not $resultado -and (Test-TmxIconUrlHttps -Url $Link)) {
+        $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
+        if ($restante -gt 0) {
+            $erroLocal = $false
+            $esgotadoLocal = $false
+            $htmlBytes = Invoke-TmxIconDownload -Url $Link -PrazoMs ([int]$restante) -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+            if ($erroLocal) { $teveErroRede = $true }
+            if ($esgotadoLocal) { $teveEsgotado = $true }
+
+            if ($htmlBytes -and $htmlBytes.Length -gt 0) {
+                $html = [System.Text.Encoding]::UTF8.GetString($htmlBytes)
+                $href = Find-TmxHtmlIconHref -Html $html
+                if ($href) {
+                    $resolvida = ConvertTo-TmxIconAbsoluteUrl -Base $Link -Href $href
+                    if (Test-TmxIconUrlHttps -Url $resolvida) {
+                        $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
+                        if ($restante -gt 0) {
+                            $erroLocal = $false
+                            $esgotadoLocal = $false
+                            $bytes = Invoke-TmxIconDownload -Url $resolvida -PrazoMs ([int]$restante) -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+                            if ($erroLocal) { $teveErroRede = $true }
+                            if ($esgotadoLocal) { $teveEsgotado = $true }
+                            if ($bytes -and $bytes.Length -gt 0) { $resultado = $bytes }
+                        } else {
+                            $teveEsgotado = $true
+                        }
+                    }
                 }
             }
+        } else {
+            $teveEsgotado = $true
         }
     }
 
-    $null
+    if ($ErroRede) { $ErroRede.Value = $teveErroRede }
+    if ($OrcamentoEsgotado) { $OrcamentoEsgotado.Value = $teveEsgotado }
+    $resultado
 }
 
 function Get-TmxAppIconNegativeCachePath {
@@ -699,19 +806,28 @@ function Get-TmxAppIcon {
         Get-TmxAppIconFromExe. Quem resolve varios apps de uma vez (a ponte
         apps.icons) le o registro de desinstalar UMA vez e passa aqui, em vez
         de deixar cada chamada varrer tudo de novo.
+    .PARAMETER PrazoRestanteMs
+        Orcamento (em ms) que a etapa de SITE desta chamada pode gastar -
+        repassado direto pra Get-TmxAppIconFromSite. Vem de
+        Invoke-TmxAppIconBatch (orcamento do LOTE menos o que ja foi gasto
+        nos apps anteriores). Padrao generoso (20s) pra uso direto/testes,
+        onde nao ha um orcamento de lote a respeitar.
     .DESCRIPTION
         Nunca lanca: qualquer falha vira $null + Write-TmxLog WARN. Uma
         chamada com icone achado grava/atualiza o cache em disco. Quando o
-        id e seguro (Test-TmxAppIconIdSafe) mas nao ha icone nenhum apos uma
-        tentativa DE VERDADE de exe+site, grava o cache negativo
-        (Set-TmxAppIconNegativeCache) para nao repetir a busca de rede por
-        7 dias.
+        id e seguro (Test-TmxAppIconIdSafe) e a etapa de site rodou ATE O FIM
+        (sem falha de rede, sem estourar PrazoRestanteMs) sem achar nada,
+        grava o cache negativo (Set-TmxAppIconNegativeCache) para nao repetir
+        a busca de rede por 7 dias - uma falha de rede transitoria ou um
+        orcamento curto demais NUNCA gravam o marcador (senao um problema de
+        conexao de 1 minuto bania o icone por 7 dias).
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] $App,
         [switch] $Offline,
-        $UninstallEntries
+        $UninstallEntries,
+        [int] $PrazoRestanteMs = 20000
     )
 
     $id = "$($App.id)"
@@ -772,10 +888,14 @@ function Get-TmxAppIcon {
 
         if ($tentouSite) {
             $bytesSite = $null
+            $erroRedeSite = $false
+            $orcamentoEsgotadoSite = $false
             try {
-                $bytesSite = Get-TmxAppIconFromSite -IconCatalogo "$($App.icon)" -Link "$($App.link)"
+                $bytesSite = Get-TmxAppIconFromSite -IconCatalogo "$($App.icon)" -Link "$($App.link)" `
+                    -PrazoMs $PrazoRestanteMs -ErroRede ([ref]$erroRedeSite) -OrcamentoEsgotado ([ref]$orcamentoEsgotadoSite)
             } catch {
                 Write-TmxLog -Level WARN -Message "Falha ao buscar icone do site para '$id'" -Data @{ erro = $_.Exception.Message }
+                $erroRedeSite = $true
             }
             if ($bytesSite) {
                 $decodificado = ConvertFrom-TmxIconImageBytes -Bytes $bytesSite
@@ -792,9 +912,12 @@ function Get-TmxAppIcon {
                 }
             }
 
-            # Exe e site foram tentados DE VERDADE e nenhum achou nada:
-            # marca o cache negativo pra nao tentar rede de novo por 7 dias.
-            Set-TmxAppIconNegativeCache -Id $id
+            # So marca "sem icone de verdade" quando a etapa de site correu
+            # ATE O FIM sem contratempo - uma falha de rede ou um orcamento
+            # curto demais nao provam nada sobre o app, so sobre o momento.
+            if (-not $erroRedeSite -and -not $orcamentoEsgotadoSite) {
+                Set-TmxAppIconNegativeCache -Id $id
+            }
         }
 
         $null
@@ -818,16 +941,26 @@ function Invoke-TmxAppIconBatch {
         acao assincrona - instalar, listar instalados, etc. - consegue
         rodar enquanto o lote nao termina).
 
-        Ids que nao COUBEREM no orcamento saem sem icone (front-end mantem
-        as iniciais) e SEM cache negativo: Get-TmxAppIcon simplesmente nao
-        chega a rodar pra eles, entao nao ha "tentativa de verdade" nenhuma
-        a registrar.
+        O orcamento RESTANTE (nao o total) e repassado pra cada
+        Get-TmxAppIcon como -PrazoRestanteMs, que por sua vez capa cada
+        download individual (Invoke-TmxIconDownload/Invoke-TmxHttpRequestOnce)
+        a esse mesmo restante - sem isso, um unico app lento (ate 3 URLs de
+        candidato, cada uma com ate 3 saltos de redirect de 5s) podia gastar
+        15s+ sozinho mesmo com um orcamento de lote de so 8s (a checagem
+        antiga so olhava o relogio ENTRE apps, nunca durante um app so).
+
+        Ids que nao COUBEREM no orcamento (o relogio ja zerou antes de
+        comecar) saem sem icone e SEM cache negativo, e voltam em
+        'Pendentes' pra quem chamou tentar de novo depois (Get-TmxAppIcon
+        simplesmente nao chega a rodar pra eles, entao nao ha "tentativa de
+        verdade" nenhuma a registrar).
     .PARAMETER Apps
         Objetos de app (do catalogo) ja resolvidos - nao ids crus.
     .PARAMETER BudgetMs
         Orcamento total do lote inteiro, nao por app (padrao 8000).
     .OUTPUTS
-        [ordered]@{} id -> @{ src; origem }.
+        [pscustomobject] @{ Icones = [ordered]@{ id -> @{ src; origem } };
+        Pendentes = string[] com os ids que nao couberam no orcamento }.
     #>
     [CmdletBinding()]
     param(
@@ -837,11 +970,18 @@ function Invoke-TmxAppIconBatch {
     )
 
     $icones     = [ordered]@{}
+    $pendentes  = New-Object 'System.Collections.Generic.List[string]'
     $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
-    foreach ($app in $Apps) {
-        if ($cronometro.ElapsedMilliseconds -gt $BudgetMs) { break }
-        $achado = Get-TmxAppIcon -App $app -UninstallEntries $UninstallEntries
+
+    for ($i = 0; $i -lt $Apps.Count; $i++) {
+        $restante = $BudgetMs - $cronometro.ElapsedMilliseconds
+        if ($restante -le 0) {
+            for ($j = $i; $j -lt $Apps.Count; $j++) { $pendentes.Add("$($Apps[$j].id)") }
+            break
+        }
+        $achado = Get-TmxAppIcon -App $Apps[$i] -UninstallEntries $UninstallEntries -PrazoRestanteMs ([int]$restante)
         if ($achado) { $icones["$($achado.id)"] = @{ src = $achado.src; origem = $achado.origem } }
     }
-    $icones
+
+    [pscustomobject]@{ Icones = $icones; Pendentes = $pendentes.ToArray() }
 }
