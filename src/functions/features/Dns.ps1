@@ -9,9 +9,14 @@ $script:TmxDnsBenchAmostras = 3
 $script:TmxDnsBenchNome     = 'www.microsoft.com'
 
 function Get-TmxDnsCatalogPath {
+    <#
+    .SYNOPSIS
+        Caminho de src/config/dns.json no disco, ou $null - no artefato
+        compilado nao ha arquivo nenhum, so $sync.configs['dns'].
+    #>
     [CmdletBinding()]
     param()
-    $dir = Get-TmxFeatureConfigDir
+    $dir = Get-TmxConfigDir
     if ($dir) { return (Join-Path $dir 'dns.json') }
     $null
 }
@@ -26,20 +31,19 @@ function Get-TmxDnsCatalog {
     [CmdletBinding()]
     param([string] $Path)
 
-    if (-not $Path) {
-        $cfg = $null
-        if ($null -ne $sync) { $cfg = $sync.configs }
-        if ($null -ne $cfg -and $cfg -is [System.Collections.IDictionary] -and $cfg.Contains('dns')) {
-            $doc = $cfg['dns']
-            if ($null -ne $doc -and $null -ne $doc.dns) { return (ConvertTo-TmxDnsCatalogEntries -Entradas $doc.dns) }
+    $doc = $null
+    if ($Path) {
+        if (-not (Test-Path -LiteralPath $Path)) {
+            throw "dns.json nao encontrado (procurado em: '$Path')"
         }
-        $Path = Get-TmxDnsCatalogPath
+        $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+    } else {
+        $doc = Get-TmxConfigDocument -Name 'dns'
     }
 
-    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) {
-        throw "dns.json nao encontrado (procurado em: '$Path')"
+    if ($null -eq $doc) {
+        throw 'dns.json nao encontrado (nem $sync.configs[''dns''], nem src/config/dns.json).'
     }
-    $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     ConvertTo-TmxDnsCatalogEntries -Entradas $doc.dns
 }
 

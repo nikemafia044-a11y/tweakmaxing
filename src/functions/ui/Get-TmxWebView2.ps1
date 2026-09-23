@@ -90,6 +90,11 @@ function Get-TmxWebRoot {
     <#
     .SYNOPSIS
         Pasta servida como https://app.tweakmaxing/.
+    .DESCRIPTION
+        Dev: $sync.webRoot (src/web). Compilado: extrai $sync.embedded.web -
+        e, junto, o modelo do MicroWin ($sync.embedded.microwinTemplate, que
+        NAO e servido pela janela; fica aqui porque esta e a pasta versionada
+        que o artefato ja escreve) - para <home>\ui\<versao>.
     #>
     [CmdletBinding()]
     param()
@@ -109,12 +114,28 @@ function Get-TmxWebRoot {
     $destino = Join-Path (Join-Path (Get-TmxUiHomePath) 'ui') (Get-TmxUiVersion)
     New-Item -ItemType Directory -Path $destino -Force | Out-Null
 
-    foreach ($nome in @($embedded.Keys)) {
+    $conteudos = @{}
+    foreach ($nome in @($embedded.Keys)) { $conteudos[$nome] = "$($embedded[$nome])" }
+
+    $modelo = $sync.embedded['microwinTemplate']
+    if ($modelo) { $conteudos['autounattend.template.xml'] = "$modelo" }
+
+    # UTF8 sem BOM: o WebView2 le os arquivos como texto servido por HTTP.
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+
+    foreach ($nome in @($conteudos.Keys)) {
         $alvo = Join-Path $destino $nome
         $pai  = Split-Path $alvo -Parent
         if (-not (Test-Path -LiteralPath $pai)) { New-Item -ItemType Directory -Path $pai -Force | Out-Null }
-        # UTF8 sem BOM: o WebView2 le os arquivos como texto servido por HTTP.
-        [IO.File]::WriteAllText($alvo, "$($embedded[$nome])", (New-Object System.Text.UTF8Encoding($false)))
+
+        $bytes = $utf8.GetBytes($conteudos[$nome])
+        # Mesma regra das DLLs: arquivo de mesmo tamanho e considerado igual.
+        # Reescrever a cada abertura so gastaria disco - e um app.js sendo
+        # reescrito enquanto a janela o le seria pior ainda.
+        if (Test-Path -LiteralPath $alvo) {
+            if ((Get-Item -LiteralPath $alvo).Length -eq $bytes.Length) { continue }
+        }
+        [IO.File]::WriteAllBytes($alvo, $bytes)
     }
     $destino
 }

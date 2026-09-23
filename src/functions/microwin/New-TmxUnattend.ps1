@@ -16,6 +16,10 @@ function Get-TmxMicroWinTemplatePath {
         texto e $PSScriptRoot pode chegar vazio. Por isso a busca comeca pelo
         ambiente ($env:TMX_MICROWIN_TEMPLATE, $env:TMX_DEV_ENTRY) e por
         $sync.webRoot, que atravessam a fronteira de runspace.
+
+        No TweakMaxing.ps1 compilado nao existe pasta tools\: o modelo vem
+        embutido em $sync.embedded.microwinTemplate e e extraido junto com os
+        arquivos da interface (Get-TmxWebRoot), em <home>\ui\<versao>.
     #>
     [CmdletBinding()]
     param()
@@ -24,6 +28,17 @@ function Get-TmxMicroWinTemplatePath {
     $candidatos = New-Object 'System.Collections.Generic.List[string]'
 
     if ($env:TMX_MICROWIN_TEMPLATE) { $candidatos.Add("$env:TMX_MICROWIN_TEMPLATE") }
+
+    if ($null -ne $sync -and $null -ne $sync.embedded -and $sync.embedded['microwinTemplate']) {
+        # Get-TmxWebRoot lanca quando nao ha nem webRoot nem arquivos embutidos:
+        # aqui isso e so mais um candidato que nao deu certo, nunca um erro.
+        try {
+            $raizUi = Get-TmxWebRoot
+            if ($raizUi) { $candidatos.Add((Join-Path $raizUi 'autounattend.template.xml')) }
+        } catch {
+            Write-Verbose "Modelo embutido indisponivel: $($_.Exception.Message)"
+        }
+    }
 
     if ($env:TMX_DEV_ENTRY) {
         $raiz = Split-Path -Parent "$env:TMX_DEV_ENTRY"

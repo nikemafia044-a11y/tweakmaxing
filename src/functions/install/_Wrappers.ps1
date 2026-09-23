@@ -316,16 +316,7 @@ function Get-TmxAppCatalog {
     [CmdletBinding()]
     param()
 
-    $doc = $null
-
-    if ($null -ne $sync -and $null -ne $sync.configs -and $null -ne $sync.configs.applications) {
-        $doc = $sync.configs.applications
-    } elseif ($null -ne $sync -and $sync.webRoot) {
-        $caminho = Join-Path (Split-Path "$($sync.webRoot)" -Parent) 'config\applications.json'
-        if (Test-Path -LiteralPath $caminho) {
-            $doc = Get-Content -LiteralPath $caminho -Raw -Encoding UTF8 | ConvertFrom-Json
-        }
-    }
+    $doc = Get-TmxConfigDocument -Name 'applications'
 
     if ($null -eq $doc) {
         throw 'catalogo de aplicativos nao encontrado (nem $sync.configs.applications, nem src/config/applications.json).'

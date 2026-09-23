@@ -62,22 +62,6 @@ $script:TmxFeatureFuncoes = @{
 # Leitura do feature.json
 # ---------------------------------------------------------------------------
 
-function Get-TmxFeatureConfigDir {
-    <#
-    .SYNOPSIS
-        Pasta src/config. Nunca usa $PSScriptRoot: dentro da runspace do pool
-        as funcoes chegam como texto e $PSScriptRoot e $null.
-    #>
-    [CmdletBinding()]
-    param()
-
-    if ($null -ne $sync -and $sync.webRoot) {
-        $dir = Join-Path (Split-Path $sync.webRoot -Parent) 'config'
-        if (Test-Path -LiteralPath $dir) { return $dir }
-    }
-    $null
-}
-
 function Get-TmxFeatureConfigEntries {
     <#
     .SYNOPSIS
@@ -87,23 +71,19 @@ function Get-TmxFeatureConfigEntries {
     [CmdletBinding()]
     param([string] $Path)
 
-    if (-not $Path) {
-        $cfg = $null
-        if ($null -ne $sync) { $cfg = $sync.configs }
-        # ContainsKey: $cfg.feature numa hashtable sem a chave devolve $null sem erro,
-        # mas com StrictMode ligado quebraria; a checagem explicita serve aos dois.
-        if ($null -ne $cfg -and $cfg -is [System.Collections.IDictionary] -and $cfg.Contains('feature')) {
-            $doc = $cfg['feature']
-            if ($null -ne $doc) { return @($doc.recursos | Where-Object { $_ }) }
+    $doc = $null
+    if ($Path) {
+        if (-not (Test-Path -LiteralPath $Path)) {
+            throw "feature.json nao encontrado (procurado em: '$Path')"
         }
-        $dir = Get-TmxFeatureConfigDir
-        if ($dir) { $Path = Join-Path $dir 'feature.json' }
+        $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+    } else {
+        $doc = Get-TmxConfigDocument -Name 'feature'
     }
 
-    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) {
-        throw "feature.json nao encontrado (procurado em: '$Path')"
+    if ($null -eq $doc) {
+        throw 'feature.json nao encontrado (nem $sync.configs[''feature''], nem src/config/feature.json).'
     }
-    $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     @($doc.recursos | Where-Object { $_ })
 }
 

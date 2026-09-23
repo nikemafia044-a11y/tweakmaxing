@@ -27,9 +27,15 @@ function Get-TmxPresets {
         Le src/config/preset.json (nome/descricao de cada preset).
     #>
     [CmdletBinding()]
-    param(
-        [string] $Path = (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'src\config\preset.json')
-    )
+    param([string] $Path)
+
+    if (-not $Path) {
+        # No artefato compilado nao existe src/config no disco: de la o
+        # documento vem de $sync.configs (ver Get-TmxTweakPresetList).
+        $raizRepo = if ($PSScriptRoot) { Split-Path (Split-Path $PSScriptRoot -Parent) -Parent } else { $null }
+        if (-not $raizRepo) { throw 'preset.json nao encontrado: informe -Path.' }
+        $Path = Join-Path $raizRepo 'src\config\preset.json'
+    }
     if (-not (Test-Path -LiteralPath $Path)) { throw "preset.json nao encontrado: $Path" }
     Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
 }

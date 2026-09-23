@@ -7,14 +7,21 @@
     abas navegaveis e barra de status. Deixa um print em tests/gui/out/shell.png.
 
     Sai com 1 se qualquer verificacao falhar. Sempre fecha a GUI.
+.PARAMETER ScriptPath
+    Script a abrir. Padrao: Start-TmxDev.ps1. Apontando para o TweakMaxing.ps1
+    compilado, o mesmo teste prova que os arquivos da interface e as DLLs do
+    WebView2 embutidos sao extraidos e servidos.
 .EXAMPLE
     .\tests\gui\Test-Shell.ps1
 .EXAMPLE
     .\tests\gui\Test-Shell.ps1 -Port 9444
+.EXAMPLE
+    .\tests\gui\Test-Shell.ps1 -Port 9343 -ScriptPath .\TweakMaxing.ps1
 #>
 [CmdletBinding()]
 param(
-    [int] $Port = 9333
+    [int]    $Port = 9333,
+    [string] $ScriptPath
 )
 
 . (Join-Path $PSScriptRoot '_GuiHelpers.ps1')
@@ -50,7 +57,12 @@ $abas = @(
 $gui = $null
 try {
     Write-Host "Abrindo a GUI em modo de teste (CDP $Port)..." -ForegroundColor Cyan
-    $gui = Start-TmxGui -Port $Port -TestMode
+    if ($ScriptPath) { Write-Host "Script: $ScriptPath" }
+    $gui = if ($ScriptPath) {
+        Start-TmxGui -Port $Port -TestMode -ScriptPath $ScriptPath
+    } else {
+        Start-TmxGui -Port $Port -TestMode
+    }
     Write-Host "CDP: $($gui.versaoCdp.Browser)"
 
     # Conectar antes da navegacao prende o agent-browser num about:blank.

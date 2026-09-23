@@ -154,54 +154,28 @@ function Get-TmxTweakTestCatalog {
 # Fontes de dados (catalogo, presets, estado da sessao)
 # ---------------------------------------------------------------------------
 
-function Get-TmxTweakConfigDir {
-    <#
-    .SYNOPSIS
-        Pasta src/config. Nunca depende de $PSScriptRoot: dentro de uma runspace
-        do pool as funcoes chegam como texto e $PSScriptRoot e $null.
-    #>
-    [CmdletBinding()]
-    param()
-
-    if ($null -ne $sync -and $sync.webRoot) {
-        $dir = Join-Path (Split-Path $sync.webRoot -Parent) 'config'
-        if (Test-Path -LiteralPath $dir) { return $dir }
-    }
-    $null
-}
-
 function Get-TmxTweakCatalogSource {
     <#
     .SYNOPSIS
-        Tweaks do catalogo de producao: $sync.configs quando ja carregado
-        (dev runner e artefato compilado), senao os tweaks*.json do disco.
+        Tweaks do catalogo de producao: todo documento 'tweaks*' de
+        $sync.configs quando ja carregado (dev runner e artefato compilado),
+        senao os tweaks*.json do disco.
     #>
     [CmdletBinding()]
     param()
 
-    $lista = New-Object 'System.Collections.Generic.List[object]'
-
-    $cfg = $null
-    if ($null -ne $sync) { $cfg = $sync.configs }
-    if ($null -ne $cfg) {
-        # @($cfg.Keys): iterar as chaves de uma hashtable vazia com foreach no
-        # PS 5.1 devolve a propria hashtable, nao zero itens.
-        $chaves = @(@($cfg.Keys) | Where-Object { "$_" -like 'tweaks*' } | Sort-Object)
-        foreach ($chave in $chaves) {
-            foreach ($t in @($cfg[$chave].tweaks)) {
-                if ($null -ne $t) { $lista.Add($t) }
-            }
-        }
+    $documentos = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($nome in @(Get-TmxConfigDocumentName -Pattern 'tweaks*')) {
+        $doc = Get-TmxConfigDocument -Name $nome
+        if ($null -ne $doc) { $documentos.Add($doc) }
     }
 
-    if ($lista.Count -eq 0) {
-        $dir = Get-TmxTweakConfigDir
-        $doDisco = if ($dir) { @(Get-TmxCatalog -Path $dir) } else { @(Get-TmxCatalog) }
-        foreach ($t in $doDisco) { if ($null -ne $t) { $lista.Add($t) } }
+    if ($documentos.Count -gt 0) {
+        return (Get-TmxCatalog -Documents $documentos.ToArray())
     }
 
-    # .ToArray(): @() sobre List generica vazia falha no PS 5.1
-    $lista.ToArray()
+    # Sem $sync e sem webRoot (modulo importado direto): caminho padrao do disco.
+    @(Get-TmxCatalog)
 }
 
 function Get-TmxTweakCatalogForUi {
@@ -239,11 +213,8 @@ function Get-TmxTweakPresetList {
     [CmdletBinding()]
     param()
 
-    if ($null -ne $sync -and $null -ne $sync.configs -and $sync.configs.ContainsKey('preset')) {
-        return $sync.configs['preset']
-    }
-    $dir = Get-TmxTweakConfigDir
-    if ($dir) { return Get-TmxPresets -Path (Join-Path $dir 'preset.json') }
+    $doc = Get-TmxConfigDocument -Name 'preset'
+    if ($null -ne $doc) { return $doc }
     Get-TmxPresets
 }
 

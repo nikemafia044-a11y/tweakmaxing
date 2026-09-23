@@ -24,22 +24,6 @@
 # Catalogo (direto do arquivo, nao do catalogo geral)
 # ---------------------------------------------------------------------------
 
-function Get-TmxUpdateConfigDir {
-    <#
-    .SYNOPSIS
-        Pasta src/config. Nunca depende de $PSScriptRoot: dentro de uma
-        runspace do pool as funcoes chegam como texto e $PSScriptRoot e $null.
-    #>
-    [CmdletBinding()]
-    param()
-
-    if ($null -ne $sync -and $sync.webRoot) {
-        $dir = Join-Path (Split-Path $sync.webRoot -Parent) 'config'
-        if (Test-Path -LiteralPath $dir) { return $dir }
-    }
-    $null
-}
-
 function Get-TmxUpdatePolicyCatalog {
     <#
     .SYNOPSIS
@@ -51,21 +35,21 @@ function Get-TmxUpdatePolicyCatalog {
     [CmdletBinding()]
     param([string] $Path)
 
-    if (-not $Path) {
-        $cfg = $null
-        if ($null -ne $sync) { $cfg = $sync.configs }
-        if ($null -ne $cfg -and $cfg -is [System.Collections.IDictionary] -and $cfg.Contains('tweaks.updates')) {
-            $doc = $cfg['tweaks.updates']
-            if ($null -ne $doc) { return @($doc.tweaks | Where-Object { $_ } | Sort-Object id) }
+    $doc = $null
+    if ($Path) {
+        if (-not (Test-Path -LiteralPath $Path)) {
+            throw "tweaks.updates.json nao encontrado (procurado em: '$Path')"
         }
-        $dir = Get-TmxUpdateConfigDir
-        if ($dir) { $Path = Join-Path $dir 'tweaks.updates.json' }
+        $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
+    } else {
+        # $sync.configs['tweaks.updates'] (dev runner e compilado) ou o arquivo
+        # de src/config derivado de $sync.webRoot.
+        $doc = Get-TmxConfigDocument -Name 'tweaks.updates'
     }
 
-    if (-not $Path -or -not (Test-Path -LiteralPath $Path)) {
-        throw "tweaks.updates.json nao encontrado (procurado em: '$Path')"
+    if ($null -eq $doc) {
+        throw 'tweaks.updates.json nao encontrado (nem $sync.configs[''tweaks.updates''], nem src/config/tweaks.updates.json).'
     }
-    $doc = Get-Content -LiteralPath $Path -Raw -Encoding UTF8 | ConvertFrom-Json
     @($doc.tweaks | Where-Object { $_ } | Sort-Object id)
 }
 

@@ -16,14 +16,48 @@ function Get-TmxCatalog {
     <#
     .SYNOPSIS
         Carrega o catalogo de tweaks a partir de um diretorio (todo tweaks*.json,
-        ordenado por nome, arrays .tweaks concatenados) ou de um arquivo unico.
+        ordenado por nome, arrays .tweaks concatenados), de um arquivo unico ou
+        de documentos JA parseados em memoria.
     .PARAMETER Path
         Diretorio ou arquivo. Default: <repo>/src/config.
+    .PARAMETER Documents
+        Documentos ja parseados (cada um com .tweaks), na ordem em que devem ser
+        concatenados. E por aqui que o TweakMaxing.ps1 compilado carrega o
+        catalogo: la nao existe src/config no disco, so $sync.configs.
     #>
-    [CmdletBinding()]
+    [CmdletBinding(DefaultParameterSetName = 'Path')]
     param(
-        [string] $Path = (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'src\config')
+        [Parameter(ParameterSetName = 'Path', Position = 0)]
+        [string] $Path,
+
+        [Parameter(Mandatory, ParameterSetName = 'Documents')]
+        $Documents
     )
+
+    $tweaks = New-Object 'System.Collections.Generic.List[object]'
+
+    if ($PSCmdlet.ParameterSetName -eq 'Documents') {
+        foreach ($documento in @($Documents)) {
+            if ($null -eq $documento) { continue }
+            foreach ($t in @($documento.tweaks)) {
+                if ($null -ne $t) { $tweaks.Add($t) }
+            }
+        }
+        if ($tweaks.Count -eq 0) {
+            throw 'Catalogo vazio: nenhum tweak encontrado nos documentos informados.'
+        }
+        # .ToArray(): @() sobre List generica vazia falha no PS 5.1
+        return $tweaks.ToArray()
+    }
+
+    if (-not $Path) {
+        # Sem -Path: <repo>/src/config. No artefato compilado $PSScriptRoot
+        # aponta para a pasta do proprio .ps1 e nao ha src/config nenhum - de
+        # la o catalogo entra por -Documents, nunca por este caminho.
+        $raizRepo = if ($PSScriptRoot) { Split-Path (Split-Path $PSScriptRoot -Parent) -Parent } else { $null }
+        if (-not $raizRepo) { throw 'Catalogo nao encontrado: informe -Path ou -Documents.' }
+        $Path = Join-Path $raizRepo 'src\config'
+    }
 
     if (-not (Test-Path -LiteralPath $Path)) {
         throw "Catalogo nao encontrado: '$Path' nao existe."
@@ -40,7 +74,6 @@ function Get-TmxCatalog {
         throw "Catalogo nao encontrado: nenhum arquivo 'tweaks*.json' em '$Path'."
     }
 
-    $tweaks = New-Object 'System.Collections.Generic.List[object]'
     foreach ($arquivo in $arquivos) {
         try {
             $doc = Get-Content -LiteralPath $arquivo.FullName -Raw -Encoding UTF8 | ConvertFrom-Json

@@ -34,6 +34,12 @@ param(
     [switch] $NoElevate
 )
 #TMX-COMPILED
+# O Start-TmxDev.ps1 ja roda com 'Stop'; o artefato compilado comeca por este
+# arquivo e herdaria o 'Continue' do host. Um erro nao-terminante engolido no
+# meio de uma aplicacao de tweaks e exatamente o que nao pode acontecer, e uma
+# diferenca de comportamento entre dev e compilado invalidaria os testes.
+$ErrorActionPreference = 'Stop'
+
 $script:TmxVersion = '#{version}'
 $script:TmxRepo    = '#{repo}'
 

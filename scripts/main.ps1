@@ -33,6 +33,12 @@ param(
     [switch] $TestMode,
     [switch] $NoElevate
 )
+# ATENCAO: este param() existe para o Start-TmxDev.ps1, que faz dot-source
+# deste arquivo com @PSBoundParameters. No TweakMaxing.ps1 compilado ele e
+# REMOVIDO pelo Compile.ps1 (um 'param' no meio do script seria erro de
+# sintaxe) - la os mesmos nomes ja existem, vindos do param() do start.ps1,
+# porque tudo vive num unico escopo de script. Nao use aqui nada que dependa
+# do param em si ($PSBoundParameters, $PSCmdlet): use as variaveis.
 
 if ($null -eq $global:sync) {
     # start.ps1 delegou a um processo elevado (ou recusou o host).
@@ -78,11 +84,15 @@ if ($Headless -or $Undo) {
 
     $perfil = Get-TmxProfile
 
-    # O catalogo pode ainda nao existir (tweaks*.json chegam em outra task):
-    # a casca tem que abrir e simular mesmo assim.
+    # Get-TmxTweakCatalogSource, e nao Get-TmxCatalog: a fonte tem que ser a
+    # MESMA da janela (todo documento 'tweaks*' de $sync.configs) porque no
+    # artefato compilado nao existe src/config no disco para ler.
+    #
+    # O catalogo ainda assim pode nao existir (JSON quebrado, por exemplo): a
+    # casca tem que abrir e simular mesmo assim.
     $catalogo = @()
     try {
-        $catalogo = @(Get-TmxCatalog)
+        $catalogo = @(Get-TmxTweakCatalogSource)
     } catch {
         Write-Warning "Catalogo indisponivel ($($_.Exception.Message)). Seguindo com catalogo vazio."
     }

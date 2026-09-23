@@ -1,0 +1,5 @@
+# Repositorio publico do TweakMaxing, no formato 'usuario/repositorio'.
+# Usado pelo Compile.ps1 no cabecalho do artefato e na URL de elevacao
+# (https://github.com/<repo>/releases/download/v<versao>/TweakMaxing.ps1).
+# A Task 15 troca o placeholder abaixo pelo repositorio de verdade.
+SEU_USUARIO/tweakmaxing

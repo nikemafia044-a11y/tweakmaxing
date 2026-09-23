@@ -5,7 +5,12 @@
 # porque um "restaurar" global nao existe: cada placa pode ter uma configuracao
 # diferente, e algumas estao em DHCP (lista vazia) enquanto outras tem servidor fixo.
 
-$script:TmxDnsConfigPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'config\dns.json'
+# Ultimo recurso, so quando o modulo e importado sem $sync (testes): no
+# artefato compilado $PSScriptRoot aponta para a pasta do proprio .ps1 e os
+# dois Split-Path podem chegar a uma string vazia - por isso a guarda.
+$script:TmxDnsConfigPath = if ($PSScriptRoot -and (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent)) {
+    Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'config\dns.json'
+} else { $null }
 $script:TmxDnsFamiliaV4  = 2
 $script:TmxDnsFamiliaV6  = 23
 
@@ -13,30 +18,22 @@ function Get-TmxDnsProvider {
     <#
     .SYNOPSIS
         Dados de um provedor de DNS: { id, primario, secundario, primario6, secundario6 }.
-        Procura primeiro em $sync.configs.dns (quando a UI ja carregou os configs)
-        e depois em src/config/dns.json.
+    .DESCRIPTION
+        Fonte: Get-TmxConfigDocument 'dns' ($sync.configs no dev runner e no
+        artefato compilado; src/config/dns.json a partir de $sync.webRoot). Sem
+        $sync nenhum, cai para o dns.json ao lado deste arquivo.
     #>
     param([Parameter(Mandatory)] [string] $Nome)
 
-    $syncVar = Get-Variable -Name 'sync' -Scope Global -ErrorAction SilentlyContinue
-    if ($syncVar -and $syncVar.Value) {
-        $cfg = $syncVar.Value.configs
-        if ($cfg -and $cfg.dns -and $cfg.dns.PSObject.Properties[$Nome]) {
-            $e = $cfg.dns.$Nome
-            return [pscustomobject]@{
-                id          = $Nome
-                primario    = "$($e.Primary)"
-                secundario  = "$($e.Secondary)"
-                primario6   = "$($e.Primary6)"
-                secundario6 = "$($e.Secondary6)"
-            }
-        }
+    $doc = Get-TmxConfigDocument -Name 'dns'
+
+    if ($null -eq $doc -and $script:TmxDnsConfigPath -and (Test-TmxItemPath -Path $script:TmxDnsConfigPath)) {
+        $doc = Get-Content -LiteralPath $script:TmxDnsConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    }
+    if ($null -eq $doc) {
+        throw 'catalogo de DNS nao encontrado (nem $sync.configs[''dns''], nem src/config/dns.json).'
     }
 
-    if (-not (Test-TmxItemPath -Path $script:TmxDnsConfigPath)) {
-        throw "catalogo de DNS nao encontrado: $($script:TmxDnsConfigPath)"
-    }
-    $doc = Get-Content -LiteralPath $script:TmxDnsConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($e in @($doc.dns)) {
         if ($null -eq $e) { continue }
         if ("$($e.id)" -ieq $Nome) {

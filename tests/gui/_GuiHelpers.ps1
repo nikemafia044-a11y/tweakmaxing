@@ -100,15 +100,24 @@ function Start-TmxGui {
     param(
         [int]    $Port = 9333,
         [switch] $TestMode,
-        [int]    $TimeoutSeconds = 60
+        [int]    $TimeoutSeconds = 60,
+        # Script a abrir. Padrao: Start-TmxDev.ps1 (modo de desenvolvimento).
+        # Aponte para o TweakMaxing.ps1 compilado para exercitar o artefato
+        # unico: a linha de comando e a mesma, porque ele aceita os mesmos
+        # -DebugPort / -TestMode / -NoElevate.
+        [string] $ScriptPath
     )
 
     Clear-TmxGuiLeftovers -Port $Port
     $saida = Initialize-TmxGuiOut
 
+    if (-not $ScriptPath) { $ScriptPath = Join-Path $script:TmxRepoRoot 'Start-TmxDev.ps1' }
+    if (-not (Test-Path -LiteralPath $ScriptPath)) { throw "Script da GUI nao encontrado: $ScriptPath" }
+    $ScriptPath = (Resolve-Path -LiteralPath $ScriptPath).ProviderPath
+
     $argumentos = @(
         '-NoProfile', '-STA', '-ExecutionPolicy', 'Bypass',
-        '-File', (Join-Path $script:TmxRepoRoot 'Start-TmxDev.ps1'),
+        '-File', $ScriptPath,
         '-DebugPort', "$Port",
         '-NoElevate'
     )
