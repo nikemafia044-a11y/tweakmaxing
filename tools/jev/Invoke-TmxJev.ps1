@@ -83,8 +83,15 @@ function ConvertTo-TmxJevDecision {
         [double] $Yes = 0.8, [double] $No = 0.2,
         [double] $Accept = 0.85, [double] $Margin = 0.5
     )
-    if ($null -ne $Answer.PSObject.Properties['probability'] -and $null -eq $Answer.PSObject.Properties['probabilities']) {
-        $p = [double]$Answer.probability
+    # A API devolve noul como { type = 'noul'; noul = <p> }. 'probability' fica
+    # aceito por compatibilidade; sem o campo 'noul', toda resposta sim/nao caia
+    # em 'desconhecido' e virava p=0 sem veredito.
+    $campoP = $null
+    foreach ($nomeCampo in 'noul', 'probability') {
+        if ($null -ne $Answer.PSObject.Properties[$nomeCampo]) { $campoP = $nomeCampo; break }
+    }
+    if ($campoP -and $null -eq $Answer.PSObject.Properties['probabilities']) {
+        $p = [double]$Answer.$campoP
         $veredito = if ($p -ge $Yes) { 'sim' } elseif ($p -le $No) { 'nao' } else { 'incerto' }
         return [pscustomobject]@{ tipo = 'noul'; probabilidade = $p; veredito = $veredito }
     }

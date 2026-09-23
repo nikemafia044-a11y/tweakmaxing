@@ -29,8 +29,9 @@ function New-TmxJevAppsPayload {
         $estado.apps[$chave] = @{ nome = "$($a.nome)"; descricao = "$($a.descricao)" }
         $perguntas["ptbr_$chave"] = @{
             type = 'noul'
-            instructions = ('A descricao em `apps.' + $chave + '.descricao` esta escrita em portugues do Brasil? Nomes proprios de produtos em ingles nao contam como ingles.')
-            criteria = @{ 'true' = 'Frase em portugues'; 'false' = 'Frase em ingles ou outra lingua' }
+            # Em ingles: o Jev e mais forte em ingles.
+            instructions = ('Is the sentence in `apps.' + $chave + '.descricao` written in Portuguese? Accents may be omitted; English product names do not count as English.')
+            criteria = @{ 'true' = 'Sentence grammar and common words are Portuguese'; 'false' = 'Sentence is in English or another language' }
         }
     }
     @{ state = $estado; questions = $perguntas; ids = @($Lote | ForEach-Object { "$($_.id)" }) }

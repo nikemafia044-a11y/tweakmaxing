@@ -40,6 +40,15 @@ Describe 'Jev: cliente e utilitarios' -Tag 'Jev' {
         @($lotes[2]).Count | Should -Be 15
     }
 
+    It 'ConvertTo-TmxJevDecision le o formato real da API para noul (campo noul, nao probability)' {
+        # Resposta capturada da API em 2026-09-23: { "type": "noul", "noul": 0.97 }
+        $r = ConvertTo-TmxJevDecision -Answer ([pscustomobject]@{ type = 'noul'; noul = 0.97 })
+        $r.tipo          | Should -Be 'noul'
+        $r.probabilidade | Should -Be 0.97
+        $r.veredito      | Should -Be 'sim'
+        (ConvertTo-TmxJevDecision -Answer ([pscustomobject]@{ type = 'noul'; noul = 0.1 })).veredito | Should -Be 'nao'
+    }
+
     It 'ConvertTo-TmxJevDecision traduz noul e choice em decisoes' {
         (ConvertTo-TmxJevDecision -Answer ([pscustomobject]@{ probability = 0.95 })).veredito | Should -Be 'sim'
         (ConvertTo-TmxJevDecision -Answer ([pscustomobject]@{ probability = 0.05 })).veredito | Should -Be 'nao'

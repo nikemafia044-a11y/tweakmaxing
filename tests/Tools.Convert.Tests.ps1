@@ -386,8 +386,10 @@ Describe 'Convert-WinUtilCatalog conversao de valor de registro' -Tag 'Convert' 
 Describe 'Convert-WinUtilCatalog distribuicao editorial' -Tag 'Convert' {
 
     It 'mantem a distribuicao de tier acordada' {
-        @($script:Tweaks | Where-Object { $_.tier -eq 'MEDIDO' }).Count   | Should -Be 42
-        @($script:Tweaks | Where-Object { $_.tier -eq 'TECNICO' }).Count  | Should -Be 21
+        # 2026-09-23: INT-001 e DES-003 rebaixados de MEDIDO para TECNICO apos
+        # auditoria Jev - o proprio texto de evidencia diz que o efeito varia.
+        @($script:Tweaks | Where-Object { $_.tier -eq 'MEDIDO' }).Count   | Should -Be 40
+        @($script:Tweaks | Where-Object { $_.tier -eq 'TECNICO' }).Count  | Should -Be 23
         @($script:Tweaks | Where-Object { $_.tier -eq 'FOLCLORE' }).Count | Should -Be 4
     }
 

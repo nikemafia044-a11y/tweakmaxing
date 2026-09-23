@@ -66,7 +66,9 @@ function New-TmxJevCatalogPayload {
         }
         $perguntas["ptbr_$chave"] = @{
             type = 'noul'
-            instructions = ('Os campos nome, porque e evidencia de `itens.' + $chave + '` estao escritos em portugues do Brasil (nao em ingles nem misturados)?')
+            # Em ingles: o Jev e mais forte em ingles (mesma pergunta em portugues deu p=0.69 num texto claramente pt-BR).
+            instructions = ('Are the prose sentences in `itens.' + $chave + '` (fields porque and evidencia) written in Portuguese? Accents may be omitted; English technical terms, product and registry names are allowed.')
+            criteria = @{ 'true' = 'Sentence grammar and common words are Portuguese'; 'false' = 'Sentences are in English or another language' }
         }
     }
     @{ state = $estado; questions = $perguntas; ids = @($Lote | ForEach-Object { $_.id }) }
