@@ -57,6 +57,7 @@ foreach ($lote in $lotes) {
     Write-Host ("lote {0}/{1} ok" -f $n, $lotes.Count)
 }
 $saida = Join-Path $OutDir 'apps-sem-ptbr.json'
-($pendentes.ToArray() | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath $saida -Encoding UTF8
+# -InputObject: lista vazia vira '[]'; pelo pipeline nada seria gravado e o relatorio antigo ficaria no disco.
+(ConvertTo-Json -InputObject @($pendentes.ToArray()) -Depth 4) | Set-Content -LiteralPath $saida -Encoding UTF8
 Write-Host ("Jev julgou {0} descricoes ({1} tokens). Sem pt-BR ou incertas: {2} -> {3}" -f $apps.Count, $uso, $pendentes.Count, $saida)
 exit 0

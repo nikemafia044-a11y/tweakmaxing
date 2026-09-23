@@ -76,7 +76,8 @@ foreach ($f in ($falhas | Select-Object -First 64)) {
 }
 $ordem = @{ defeito = 0; outro = 1; flaky = 2; ambiente = 3 }
 $saida = $linhas.ToArray() | Sort-Object { if ($_.decisao -eq 'review') { -1 } else { $ordem[$_.classe] } }
-($saida | ConvertTo-Json -Depth 4) | Set-Content -LiteralPath (Join-Path $OutDir 'triagem-falhas.json') -Encoding UTF8
+# -InputObject: lista vazia vira '[]' em vez de deixar o relatorio antigo no disco.
+(ConvertTo-Json -InputObject @($saida) -Depth 4) | Set-Content -LiteralPath (Join-Path $OutDir 'triagem-falhas.json') -Encoding UTF8
 $saida | Format-Table classe, decisao, p, teste -AutoSize | Out-String | Write-Host
 $uso = if ($resp.usage) { [int]$resp.usage.input_tokens + [int]$resp.usage.output_tokens } else { 0 }
 Write-Host ("Jev triou {0} falhas ({1} tokens). Reveja primeiro as marcadas 'defeito' ou 'review'." -f $linhas.Count, $uso)

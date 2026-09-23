@@ -120,7 +120,8 @@ foreach ($lote in $lotes) {
 }
 
 $relatorio = Join-Path $OutDir 'catalogo-atencao.json'
-($atencao.ToArray() | ConvertTo-Json -Depth 5) | Set-Content -LiteralPath $relatorio -Encoding UTF8
+# -InputObject: lista vazia vira '[]'; pelo pipeline nada seria gravado e o relatorio antigo ficaria no disco.
+(ConvertTo-Json -InputObject @($atencao.ToArray()) -Depth 5) | Set-Content -LiteralPath $relatorio -Encoding UTF8
 Write-Host ("Jev julgou {0} tweaks ({1} tokens). Itens para revisao humana: {2} -> {3}" -f $itens.Count, $totalUso, $atencao.Count, $relatorio)
 $atencao.ToArray() | Format-Table -AutoSize | Out-String | Write-Host
 exit 0

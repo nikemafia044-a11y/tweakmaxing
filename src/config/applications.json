@@ -3,7 +3,7 @@
     {
       "id": "1password",
       "nome": "1Password",
-      "descricao": "1Password is a password manager that allows you to store and manage your passwords securely.",
+      "descricao": "Gerenciador de senhas para guardar e organizar suas senhas com segurança.",
       "categoria": "Utilitarios",
       "winget": "AgileBits.1Password",
       "choco": "1password",
@@ -23,7 +23,7 @@
     {
       "id": "abdownloadmanager",
       "nome": "AB Download Manager",
-      "descricao": "AB Download Manager is an open-source download accelerator and manager with multi-threaded downloads, queue scheduling, speed limiting, and browser integration.",
+      "descricao": "Acelerador e gerenciador de downloads de código aberto, com download em várias conexões, fila agendada, limite de velocidade e integração com o navegador.",
       "categoria": "Utilitarios",
       "winget": "amir1376.ABDownloadManager",
       "choco": "ab-download-manager",
@@ -33,7 +33,7 @@
     {
       "id": "adobe",
       "nome": "Adobe Acrobat Reader",
-      "descricao": "Adobe Acrobat Reader is a free PDF viewer with essential features for viewing, printing, and annotating PDF documents.",
+      "descricao": "Leitor de PDF gratuito da Adobe, com o essencial para ver, imprimir e anotar documentos.",
       "categoria": "Documentos",
       "winget": "Adobe.Acrobat.Reader.64-bit",
       "choco": "adobereader",
@@ -43,7 +43,7 @@
     {
       "id": "advancedip",
       "nome": "Advanced IP Scanner",
-      "descricao": "Advanced IP Scanner is a fast and easy-to-use network scanner. It is designed to analyze LAN networks and provides information about connected devices.",
+      "descricao": "Scanner de rede rápido e simples: analisa a rede local e mostra informações dos dispositivos conectados.",
       "categoria": "Ferramentas Pro",
       "winget": "Famatech.AdvancedIPScanner",
       "choco": "advanced-ip-scanner",
@@ -53,7 +53,7 @@
     {
       "id": "aimp",
       "nome": "AIMP (Music Player)",
-      "descricao": "AIMP is a feature-rich music player with support for various audio formats, playlists, and customizable user interface.",
+      "descricao": "Reprodutor de música completo, com suporte a vários formatos de áudio, playlists e interface personalizável.",
       "categoria": "Multimidia",
       "winget": "AIMP.AIMP",
       "choco": "aimp",
@@ -63,7 +63,7 @@
     {
       "id": "angryipscanner",
       "nome": "Angry IP Scanner",
-      "descricao": "Angry IP Scanner is an open-source and cross-platform network scanner. It is used to scan IP addresses and ports, providing information about network connectivity.",
+      "descricao": "Scanner de rede de código aberto e multiplataforma que varre endereços IP e portas e mostra o estado da conectividade.",
       "categoria": "Ferramentas Pro",
       "winget": "angryziber.AngryIPScanner",
       "choco": "angryip",
@@ -73,7 +73,7 @@
     {
       "id": "anydesk",
       "nome": "AnyDesk",
-      "descricao": "AnyDesk is a remote desktop software that enables users to access and control computers remotely. It is known for its fast connection and low latency.",
+      "descricao": "Software de acesso remoto para controlar outros computadores, conhecido pela conexão rápida e baixa latência.",
       "categoria": "Utilitarios",
       "winget": "AnyDesk.AnyDesk",
       "choco": "anydesk",
@@ -83,7 +83,7 @@
     {
       "id": "audacity",
       "nome": "Audacity",
-      "descricao": "Audacity is a free and open-source audio editing software known for its powerful recording and editing capabilities.",
+      "descricao": "Editor de áudio livre e de código aberto, com recursos fortes de gravação e edição.",
       "categoria": "Multimidia",
       "winget": "Audacity.Audacity",
       "choco": "audacity",
@@ -93,7 +93,7 @@
     {
       "id": "autoruns",
       "nome": "Autoruns",
-      "descricao": "This utility shows you what programs are configured to run during system bootup or login.",
+      "descricao": "Utilitário da Sysinternals que mostra quais programas estão configurados para iniciar com o sistema ou no logon.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.Sysinternals.Autoruns",
       "choco": "autoruns",
@@ -103,7 +103,7 @@
     {
       "id": "rdcman",
       "nome": "RDCMan",
-      "descricao": "RDCMan manages multiple remote desktop connections. It is useful for managing server labs where you need regular access to each machine such as automated checkin systems and data centers.",
+      "descricao": "Gerencia várias conexões de área de trabalho remota ao mesmo tempo; útil para laboratórios de servidores e data centers.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.Sysinternals.RDCMan",
       "choco": "rdcman",
@@ -113,7 +113,7 @@
     {
       "id": "autohotkey",
       "nome": "AutoHotkey",
-      "descricao": "AutoHotkey is a scripting language for Windows that allows users to create custom automation scripts and macros. It is often used for automating repetitive tasks and customizing keyboard shortcuts.",
+      "descricao": "Linguagem de script para Windows que cria automações e macros; muito usada para repetir tarefas e criar atalhos de teclado.",
       "categoria": "Utilitarios",
       "winget": "AutoHotkey.AutoHotkey",
       "choco": "autohotkey",
@@ -123,7 +123,7 @@
     {
       "id": "battlenet",
       "nome": "Battle.net",
-      "descricao": "Battle.net is a launcher for games created and developed by Activision Blizzard",
+      "descricao": "Launcher dos jogos da Activision Blizzard.",
       "categoria": "Jogos",
       "winget": "Blizzard.BattleNet",
       "choco": "na",
@@ -143,7 +143,7 @@
     {
       "id": "blender",
       "nome": "Blender (3D Graphics)",
-      "descricao": "Blender is a powerful open-source 3D creation suite, offering modeling, sculpting, animation, and rendering tools.",
+      "descricao": "Suíte de criação 3D de código aberto, com modelagem, escultura, animação e renderização.",
       "categoria": "Multimidia",
       "winget": "BlenderFoundation.Blender",
       "choco": "blender",
@@ -163,7 +163,7 @@
     {
       "id": "bruno",
       "nome": "Bruno",
-      "descricao": "Bruno is a local-first API client that stores collections as plain text files for version control and collaboration.",
+      "descricao": "Cliente de API que funciona localmente e salva as coleções como arquivos de texto, fáceis de versionar e compartilhar.",
       "categoria": "Desenvolvimento",
       "winget": "Bruno.Bruno",
       "choco": "bruno",
@@ -173,7 +173,7 @@
     {
       "id": "bulkcrapuninstaller",
       "nome": "Bulk Crap Uninstaller",
-      "descricao": "Bulk Crap Uninstaller is a free and open-source uninstaller utility for Windows. It helps users remove unwanted programs and clean up their system by uninstalling multiple applications at once.",
+      "descricao": "Desinstalador livre e de código aberto para Windows que remove vários programas de uma vez e limpa o que sobra.",
       "categoria": "Utilitarios",
       "winget": "Klocman.BulkCrapUninstaller",
       "choco": "bulk-crap-uninstaller",
@@ -183,7 +183,7 @@
     {
       "id": "blurautoclicker",
       "nome": "BlurAutoClicker",
-      "descricao": "An Auto-clicker with a few advanced features and generally better performance than popular alternatives.",
+      "descricao": "Auto-clicker com alguns recursos avançados e desempenho em geral melhor que o das alternativas populares.",
       "categoria": "Utilitarios",
       "winget": "Blur009.BlurAutoClicker",
       "choco": "na",
@@ -193,7 +193,7 @@
     {
       "id": "calibre",
       "nome": "Calibre",
-      "descricao": "Calibre is a powerful and easy-to-use e-book manager, viewer, and converter.",
+      "descricao": "Gerenciador, leitor e conversor de e-books, completo e fácil de usar.",
       "categoria": "Multimidia",
       "winget": "calibre.calibre",
       "choco": "calibre",
@@ -203,7 +203,7 @@
     {
       "id": "cemu",
       "nome": "Cemu",
-      "descricao": "Cemu is a highly experimental software to emulate Wii U applications on PC.",
+      "descricao": "Emulador experimental que roda aplicativos do Wii U no PC.",
       "categoria": "Jogos",
       "winget": "Cemu.Cemu",
       "choco": "cemu",
@@ -213,7 +213,7 @@
     {
       "id": "chatgpt",
       "nome": "ChatGPT Desktop",
-      "descricao": "The official ChatGPT desktop app for Windows, distributed through the Microsoft Store.",
+      "descricao": "Aplicativo oficial do ChatGPT para Windows, distribuído pela Microsoft Store.",
       "categoria": "Desenvolvimento",
       "winget": "msstore:9NT1R1C2HH7J",
       "choco": "na",
@@ -223,7 +223,7 @@
     {
       "id": "chatterino",
       "nome": "Chatterino",
-      "descricao": "Chatterino is a chat client for Twitch chat that offers a clean and customizable interface for a better streaming experience.",
+      "descricao": "Cliente de chat da Twitch com interface limpa e personalizável.",
       "categoria": "Comunicacao",
       "winget": "ChatterinoTeam.Chatterino",
       "choco": "chatterino",
@@ -233,7 +233,7 @@
     {
       "id": "chrome",
       "nome": "Chrome",
-      "descricao": "Google Chrome is a widely used web browser known for its speed, simplicity, and seamless integration with Google services.",
+      "descricao": "Navegador do Google, o mais usado no mundo e referência de compatibilidade para sites.",
       "categoria": "Navegadores",
       "winget": "Google.Chrome",
       "choco": "googlechrome",
@@ -243,7 +243,7 @@
     {
       "id": "chromium",
       "nome": "Chromium",
-      "descricao": "Chromium is the open-source project that serves as the foundation for various web browsers, including Chrome.",
+      "descricao": "Projeto de código aberto que serve de base para vários navegadores, incluindo o Chrome.",
       "categoria": "Navegadores",
       "winget": "Hibbiki.Chromium",
       "choco": "chromium",
@@ -253,7 +253,7 @@
     {
       "id": "cinebenchr23",
       "nome": "Cinebench R23",
-      "descricao": "Cinebench R23 is a benchmark tool for comparing CPU rendering performance across systems.",
+      "descricao": "Benchmark que compara o desempenho de renderização da CPU entre máquinas.",
       "categoria": "Ferramentas Pro",
       "winget": "Maxon.CinebenchR23",
       "choco": "na",
@@ -263,7 +263,7 @@
     {
       "id": "claude",
       "nome": "Claude Desktop",
-      "descricao": "Anthropic's Claude desktop application for focused AI-assisted work and chat.",
+      "descricao": "Aplicativo de desktop do Claude, da Anthropic, para conversas e trabalho assistido por IA.",
       "categoria": "Desenvolvimento",
       "winget": "Anthropic.Claude",
       "choco": "claude",
@@ -273,7 +273,7 @@
     {
       "id": "claude-code",
       "nome": "Claude Code",
-      "descricao": "Anthropic's agentic coding tool for terminal and IDE development workflows.",
+      "descricao": "Ferramenta de programação agêntica da Anthropic para o terminal e para IDEs.",
       "categoria": "Desenvolvimento",
       "winget": "Anthropic.ClaudeCode",
       "choco": "claude-code",
@@ -283,7 +283,7 @@
     {
       "id": "cmake",
       "nome": "CMake",
-      "descricao": "CMake is an open-source, cross-platform family of tools designed to build, test and package software.",
+      "descricao": "Conjunto de ferramentas de código aberto e multiplataforma para compilar, testar e empacotar software.",
       "categoria": "Desenvolvimento",
       "winget": "Kitware.CMake",
       "choco": "cmake",
@@ -293,7 +293,7 @@
     {
       "id": "codex",
       "nome": "Codex",
-      "descricao": "Codex CLI is an OpenAI coding agent that runs locally in your terminal.",
+      "descricao": "Codex CLI: agente de programação da OpenAI que roda localmente no terminal.",
       "categoria": "Desenvolvimento",
       "winget": "OpenAI.Codex",
       "choco": "codex",
@@ -303,7 +303,7 @@
     {
       "id": "cpuz",
       "nome": "CPU-Z",
-      "descricao": "CPU-Z is a system monitoring and diagnostic tool for Windows. It provides detailed information about the computer's hardware components, including the CPU, memory, and motherboard.",
+      "descricao": "Ferramenta de diagnóstico que mostra em detalhes o hardware do PC: CPU, memória e placa-mãe.",
       "categoria": "Ferramentas Pro",
       "winget": "CPUID.CPU-Z",
       "choco": "cpu-z",
@@ -323,7 +323,7 @@
     {
       "id": "crystaldiskmark",
       "nome": "Crystal Disk Mark",
-      "descricao": "Crystal Disk Mark is a disk benchmarking tool that measures the read and write speeds of storage devices. It helps users assess the performance of their hard drives and SSDs.",
+      "descricao": "Benchmark de disco que mede as velocidades de leitura e escrita de HDs e SSDs.",
       "categoria": "Utilitarios",
       "winget": "CrystalDewWorld.CrystalDiskMark",
       "choco": "crystaldiskmark",
@@ -333,7 +333,7 @@
     {
       "id": "cursor",
       "nome": "Cursor",
-      "descricao": "AI-powered code editor (VS Code-based) with agentic coding features and integrated AI assistance for development workflows.",
+      "descricao": "Editor de código com IA baseado no VS Code, com recursos de programação agêntica e assistente integrado.",
       "categoria": "Desenvolvimento",
       "winget": "Anysphere.Cursor",
       "choco": "cursoride",
@@ -343,7 +343,7 @@
     {
       "id": "ddu",
       "nome": "Display Driver Uninstaller",
-      "descricao": "Display Driver Uninstaller (DDU) is a tool for completely uninstalling graphics drivers from NVIDIA, AMD, and Intel. It is useful for troubleshooting graphics driver-related issues.",
+      "descricao": "Display Driver Uninstaller: remove por completo drivers de vídeo NVIDIA, AMD e Intel; útil para resolver problemas de driver.",
       "categoria": "Ferramentas Pro",
       "winget": "Wagnardsoft.DisplayDriverUninstaller",
       "choco": "ddu",
@@ -363,7 +363,7 @@
     {
       "id": "dismtools",
       "nome": "DISMTools",
-      "descricao": "DISMTools is a fast, customizable GUI for the DISM utility, supporting Windows images from Windows 7 onward. It handles installations on any drive, offers project support, and lets users tweak settings like color modes, language, and DISM versions; powered by both native DISM and a managed DISM API.",
+      "descricao": "Interface gráfica rápida e personalizável para o DISM, compatível com imagens do Windows 7 em diante, com suporte a projetos e instalação em qualquer unidade.",
       "categoria": "Ferramentas Microsoft",
       "winget": "CodingWondersSoftware.DISMTools.Stable",
       "choco": "dismtools",
@@ -373,7 +373,7 @@
     {
       "id": "ntlite",
       "nome": "NTLite",
-      "descricao": "Integrate updates, drivers, automate Windows and application setup, speedup Windows deployment process and have it all set for the next time.",
+      "descricao": "Integra atualizações e drivers em imagens do Windows e automatiza a instalação do sistema e dos aplicativos.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Nlitesoft.NTLite",
       "choco": "ntlite-free",
@@ -383,7 +383,7 @@
     {
       "id": "dorion",
       "nome": "Dorion",
-      "descricao": "Tiny alternative Discord client with a smaller footprint, snappier startup, themes, plugins and more!",
+      "descricao": "Cliente alternativo e leve do Discord, que abre mais rápido e aceita temas e plugins.",
       "categoria": "Comunicacao",
       "winget": "SpikeHD.Dorion",
       "choco": "dorion",
@@ -393,7 +393,7 @@
     {
       "id": "dockerdesktop",
       "nome": "Docker Desktop",
-      "descricao": "Docker Desktop provides a local environment for building, running, and testing containerized applications on Windows.",
+      "descricao": "Ambiente local para criar, rodar e testar aplicações em contêineres no Windows.",
       "categoria": "Desenvolvimento",
       "winget": "Docker.DockerDesktop",
       "choco": "docker-desktop",
@@ -403,7 +403,7 @@
     {
       "id": "dotnet6",
       "nome": ".NET Desktop Runtime 6",
-      "descricao": ".NET Desktop Runtime 6 is a runtime environment required for running applications developed with .NET 6.",
+      "descricao": "Runtime necessário para rodar aplicativos de desktop feitos com .NET 6.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.DotNet.DesktopRuntime.6",
       "choco": "dotnet-6.0-runtime",
@@ -413,7 +413,7 @@
     {
       "id": "dotnet8",
       "nome": ".NET Desktop Runtime 8",
-      "descricao": ".NET Desktop Runtime 8 is a runtime environment required for running applications developed with .NET 8.",
+      "descricao": "Runtime necessário para rodar aplicativos de desktop feitos com .NET 8.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.DotNet.DesktopRuntime.8",
       "choco": "dotnet-8.0-runtime",
@@ -423,7 +423,7 @@
     {
       "id": "dotnet9",
       "nome": ".NET Desktop Runtime 9",
-      "descricao": ".NET Desktop Runtime 9 is a runtime environment required for running applications developed with .NET 9.",
+      "descricao": "Runtime necessário para rodar aplicativos de desktop feitos com .NET 9.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.DotNet.DesktopRuntime.9",
       "choco": "dotnet-9.0-runtime",
@@ -433,7 +433,7 @@
     {
       "id": "dotnet10",
       "nome": ".NET Desktop Runtime 10",
-      "descricao": ".NET Desktop Runtime 10 is a runtime environment required for running applications developed with .NET 10.",
+      "descricao": "Runtime necessário para rodar aplicativos de desktop feitos com .NET 10.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.DotNet.DesktopRuntime.10",
       "choco": "dotnet-10.0-runtime",
@@ -443,7 +443,7 @@
     {
       "id": "dropbox",
       "nome": "Dropbox",
-      "descricao": "Dropbox is a cloud storage client for syncing files, sharing content, and keeping documents available across devices.",
+      "descricao": "Cliente de armazenamento em nuvem para sincronizar e compartilhar arquivos entre dispositivos.",
       "categoria": "Utilitarios",
       "winget": "Dropbox.Dropbox",
       "choco": "dropbox",
@@ -453,7 +453,7 @@
     {
       "id": "eaapp",
       "nome": "EA App",
-      "descricao": "EA App is a platform for accessing and playing Electronic Arts games.",
+      "descricao": "Plataforma para acessar e jogar os jogos da Electronic Arts.",
       "categoria": "Jogos",
       "winget": "ElectronicArts.EADesktop",
       "choco": "ea-app",
@@ -463,7 +463,7 @@
     {
       "id": "eartrumpet",
       "nome": "EarTrumpet (Audio)",
-      "descricao": "EarTrumpet is an audio control app for Windows, providing a simple and intuitive interface for managing sound settings.",
+      "descricao": "Controle de volume para Windows, com interface simples para ajustar o som de cada aplicativo.",
       "categoria": "Multimidia",
       "winget": "File-New-Project.EarTrumpet",
       "choco": "eartrumpet",
@@ -473,7 +473,7 @@
     {
       "id": "edge",
       "nome": "Edge",
-      "descricao": "Microsoft Edge is a modern web browser built on Chromium, offering performance, security, and integration with Microsoft services.",
+      "descricao": "Navegador da Microsoft baseado em Chromium, integrado aos serviços da Microsoft.",
       "categoria": "Navegadores",
       "winget": "Microsoft.Edge",
       "choco": "microsoft-edge",
@@ -483,7 +483,7 @@
     {
       "id": "es-de",
       "nome": "EmulationStation Desktop Edition",
-      "descricao": "EmulationStation Desktop Edition is a frontend for browsing and launching games from your multi-platform game collection.",
+      "descricao": "Frontend para navegar e abrir jogos de uma coleção com várias plataformas (emulação).",
       "categoria": "Jogos",
       "winget": "ES-DE.EmulationStation-DE",
       "choco": "",
@@ -493,7 +493,7 @@
     {
       "id": "enteauth",
       "nome": "Ente Auth",
-      "descricao": "Ente Auth is a free, cross-platform, end-to-end encrypted authenticator app.",
+      "descricao": "Autenticador de dois fatores gratuito, multiplataforma e com criptografia de ponta a ponta.",
       "categoria": "Utilitarios",
       "winget": "ente-io.auth-desktop",
       "choco": "ente-auth",
@@ -503,7 +503,7 @@
     {
       "id": "epicgames",
       "nome": "Epic Games Launcher",
-      "descricao": "Epic Games Launcher is the client for accessing and playing games from the Epic Games Store.",
+      "descricao": "Cliente para acessar e jogar os jogos da Epic Games Store.",
       "categoria": "Jogos",
       "winget": "EpicGames.EpicGamesLauncher",
       "choco": "epicgameslauncher",
@@ -513,7 +513,7 @@
     {
       "id": "files",
       "nome": "Files",
-      "descricao": "Alternative file explorer.",
+      "descricao": "Gerenciador de arquivos alternativo ao Explorador do Windows.",
       "categoria": "Utilitarios",
       "winget": "FilesCommunity.Files",
       "choco": "files",
@@ -523,7 +523,7 @@
     {
       "id": "fileconverter",
       "nome": "File Converter",
-      "descricao": "File Converter converts and compresses files from the Windows Explorer context menu.",
+      "descricao": "Converte e comprime arquivos direto pelo menu de contexto do Explorador.",
       "categoria": "Multimidia",
       "winget": "AdrienAllard.FileConverter",
       "choco": "file-converter",
@@ -543,7 +543,7 @@
     {
       "id": "firefoxesr",
       "nome": "Firefox ESR",
-      "descricao": "Mozilla Firefox is an open-source web browser known for its customization options, privacy features, and extensions. Firefox ESR (Extended Support Release) receives major updates every 42 weeks with minor updates such as crash fixes, security fixes and policy updates as needed, but at least every four weeks.",
+      "descricao": "Versão de suporte estendido do Firefox: grandes atualizações a cada 42 semanas e correções de segurança pelo menos a cada quatro semanas.",
       "categoria": "Navegadores",
       "winget": "Mozilla.Firefox.ESR",
       "choco": "FirefoxESR",
@@ -553,7 +553,7 @@
     {
       "id": "floorp",
       "nome": "Floorp",
-      "descricao": "Floorp is an open-source web browser project that aims to provide a simple and fast browsing experience.",
+      "descricao": "Navegador de código aberto baseado no Firefox, com foco em simplicidade e rapidez.",
       "categoria": "Navegadores",
       "winget": "Ablaze.Floorp",
       "choco": "floorp",
@@ -563,7 +563,7 @@
     {
       "id": "flux",
       "nome": "F.lux",
-      "descricao": "f.lux adjusts the color temperature of your screen to reduce eye strain during nighttime use.",
+      "descricao": "Ajusta a temperatura de cor da tela à noite para cansar menos a vista.",
       "categoria": "Utilitarios",
       "winget": "flux.flux",
       "choco": "flux",
@@ -573,7 +573,7 @@
     {
       "id": "foobar",
       "nome": "foobar2000 (Music Player)",
-      "descricao": "foobar2000 is a highly customizable and extensible music player for Windows, known for its modular design and advanced features.",
+      "descricao": "Reprodutor de música altamente personalizável e extensível, com design modular e recursos avançados.",
       "categoria": "Multimidia",
       "winget": "PeterPawlowski.foobar2000",
       "choco": "foobar2000",
@@ -583,7 +583,7 @@
     {
       "id": "fnm",
       "nome": "Fast Node Manager",
-      "descricao": "Fast Node Manager (fnm) is a fast, cross-platform tool for installing and switching between Node.js versions.",
+      "descricao": "Fast Node Manager: instala e troca versões do Node.js de forma rápida e multiplataforma.",
       "categoria": "Desenvolvimento",
       "winget": "Schniz.fnm",
       "choco": "fnm",
@@ -593,7 +593,7 @@
     {
       "id": "foxpdfreader",
       "nome": "Foxit PDF Reader",
-      "descricao": "Foxit PDF Reader is a free PDF viewer with a familiar ribbon-style interface.",
+      "descricao": "Leitor de PDF gratuito com interface em faixa de opções, no estilo do Office.",
       "categoria": "Documentos",
       "winget": "Foxit.FoxitReader",
       "choco": "foxitreader",
@@ -603,7 +603,7 @@
     {
       "id": "geforcenow",
       "nome": "GeForce NOW",
-      "descricao": "GeForce NOW is a cloud gaming service that allows you to play high-quality PC games on your device.",
+      "descricao": "Serviço de jogos em nuvem da NVIDIA para jogar títulos de PC em qualquer dispositivo.",
       "categoria": "Jogos",
       "winget": "Nvidia.GeForceNow",
       "choco": "nvidia-geforce-now",
@@ -613,7 +613,7 @@
     {
       "id": "gimp",
       "nome": "GIMP (Image Editor)",
-      "descricao": "GIMP is a versatile open-source raster graphics editor used for tasks such as photo retouching, image editing, and image composition.",
+      "descricao": "Editor de imagens de código aberto, usado para retoque de fotos, edição e composição.",
       "categoria": "Multimidia",
       "winget": "GIMP.GIMP.3",
       "choco": "gimp",
@@ -633,7 +633,7 @@
     {
       "id": "gitextensions",
       "nome": "Git Extensions",
-      "descricao": "Git Extensions is a graphical Git client for Windows with repository, history, and commit management tools.",
+      "descricao": "Cliente Git gráfico para Windows, com ferramentas para repositórios, histórico e commits.",
       "categoria": "Desenvolvimento",
       "winget": "GitExtensionsTeam.GitExtensions",
       "choco": "gitextensions",
@@ -643,7 +643,7 @@
     {
       "id": "githubcli",
       "nome": "GitHub CLI",
-      "descricao": "GitHub CLI brings pull requests, issues, releases, and other GitHub workflows to the terminal.",
+      "descricao": "Traz pull requests, issues, releases e outros fluxos do GitHub para o terminal.",
       "categoria": "Desenvolvimento",
       "winget": "GitHub.cli",
       "choco": "gh",
@@ -653,7 +653,7 @@
     {
       "id": "githubdesktop",
       "nome": "GitHub Desktop",
-      "descricao": "GitHub Desktop is a visual Git client that simplifies collaboration on GitHub repositories with an easy-to-use interface.",
+      "descricao": "Cliente Git visual que simplifica o trabalho com repositórios do GitHub.",
       "categoria": "Desenvolvimento",
       "winget": "GitHub.GitHubDesktop",
       "choco": "git;github-desktop",
@@ -663,7 +663,7 @@
     {
       "id": "gog",
       "nome": "GOG Galaxy",
-      "descricao": "GOG Galaxy is a gaming client that offers DRM-free games, additional content, and more.",
+      "descricao": "Cliente de jogos da GOG, com jogos sem DRM e conteúdo extra.",
       "categoria": "Jogos",
       "winget": "GOG.Galaxy",
       "choco": "goggalaxy",
@@ -673,7 +673,7 @@
     {
       "id": "golang",
       "nome": "Go",
-      "descricao": "Go (or Golang) is a statically typed, compiled programming language designed for simplicity, reliability, and efficiency.",
+      "descricao": "Go (Golang): linguagem compilada e de tipagem estática, pensada para ser simples, confiável e eficiente.",
       "categoria": "Desenvolvimento",
       "winget": "GoLang.Go",
       "choco": "golang",
@@ -683,7 +683,7 @@
     {
       "id": "googledrive",
       "nome": "Google Drive",
-      "descricao": "File syncing across devices all tied to your Google account.",
+      "descricao": "Sincroniza arquivos entre dispositivos pela sua conta Google.",
       "categoria": "Utilitarios",
       "winget": "Google.GoogleDrive",
       "choco": "googledrive",
@@ -693,7 +693,7 @@
     {
       "id": "gpuz",
       "nome": "GPU-Z",
-      "descricao": "GPU-Z provides detailed information about your graphics card and GPU.",
+      "descricao": "Mostra informações detalhadas da placa de vídeo e da GPU.",
       "categoria": "Ferramentas Pro",
       "winget": "TechPowerUp.GPU-Z",
       "choco": "gpu-z",
@@ -703,7 +703,7 @@
     {
       "id": "gsudo",
       "nome": "gsudo",
-      "descricao": "gsudo is a sudo equivalent for Windows. It allows you to run commands with elevated administrative privileges directly within the current console window.",
+      "descricao": "Equivalente ao sudo para Windows: roda comandos como administrador na própria janela do console.",
       "categoria": "Ferramentas Pro",
       "winget": "gerardog.gsudo",
       "choco": "gsudo",
@@ -713,7 +713,7 @@
     {
       "id": "helium",
       "nome": "Helium",
-      "descricao": "Private, fast, and honest web browser.",
+      "descricao": "Navegador com foco em privacidade e rapidez.",
       "categoria": "Navegadores",
       "winget": "ImputNet.Helium",
       "choco": "helium",
@@ -723,7 +723,7 @@
     {
       "id": "hugo",
       "nome": "Hugo",
-      "descricao": "The world's fastest framework for building websites.",
+      "descricao": "Framework rápido para gerar sites estáticos.",
       "categoria": "Utilitarios",
       "winget": "Hugo.Hugo.Extended",
       "choco": "hugo-extended",
@@ -733,7 +733,7 @@
     {
       "id": "handbrake",
       "nome": "HandBrake",
-      "descricao": "HandBrake is an open-source video transcoder, allowing you to convert video from nearly any format to a selection of widely supported codecs.",
+      "descricao": "Conversor de vídeo de código aberto que transforma praticamente qualquer formato em codecs amplamente suportados.",
       "categoria": "Multimidia",
       "winget": "HandBrake.HandBrake",
       "choco": "handbrake",
@@ -743,7 +743,7 @@
     {
       "id": "heroiclauncher",
       "nome": "Heroic Games Launcher",
-      "descricao": "Heroic Games Launcher is an open-source alternative game launcher for Epic Games Store.",
+      "descricao": "Launcher alternativo e de código aberto para jogos da Epic Games Store (e GOG).",
       "categoria": "Jogos",
       "winget": "HeroicGamesLauncher.HeroicGamesLauncher",
       "choco": "heroic-games-launcher",
@@ -753,7 +753,7 @@
     {
       "id": "hwinfo",
       "nome": "HWiNFO",
-      "descricao": "HWiNFO provides comprehensive hardware information and diagnostics for Windows.",
+      "descricao": "Informações e diagnóstico completos do hardware, incluindo sensores em tempo real.",
       "categoria": "Ferramentas Pro",
       "winget": "REALiX.HWiNFO",
       "choco": "hwinfo",
@@ -763,7 +763,7 @@
     {
       "id": "hwmonitor",
       "nome": "HWMonitor",
-      "descricao": "HWMonitor is a hardware monitoring program that reads PC systems main health sensors.",
+      "descricao": "Monitora os principais sensores do PC: temperaturas, tensões e ventoinhas.",
       "categoria": "Ferramentas Pro",
       "winget": "CPUID.HWMonitor",
       "choco": "hwmonitor",
@@ -773,7 +773,7 @@
     {
       "id": "imageglass",
       "nome": "ImageGlass (Image Viewer)",
-      "descricao": "ImageGlass is a versatile image viewer with support for various image formats and a focus on simplicity and speed.",
+      "descricao": "Visualizador de imagens simples e rápido, compatível com vários formatos.",
       "categoria": "Multimidia",
       "winget": "DuongDieuPhap.ImageGlass",
       "choco": "imageglass",
@@ -783,7 +783,7 @@
     {
       "id": "internetdownloadmanager",
       "nome": "Internet Download Manager",
-      "descricao": "Internet Download Manager is a download manager for accelerating, resuming, and scheduling file downloads.",
+      "descricao": "Gerenciador de downloads para acelerar, retomar e agendar downloads.",
       "categoria": "Utilitarios",
       "winget": "Tonec.InternetDownloadManager",
       "choco": "internet-download-manager",
@@ -793,7 +793,7 @@
     {
       "id": "irfanview",
       "nome": "IrfanView",
-      "descricao": "IrfanView is a lightweight, fast, and free image viewer and editor. Supports multiple formats, batch processing, and powerful plugins.",
+      "descricao": "Visualizador e editor de imagens leve, rápido e gratuito, com processamento em lote e plugins.",
       "categoria": "Multimidia",
       "winget": "IrfanSkiljan.IrfanView",
       "choco": "irfanview",
@@ -803,7 +803,7 @@
     {
       "id": "itch",
       "nome": "Itch.io",
-      "descricao": "Itch.io is a digital distribution platform for indie games and creative projects.",
+      "descricao": "Plataforma de distribuição de jogos independentes e projetos criativos.",
       "categoria": "Jogos",
       "winget": "ItchIo.Itch",
       "choco": "itch",
@@ -813,7 +813,7 @@
     {
       "id": "itunes",
       "nome": "iTunes",
-      "descricao": "iTunes is a media player, media library, and online radio broadcaster application developed by Apple Inc.",
+      "descricao": "Reprodutor e biblioteca de mídia da Apple, usado também para sincronizar iPhone e iPad.",
       "categoria": "Multimidia",
       "winget": "Apple.iTunes",
       "choco": "itunes",
@@ -823,7 +823,7 @@
     {
       "id": "java8",
       "nome": "Amazon Corretto 8 (LTS)",
-      "descricao": "Amazon Corretto is a no-cost, multiplatform, production-ready distribution of the Open Java Development Kit (OpenJDK).",
+      "descricao": "Amazon Corretto 8: distribuição gratuita e pronta para produção do OpenJDK (Java).",
       "categoria": "Desenvolvimento",
       "winget": "Amazon.Corretto.8.JDK",
       "choco": "corretto8jdk",
@@ -833,7 +833,7 @@
     {
       "id": "java21",
       "nome": "Amazon Corretto 21 (LTS)",
-      "descricao": "Amazon Corretto is a no-cost, multiplatform, production-ready distribution of the Open Java Development Kit (OpenJDK).",
+      "descricao": "Amazon Corretto 21: distribuição gratuita e pronta para produção do OpenJDK (Java).",
       "categoria": "Desenvolvimento",
       "winget": "Amazon.Corretto.21.JDK",
       "choco": "corretto21jdk",
@@ -843,7 +843,7 @@
     {
       "id": "java25",
       "nome": "Amazon Corretto 25 (LTS)",
-      "descricao": "Amazon Corretto is a no-cost, multiplatform, production-ready distribution of the Open Java Development Kit (OpenJDK).",
+      "descricao": "Amazon Corretto 25: distribuição gratuita e pronta para produção do OpenJDK (Java).",
       "categoria": "Desenvolvimento",
       "winget": "Amazon.Corretto.25.JDK",
       "choco": "corretto25jdk",
@@ -853,7 +853,7 @@
     {
       "id": "jellyfinmediaplayer",
       "nome": "Jellyfin Media Player",
-      "descricao": "Jellyfin Media Player is a client application for the Jellyfin media server, providing access to your media library.",
+      "descricao": "Cliente do servidor de mídia Jellyfin para acessar sua biblioteca.",
       "categoria": "Auto-hospedado",
       "winget": "Jellyfin.JellyfinMediaPlayer",
       "choco": "jellyfin-media-player",
@@ -863,7 +863,7 @@
     {
       "id": "jellyfinserver",
       "nome": "Jellyfin Server",
-      "descricao": "Jellyfin Server is an open-source media server software, allowing you to organize and stream your media library.",
+      "descricao": "Servidor de mídia de código aberto para organizar e transmitir sua biblioteca de filmes, séries e músicas.",
       "categoria": "Auto-hospedado",
       "winget": "Jellyfin.Server",
       "choco": "jellyfin",
@@ -873,7 +873,7 @@
     {
       "id": "jetbrains",
       "nome": "Jetbrains Toolbox",
-      "descricao": "Jetbrains Toolbox is a platform for easy installation and management of JetBrains developer tools.",
+      "descricao": "Instala e gerencia as ferramentas de desenvolvimento da JetBrains.",
       "categoria": "Desenvolvimento",
       "winget": "JetBrains.Toolbox",
       "choco": "jetbrainstoolbox",
@@ -883,7 +883,7 @@
     {
       "id": "jpegview",
       "nome": "JPEG View",
-      "descricao": "JPEGView is a lean, fast and highly configurable viewer/editor for JPEG, BMP, PNG, WEBP, TGA, GIF, JXL, HEIC, HEIF, AVIF, and TIFF images with a minimal GUI.",
+      "descricao": "Visualizador e editor de imagens enxuto e rápido (JPEG, PNG, WEBP, HEIC, AVIF e outros), com interface mínima.",
       "categoria": "Utilitarios",
       "winget": "sylikc.JPEGView",
       "choco": "jpegview",
@@ -893,7 +893,7 @@
     {
       "id": "joplin",
       "nome": "Joplin",
-      "descricao": "Joplin is an open-source note-taking and to-do application with synchronization capabilities.",
+      "descricao": "Aplicativo de notas e tarefas de código aberto, com sincronização.",
       "categoria": "Documentos",
       "winget": "Joplin.Joplin",
       "choco": "joplin",
@@ -903,7 +903,7 @@
     {
       "id": "keepassxc",
       "nome": "KeePassXC",
-      "descricao": "KeePassXC is a modern, secure, and open-source password manager that stores and manages your most sensitive information. You can run KeePassXC on Windows, macOS, and Linux systems. KeePassXC is for people with extremely high demands of secure personal data management. It saves many different types of information, such as usernames, passwords, URLs, attachments, and notes in an offline, encrypted file that can be stored in any location, including private and public cloud solutions. For easy identification and management, user-defined titles and icons can be specified for entries. In addition, entries are sorted into customizable groups. An integrated search function allows you to use advanced patterns to easily find any entry in your database. A customizable, fast, and easy-to-use password generator utility allows you to create passwords with any combination of characters or easy to remember passphrases.",
+      "descricao": "Gerenciador de senhas moderno e de código aberto que guarda senhas, URLs, anexos e notas num arquivo criptografado offline, com gerador de senhas e busca avançada.",
       "categoria": "Utilitarios",
       "winget": "KeePassXCTeam.KeePassXC",
       "choco": "keepassxc",
@@ -913,7 +913,7 @@
     {
       "id": "klite",
       "nome": "K-Lite Codec Standard",
-      "descricao": "K-Lite Codec Pack Standard is a collection of audio and video codecs and related tools, providing essential components for media playback.",
+      "descricao": "K-Lite Codec Pack Standard: coleção de codecs de áudio e vídeo e ferramentas para reproduzir mídia.",
       "categoria": "Multimidia",
       "winget": "CodecGuide.K-LiteCodecPack.Standard",
       "choco": "k-litecodecpack-standard",
@@ -923,7 +923,7 @@
     {
       "id": "kodi",
       "nome": "Kodi Media Center",
-      "descricao": "Kodi is an open-source media center application that allows you to play and view most videos, music, podcasts, and other digital media files.",
+      "descricao": "Central de mídia de código aberto para vídeos, músicas, podcasts e outros arquivos.",
       "categoria": "Auto-hospedado",
       "winget": "XBMCFoundation.Kodi",
       "choco": "kodi",
@@ -933,7 +933,7 @@
     {
       "id": "lazygit",
       "nome": "Lazygit",
-      "descricao": "Simple terminal UI for git commands.",
+      "descricao": "Interface simples no terminal para comandos do git.",
       "categoria": "Desenvolvimento",
       "winget": "JesseDuffield.lazygit",
       "choco": "lazygit",
@@ -943,7 +943,7 @@
     {
       "id": "libreoffice",
       "nome": "LibreOffice",
-      "descricao": "LibreOffice is a powerful and free office suite, compatible with other major office suites.",
+      "descricao": "Suíte de escritório livre e completa, compatível com os principais formatos do mercado.",
       "categoria": "Documentos",
       "winget": "TheDocumentFoundation.LibreOffice",
       "choco": "libreoffice-fresh",
@@ -953,7 +953,7 @@
     {
       "id": "librewolf",
       "nome": "LibreWolf",
-      "descricao": "LibreWolf is a privacy-focused web browser based on Firefox, with additional privacy and security enhancements.",
+      "descricao": "Navegador baseado no Firefox com ajustes extras de privacidade e segurança.",
       "categoria": "Navegadores",
       "winget": "LibreWolf.LibreWolf",
       "choco": "librewolf",
@@ -963,7 +963,7 @@
     {
       "id": "localsend",
       "nome": "LocalSend",
-      "descricao": "An open-source cross-platform alternative to AirDrop.",
+      "descricao": "Alternativa de código aberto e multiplataforma ao AirDrop para trocar arquivos na rede local.",
       "categoria": "Auto-hospedado",
       "winget": "LocalSend.LocalSend",
       "choco": "localsend.install",
@@ -973,7 +973,7 @@
     {
       "id": "mpc-qt",
       "nome": "mpc-qt",
-      "descricao": "Media Player Classic Qute Theater",
+      "descricao": "Media Player Classic Qute Theater: reprodutor de vídeo inspirado no MPC-HC.",
       "categoria": "Multimidia",
       "winget": "mpc-qt.mpc-qt",
       "choco": "mediainfo",
@@ -983,7 +983,7 @@
     {
       "id": "mpv",
       "nome": "mpv",
-      "descricao": "mpv is a free, open source, and cross-platform media player supporting a wide variety of media formats, codecs, and subtitle types.",
+      "descricao": "Reprodutor de mídia livre e multiplataforma, compatível com muitos formatos, codecs e legendas.",
       "categoria": "Multimidia",
       "winget": "shinchiro.mpv",
       "choco": null,
@@ -993,7 +993,7 @@
     {
       "id": "matrix",
       "nome": "Element",
-      "descricao": "Element is a client for Matrix; an open network for secure, decentralized communication.",
+      "descricao": "Element: cliente do Matrix, rede aberta para comunicação segura e descentralizada.",
       "categoria": "Comunicacao",
       "winget": "Element.Element",
       "choco": "element-desktop",
@@ -1003,7 +1003,7 @@
     {
       "id": "minitoolpartitionwizard",
       "nome": "MiniTool Partition Wizard",
-      "descricao": "Comprehensive free partition manager that performs advanced operations Windows natively cannot, such as merging partitions, converting file systems, and organizing disk capacity.",
+      "descricao": "Gerenciador de partições gratuito que faz o que o Windows não faz sozinho: mesclar partições, converter sistemas de arquivos e reorganizar o disco.",
       "categoria": "Utilitarios",
       "winget": "MiniTool.PartitionWizard.Free",
       "choco": "minitoolpartitionwizard",
@@ -1013,7 +1013,7 @@
     {
       "id": "modrinth",
       "nome": "Modrinth App",
-      "descricao": "Modrinth App is a desktop application for managing Minecraft mods and modpacks.",
+      "descricao": "Aplicativo para gerenciar mods e modpacks de Minecraft.",
       "categoria": "Jogos",
       "winget": "Modrinth.ModrinthApp",
       "choco": "modrinth-app",
@@ -1023,7 +1023,7 @@
     {
       "id": "moonlight",
       "nome": "Moonlight/GameStream Client",
-      "descricao": "Moonlight/GameStream Client allows you to stream PC games to other devices over your local network.",
+      "descricao": "Cliente de streaming para jogar os jogos do PC em outros dispositivos pela rede local.",
       "categoria": "Auto-hospedado",
       "winget": "MoonlightGameStreamingProject.Moonlight",
       "choco": "moonlight-qt",
@@ -1033,7 +1033,7 @@
     {
       "id": "mpchc",
       "nome": "Media Player Classic - Home Cinema",
-      "descricao": "Media Player Classic - Home Cinema (MPC-HC) is a free and open-source video and audio player for Windows. MPC-HC is based on the original Guliverkli project and contains many additional features and bug fixes.",
+      "descricao": "Media Player Classic - Home Cinema: reprodutor de áudio e vídeo livre e de código aberto para Windows.",
       "categoria": "Multimidia",
       "winget": "clsid2.mpc-hc",
       "choco": "mpc-hc-clsid2",
@@ -1043,7 +1043,7 @@
     {
       "id": "msedgeredirect",
       "nome": "MSEdgeRedirect",
-      "descricao": "A Tool to Redirect News, Search, Widgets, Weather, and More to your default browser.",
+      "descricao": "Redireciona notícias, pesquisa, widgets, clima e outros links do Windows para o seu navegador padrão.",
       "categoria": "Utilitarios",
       "winget": "rcmaehl.MSEdgeRedirect",
       "choco": "msedgeredirect",
@@ -1053,7 +1053,7 @@
     {
       "id": "msiafterburner",
       "nome": "MSI Afterburner",
-      "descricao": "MSI Afterburner is a graphics card overclocking utility with advanced features.",
+      "descricao": "Utilitário de overclock e monitoramento de placas de vídeo.",
       "categoria": "Utilitarios",
       "winget": "Guru3D.Afterburner",
       "choco": "msiafterburner",
@@ -1063,7 +1063,7 @@
     {
       "id": "mullvadvpn",
       "nome": "Mullvad VPN",
-      "descricao": "This is the VPN client software for the Mullvad VPN service.",
+      "descricao": "Cliente do serviço de VPN Mullvad.",
       "categoria": "Ferramentas Pro",
       "winget": "MullvadVPN.MullvadVPN",
       "choco": "mullvad-app",
@@ -1073,7 +1073,7 @@
     {
       "id": "mullvadbrowser",
       "nome": "Mullvad Browser",
-      "descricao": "Mullvad Browser is a privacy-focused web browser, developed in partnership with the Tor Project.",
+      "descricao": "Navegador focado em privacidade, desenvolvido em parceria com o Tor Project.",
       "categoria": "Navegadores",
       "winget": "MullvadVPN.MullvadBrowser",
       "choco": "na",
@@ -1083,7 +1083,7 @@
     {
       "id": "nomacs",
       "nome": "nomacs",
-      "descricao": "nomacs is a free, open-source image viewer, which supports multiple platforms. You can use it for viewing all common image formats, including RAW and .psd images.",
+      "descricao": "Visualizador de imagens livre e multiplataforma, compatível com os formatos comuns, inclusive RAW e .psd.",
       "categoria": "Multimidia",
       "winget": "nomacs.nomacs",
       "choco": "nomacs",
@@ -1093,7 +1093,7 @@
     {
       "id": "nanazip",
       "nome": "NanaZip",
-      "descricao": "NanaZip is a fast and efficient file compression and decompression tool.",
+      "descricao": "Compactador e descompactador de arquivos rápido, derivado do 7-Zip.",
       "categoria": "Utilitarios",
       "winget": "M2Team.NanaZip",
       "choco": "nanazip",
@@ -1103,7 +1103,7 @@
     {
       "id": "netbird",
       "nome": "NetBird",
-      "descricao": "NetBird is an open-source alternative comparable to TailScale that can be connected to a self-hosted server.",
+      "descricao": "Alternativa de código aberto ao Tailscale, que pode usar um servidor próprio.",
       "categoria": "Auto-hospedado",
       "winget": "Netbird.Netbird",
       "choco": "netbird",
@@ -1113,7 +1113,7 @@
     {
       "id": "tailscale",
       "nome": "Tailscale",
-      "descricao": "The Tailscale client allows you to connect all your devices using WireGuard®, without the hassle. Tailscale makes it as easy as installing an app and signing in.",
+      "descricao": "Conecta todos os seus dispositivos numa rede privada com WireGuard, bastando instalar e entrar na conta.",
       "categoria": "Utilitarios",
       "winget": "Tailscale.Tailscale",
       "choco": "tailscale",
@@ -1123,7 +1123,7 @@
     {
       "id": "naps2",
       "nome": "NAPS2 (Scanner)",
-      "descricao": "NAPS2 is a document scanning application that simplifies the process of creating electronic documents.",
+      "descricao": "Aplicativo para digitalizar documentos e gerar PDFs.",
       "categoria": "Documentos",
       "winget": "Cyanfish.NAPS2",
       "choco": "naps2",
@@ -1133,7 +1133,7 @@
     {
       "id": "neovim",
       "nome": "Neovim",
-      "descricao": "Neovim is a highly extensible text editor and an improvement over the original Vim editor.",
+      "descricao": "Editor de texto altamente extensível, evolução do Vim.",
       "categoria": "Desenvolvimento",
       "winget": "Neovim.Neovim",
       "choco": "neovim",
@@ -1143,7 +1143,7 @@
     {
       "id": "nextclouddesktop",
       "nome": "Nextcloud Desktop",
-      "descricao": "Nextcloud Desktop is the official desktop client for the Nextcloud file synchronization and sharing platform.",
+      "descricao": "Cliente oficial de desktop para sincronizar e compartilhar arquivos com o Nextcloud.",
       "categoria": "Auto-hospedado",
       "winget": "Nextcloud.NextcloudDesktop",
       "choco": "nextcloud-client",
@@ -1153,7 +1153,7 @@
     {
       "id": "nmap",
       "nome": "Nmap",
-      "descricao": "Nmap (Network Mapper) is an open-source tool for network exploration and security auditing. It discovers devices on a network and provides information about their ports and services.",
+      "descricao": "Ferramenta de código aberto para explorar a rede e auditar segurança: descobre dispositivos, portas e serviços.",
       "categoria": "Ferramentas Pro",
       "winget": "Insecure.Nmap",
       "choco": "nmap",
@@ -1163,7 +1163,7 @@
     {
       "id": "nodejs",
       "nome": "NodeJS",
-      "descricao": "NodeJS is a JavaScript runtime built on Chrome's V8 JavaScript engine for building server-side and networking applications.",
+      "descricao": "Runtime de JavaScript baseado no V8 do Chrome, para aplicações de servidor e de rede.",
       "categoria": "Desenvolvimento",
       "winget": "OpenJS.NodeJS",
       "choco": "nodejs",
@@ -1173,7 +1173,7 @@
     {
       "id": "nodejslts",
       "nome": "NodeJS LTS",
-      "descricao": "NodeJS LTS provides Long-Term Support releases for stable and reliable server-side JavaScript development.",
+      "descricao": "Versão de suporte de longo prazo (LTS) do Node.js, mais estável.",
       "categoria": "Desenvolvimento",
       "winget": "OpenJS.NodeJS.LTS",
       "choco": "nodejs-lts",
@@ -1183,7 +1183,7 @@
     {
       "id": "pnpm",
       "nome": "pnpm",
-      "descricao": "pnpm is a fast and disk space efficient package manager for JavaScript and Node.js applications.",
+      "descricao": "Gerenciador de pacotes para JavaScript e Node.js, rápido e econômico em espaço em disco.",
       "categoria": "Desenvolvimento",
       "winget": "pnpm.pnpm",
       "choco": null,
@@ -1203,7 +1203,7 @@
     {
       "id": "nuget",
       "nome": "NuGet",
-      "descricao": "NuGet is a package manager for the .NET framework, enabling developers to manage and share libraries in their .NET applications.",
+      "descricao": "Gerenciador de pacotes do .NET para usar e compartilhar bibliotecas.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.NuGet",
       "choco": "nuget.commandline",
@@ -1213,7 +1213,7 @@
     {
       "id": "nvclean",
       "nome": "NVCleanstall",
-      "descricao": "NVCleanstall is a tool designed to customize NVIDIA driver installations, allowing advanced users to control more aspects of the installation process.",
+      "descricao": "Personaliza a instalação do driver NVIDIA, permitindo escolher quais componentes instalar.",
       "categoria": "Utilitarios",
       "winget": "TechPowerUp.NVCleanstall",
       "choco": "na",
@@ -1233,7 +1233,7 @@
     {
       "id": "obsidian",
       "nome": "Obsidian",
-      "descricao": "Obsidian is a powerful note-taking and knowledge management application.",
+      "descricao": "Aplicativo de notas e gestão de conhecimento baseado em arquivos Markdown.",
       "categoria": "Documentos",
       "winget": "Obsidian.Obsidian",
       "choco": "obsidian",
@@ -1243,7 +1243,7 @@
     {
       "id": "okular",
       "nome": "Okular",
-      "descricao": "Okular is a versatile document viewer with advanced features.",
+      "descricao": "Visualizador de documentos versátil (PDF e outros formatos) com recursos avançados.",
       "categoria": "Documentos",
       "winget": "KDE.Okular",
       "choco": "okular",
@@ -1253,7 +1253,7 @@
     {
       "id": "onedrive",
       "nome": "OneDrive",
-      "descricao": "OneDrive is a cloud storage service provided by Microsoft, allowing users to store and share files securely across devices.",
+      "descricao": "Armazenamento em nuvem da Microsoft para guardar e compartilhar arquivos entre dispositivos.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.OneDrive",
       "choco": "onedrive",
@@ -1263,7 +1263,7 @@
     {
       "id": "onlyoffice",
       "nome": "ONLYOFFICE Desktop",
-      "descricao": "ONLYOFFICE Desktop is a comprehensive office suite for document editing and collaboration.",
+      "descricao": "Suíte de escritório completa para editar documentos e colaborar.",
       "categoria": "Documentos",
       "winget": "ONLYOFFICE.DesktopEditors",
       "choco": "onlyoffice",
@@ -1273,7 +1273,7 @@
     {
       "id": "opautoclicker",
       "nome": "OPAutoClicker",
-      "descricao": "A full-fledged autoclicker with two modes of autoclicking, at your dynamic cursor location or at a prespecified location.",
+      "descricao": "Auto-clicker completo com dois modos: na posição atual do cursor ou num ponto definido.",
       "categoria": "Utilitarios",
       "winget": "OPAutoClicker.OPAutoClicker",
       "choco": "autoclicker",
@@ -1283,7 +1283,7 @@
     {
       "id": "openrgb",
       "nome": "OpenRGB",
-      "descricao": "OpenRGB is an open-source RGB lighting control software designed to manage and control RGB lighting for various components and peripherals.",
+      "descricao": "Controle de iluminação RGB de código aberto para vários componentes e periféricos.",
       "categoria": "Utilitarios",
       "winget": "OpenRGB.OpenRGB",
       "choco": "openrgb",
@@ -1293,7 +1293,7 @@
     {
       "id": "openvpn",
       "nome": "OpenVPN Connect",
-      "descricao": "OpenVPN Connect is a VPN client that allows you to connect securely to a VPN server. It provides a secure and encrypted connection for protecting your online privacy.",
+      "descricao": "Cliente VPN para conectar com segurança a um servidor OpenVPN.",
       "categoria": "Ferramentas Pro",
       "winget": "OpenVPNTechnologies.OpenVPNConnect",
       "choco": "openvpn-connect",
@@ -1303,7 +1303,7 @@
     {
       "id": "ovirtualbox",
       "nome": "Oracle VirtualBox",
-      "descricao": "Oracle VirtualBox is a powerful and free open-source virtualization tool for x86 and AMD64/Intel64 architectures.",
+      "descricao": "Virtualizador gratuito e de código aberto para rodar outros sistemas operacionais em máquinas virtuais.",
       "categoria": "Utilitarios",
       "winget": "Oracle.VirtualBox",
       "choco": "virtualbox",
@@ -1313,7 +1313,7 @@
     {
       "id": "policyplus",
       "nome": "Policy Plus",
-      "descricao": "Local Group Policy Editor plus more, for all Windows editions.",
+      "descricao": "Editor de Política de Grupo Local (e mais) que funciona em todas as edições do Windows, inclusive a Home.",
       "categoria": "Utilitarios",
       "winget": "Fleex255.PolicyPlus",
       "choco": "na",
@@ -1323,7 +1323,7 @@
     {
       "id": "processexplorer",
       "nome": "Process Explorer",
-      "descricao": "Process Explorer is a task manager and system monitor.",
+      "descricao": "Gerenciador de tarefas e monitor de sistema avançado da Sysinternals.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.Sysinternals.ProcessExplorer",
       "choco": "procexp",
@@ -1333,7 +1333,7 @@
     {
       "id": "paintdotnet",
       "nome": "Paint.NET",
-      "descricao": "Paint.NET is a free image and photo editing software for Windows. It features an intuitive user interface and supports a wide range of powerful editing tools.",
+      "descricao": "Editor de imagens e fotos gratuito para Windows, com interface intuitiva e boas ferramentas de edição.",
       "categoria": "Multimidia",
       "winget": "dotPDN.PaintDotNet",
       "choco": "paint.net",
@@ -1343,7 +1343,7 @@
     {
       "id": "parsec",
       "nome": "Parsec",
-      "descricao": "Parsec is a low-latency, high-quality remote desktop sharing application for collaborating and gaming across devices.",
+      "descricao": "Área de trabalho remota de baixa latência e alta qualidade, para colaborar e jogar entre dispositivos.",
       "categoria": "Utilitarios",
       "winget": "Parsec.Parsec",
       "choco": "parsec",
@@ -1353,7 +1353,7 @@
     {
       "id": "peazip",
       "nome": "PeaZip",
-      "descricao": "PeaZip is a free, open-source file archiver utility that supports multiple archive formats and provides encryption features.",
+      "descricao": "Compactador livre e de código aberto, compatível com muitos formatos e com criptografia.",
       "categoria": "Utilitarios",
       "winget": "Giorgiotani.Peazip",
       "choco": "peazip",
@@ -1363,7 +1363,7 @@
     {
       "id": "pdf-xchange",
       "nome": "PDF-XChange Editor",
-      "descricao": "A comprehensive Windows-based software suite and editor for creating, viewing, editing, annotating, and signing PDF files.",
+      "descricao": "Editor completo para criar, ver, editar, anotar e assinar arquivos PDF.",
       "categoria": "Documentos",
       "winget": "TrackerSoftware.PDF-XChangeEditor",
       "choco": "pdfxchangeeditor",
@@ -1373,7 +1373,7 @@
     {
       "id": "pdf24creator",
       "nome": "PDF24 Creator",
-      "descricao": "Free and easy-to-use online/desktop PDF tools that make you more productive",
+      "descricao": "Ferramentas de PDF gratuitas e fáceis de usar para desktop.",
       "categoria": "Documentos",
       "winget": "geeksoftwareGmbH.PDF24Creator",
       "choco": "pdf24",
@@ -1383,7 +1383,7 @@
     {
       "id": "pdfgear",
       "nome": "PDFgear",
-      "descricao": "PDFgear is a piece of full-featured PDF management software for Windows, macOS, and mobile, and it's completely free to use.",
+      "descricao": "Software gratuito e completo para gerenciar PDFs.",
       "categoria": "Documentos",
       "winget": "PDFgear.PDFgear",
       "choco": "pdfgear",
@@ -1393,7 +1393,7 @@
     {
       "id": "pdfsam",
       "nome": "PDFsam Basic",
-      "descricao": "PDFsam Basic is a free and open-source tool for splitting, merging, and rotating PDF files.",
+      "descricao": "Ferramenta livre e de código aberto para dividir, juntar e girar arquivos PDF.",
       "categoria": "Documentos",
       "winget": "PDFsam.PDFsam",
       "choco": "pdfsam",
@@ -1403,7 +1403,7 @@
     {
       "id": "playnite",
       "nome": "Playnite",
-      "descricao": "Playnite is an open-source video game library manager with one simple goal: To provide a unified interface for all of your games.",
+      "descricao": "Gerenciador de biblioteca de jogos de código aberto que reúne todos os seus jogos numa interface só.",
       "categoria": "Jogos",
       "winget": "Playnite.Playnite",
       "choco": "playnite",
@@ -1413,7 +1413,7 @@
     {
       "id": "plex",
       "nome": "Plex Media Server",
-      "descricao": "Plex Media Server is a media server software that allows you to organize and stream your media library. It supports various media formats and offers a wide range of features.",
+      "descricao": "Servidor de mídia para organizar e transmitir sua biblioteca, compatível com vários formatos.",
       "categoria": "Auto-hospedado",
       "winget": "Plex.PlexMediaServer",
       "choco": "plexmediaserver",
@@ -1423,7 +1423,7 @@
     {
       "id": "plexdesktop",
       "nome": "Plex Desktop",
-      "descricao": "Plex Desktop for Windows is the front end for Plex Media Server.",
+      "descricao": "Aplicativo de desktop para assistir ao conteúdo do Plex Media Server.",
       "categoria": "Auto-hospedado",
       "winget": "Plex.Plex",
       "choco": "plex",
@@ -1433,7 +1433,7 @@
     {
       "id": "posh",
       "nome": "Oh My Posh (Prompt)",
-      "descricao": "Oh My Posh is a cross-platform prompt theme engine for any shell.",
+      "descricao": "Oh My Posh: motor de temas para o prompt de qualquer shell, multiplataforma.",
       "categoria": "Desenvolvimento",
       "winget": "JanDeDobbeleer.OhMyPosh",
       "choco": "oh-my-posh",
@@ -1443,7 +1443,7 @@
     {
       "id": "postman",
       "nome": "Postman",
-      "descricao": "Postman is an API platform and desktop client for designing, testing, documenting, and collaborating on APIs.",
+      "descricao": "Plataforma e cliente de desktop para projetar, testar, documentar e colaborar em APIs.",
       "categoria": "Desenvolvimento",
       "winget": "Postman.Postman",
       "choco": "postman",
@@ -1453,7 +1453,7 @@
     {
       "id": "powershell",
       "nome": "PowerShell",
-      "descricao": "PowerShell is a task automation framework and scripting language designed for system administrators, offering powerful command-line capabilities.",
+      "descricao": "PowerShell 7: shell e linguagem de script para automação de tarefas e administração de sistemas.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.PowerShell",
       "choco": "powershell-core",
@@ -1473,7 +1473,7 @@
     {
       "id": "prismlauncher",
       "nome": "Prism Launcher",
-      "descricao": "Prism Launcher is an open-source Minecraft launcher with the ability to manage multiple instances, accounts, and mods.",
+      "descricao": "Launcher de Minecraft de código aberto que gerencia várias instâncias, contas e mods.",
       "categoria": "Jogos",
       "winget": "PrismLauncher.PrismLauncher",
       "choco": "prismlauncher",
@@ -1483,7 +1483,7 @@
     {
       "id": "processlasso",
       "nome": "Process Lasso",
-      "descricao": "Process Lasso is a system optimization and automation tool that improves system responsiveness and stability by adjusting process priorities and CPU affinities.",
+      "descricao": "Ajusta prioridades e afinidade de CPU dos processos automaticamente para melhorar a responsividade.",
       "categoria": "Utilitarios",
       "winget": "BitSum.ProcessLasso",
       "choco": "plasso",
@@ -1493,7 +1493,7 @@
     {
       "id": "protonauth",
       "nome": "Proton Authenticator",
-      "descricao": "2FA app from Proton to securely sync and backup 2FA codes.",
+      "descricao": "Aplicativo 2FA da Proton, com sincronização e backup seguros dos códigos.",
       "categoria": "Utilitarios",
       "winget": "Proton.ProtonAuthenticator",
       "choco": "protonauth",
@@ -1503,7 +1503,7 @@
     {
       "id": "protonmail",
       "nome": "Proton Mail",
-      "descricao": "Proton Mail is an end-to-end encrypted email service by Proton, protecting your privacy with zero-access encryption.",
+      "descricao": "Serviço de e-mail da Proton com criptografia de ponta a ponta.",
       "categoria": "Comunicacao",
       "winget": "Proton.ProtonMail",
       "choco": "protonmail",
@@ -1513,7 +1513,7 @@
     {
       "id": "protondrive",
       "nome": "Proton Drive",
-      "descricao": "Proton Drive is an end-to-end encrypted Swiss vault for your files that protects your data.",
+      "descricao": "Armazenamento em nuvem suíço da Proton com criptografia de ponta a ponta.",
       "categoria": "Utilitarios",
       "winget": "Proton.ProtonDrive",
       "choco": "protondrive",
@@ -1523,7 +1523,7 @@
     {
       "id": "protonpass",
       "nome": "Proton Pass",
-      "descricao": "Proton Pass is a cloud-based password manager with end-to-end encryption and unique email aliases.",
+      "descricao": "Gerenciador de senhas da Proton com criptografia de ponta a ponta e aliases de e-mail.",
       "categoria": "Utilitarios",
       "winget": "Proton.ProtonPass",
       "choco": "protonpass",
@@ -1533,7 +1533,7 @@
     {
       "id": "protonvpn",
       "nome": "Proton VPN",
-      "descricao": "Proton VPN is a no-logs VPN service that protects your privacy online with features like Secure Core and Tor over VPN.",
+      "descricao": "VPN da Proton sem registro de atividade, com recursos como Secure Core e Tor sobre VPN.",
       "categoria": "Ferramentas Pro",
       "winget": "Proton.ProtonVPN",
       "choco": "protonvpn",
@@ -1543,7 +1543,7 @@
     {
       "id": "processmonitor",
       "nome": "Process Monitor",
-      "descricao": "SysInternals Process Monitor is an advanced monitoring tool that shows real-time file system, registry, and process/thread activity.",
+      "descricao": "Monitor avançado da Sysinternals que mostra em tempo real a atividade de arquivos, registro e processos.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.Sysinternals.ProcessMonitor",
       "choco": "procexp",
@@ -1553,7 +1553,7 @@
     {
       "id": "putty",
       "nome": "PuTTY",
-      "descricao": "PuTTY is a free and open-source terminal emulator, serial console, and network file transfer application. It supports various network protocols such as SSH, Telnet, and SCP.",
+      "descricao": "Emulador de terminal livre e de código aberto, com suporte a SSH, Telnet, conexão serial e SCP.",
       "categoria": "Ferramentas Pro",
       "winget": "PuTTY.PuTTY",
       "choco": "putty",
@@ -1563,7 +1563,7 @@
     {
       "id": "python3",
       "nome": "Python3",
-      "descricao": "Python is a versatile programming language used for web development, data analysis, artificial intelligence, and more.",
+      "descricao": "Linguagem de programação versátil, usada em web, análise de dados, IA e automação.",
       "categoria": "Desenvolvimento",
       "winget": "Python.Python.3.14",
       "choco": "python",
@@ -1573,7 +1573,7 @@
     {
       "id": "qbittorrent",
       "nome": "qBittorrent",
-      "descricao": "qBittorrent is a free and open-source BitTorrent client that aims to provide a feature-rich and lightweight alternative to other torrent clients.",
+      "descricao": "Cliente BitTorrent livre, de código aberto, leve e completo.",
       "categoria": "Utilitarios",
       "winget": "qBittorrent.qBittorrent",
       "choco": "qbittorrent",
@@ -1583,7 +1583,7 @@
     {
       "id": "qownnotes",
       "nome": "QOwnNotes",
-      "descricao": "QOwnNotes is a free open-source note-taking app with Nextcloud/ownCloud integration.",
+      "descricao": "Aplicativo de notas livre, de código aberto e integrado ao Nextcloud/ownCloud.",
       "categoria": "Documentos",
       "winget": "pbek.QOwnNotes",
       "choco": "qownnotes",
@@ -1593,7 +1593,7 @@
     {
       "id": "qtox",
       "nome": "QTox",
-      "descricao": "QTox is a free and open-source messaging app that prioritizes user privacy and security in its design.",
+      "descricao": "Mensageiro livre e de código aberto com foco em privacidade e segurança.",
       "categoria": "Comunicacao",
       "winget": "Tox.qTox",
       "choco": "qtox",
@@ -1613,7 +1613,7 @@
     {
       "id": "wiseprogramuninstaller",
       "nome": "Wise Program Uninstaller (WiseCleaner)",
-      "descricao": "Wise Program Uninstaller is the perfect solution for uninstalling Windows programs, allowing you to uninstall applications quickly and completely using its simple and user-friendly interface.",
+      "descricao": "Desinstalador simples que remove programas do Windows de forma rápida e completa.",
       "categoria": "Utilitarios",
       "winget": "WiseCleaner.WiseProgramUninstaller",
       "choco": "na",
@@ -1633,7 +1633,7 @@
     {
       "id": "rustlang",
       "nome": "Rust",
-      "descricao": "Rust is a programming language designed for safety and performance, particularly focused on systems programming.",
+      "descricao": "Linguagem de programação focada em segurança de memória e desempenho, voltada à programação de sistemas.",
       "categoria": "Desenvolvimento",
       "winget": "Rustlang.Rust.MSVC",
       "choco": "rust",
@@ -1643,7 +1643,7 @@
     {
       "id": "sdio",
       "nome": "Snappy Driver Installer Origin",
-      "descricao": "Snappy Driver Installer Origin is a free and open-source driver updater with a vast driver database for Windows.",
+      "descricao": "Snappy Driver Installer Origin: atualizador de drivers livre e de código aberto, com grande banco de drivers.",
       "categoria": "Utilitarios",
       "winget": "GlennDelahoy.SnappyDriverInstallerOrigin",
       "choco": "sdio",
@@ -1663,7 +1663,7 @@
     {
       "id": "nilesoftshell",
       "nome": "Nilesoft Shell",
-      "descricao": "Shell is an expanded context menu tool that adds extra functionality and customization options to the Windows context menu.",
+      "descricao": "Amplia e personaliza o menu de contexto do Windows com novas opções.",
       "categoria": "Utilitarios",
       "winget": "Nilesoft.Shell",
       "choco": "nilesoft-shell",
@@ -1673,7 +1673,7 @@
     {
       "id": "systeminformer",
       "nome": "System Informer",
-      "descricao": "A free, powerful, multi-purpose tool that helps you monitor system resources, debug software and detect malware.",
+      "descricao": "Ferramenta gratuita para monitorar recursos do sistema, depurar software e detectar malware.",
       "categoria": "Desenvolvimento",
       "winget": "WinsiderSS.SystemInformer",
       "choco": "systeminformer",
@@ -1683,7 +1683,7 @@
     {
       "id": "signal",
       "nome": "Signal",
-      "descricao": "Signal is a privacy-focused messaging app that offers end-to-end encryption for secure and private communication.",
+      "descricao": "Mensageiro focado em privacidade, com criptografia de ponta a ponta.",
       "categoria": "Comunicacao",
       "winget": "OpenWhisperSystems.Signal",
       "choco": "signal",
@@ -1693,7 +1693,7 @@
     {
       "id": "signalrgb",
       "nome": "SignalRGB",
-      "descricao": "SignalRGB lets you control and sync your favorite RGB devices with one free application.",
+      "descricao": "Controla e sincroniza dispositivos RGB de várias marcas num aplicativo gratuito.",
       "categoria": "Utilitarios",
       "winget": "WhirlwindFX.SignalRgb",
       "choco": "na",
@@ -1703,7 +1703,7 @@
     {
       "id": "simplenote",
       "nome": "Simplenote",
-      "descricao": "Simplenote is an easy way to keep notes, lists, ideas and more.",
+      "descricao": "Jeito simples de guardar notas, listas e ideias.",
       "categoria": "Documentos",
       "winget": "Automattic.Simplenote",
       "choco": "simplenote",
@@ -1713,7 +1713,7 @@
     {
       "id": "simplewall",
       "nome": "Simplewall",
-      "descricao": "Simplewall is a free and open-source firewall application for Windows. It allows users to control and manage the inbound and outbound network traffic of applications.",
+      "descricao": "Firewall livre e de código aberto para controlar o tráfego de entrada e saída de cada aplicativo.",
       "categoria": "Ferramentas Pro",
       "winget": "Henry++.simplewall",
       "choco": "simplewall",
@@ -1723,7 +1723,7 @@
     {
       "id": "slack",
       "nome": "Slack",
-      "descricao": "Slack is a collaboration hub that connects teams and facilitates communication through channels, messaging, and file sharing.",
+      "descricao": "Plataforma de comunicação para equipes, com canais, mensagens e compartilhamento de arquivos.",
       "categoria": "Comunicacao",
       "winget": "SlackTechnologies.Slack",
       "choco": "slack",
@@ -1733,7 +1733,7 @@
     {
       "id": "startallback",
       "nome": "StartAllBack",
-      "descricao": "StartAllBack restores and improves Windows taskbar, Start menu, File Explorer, and shell UI behavior.",
+      "descricao": "Restaura e melhora a barra de tarefas, o menu Iniciar e o Explorador do Windows.",
       "categoria": "Utilitarios",
       "winget": "StartIsBack.StartAllBack",
       "choco": "StartAllBack",
@@ -1743,7 +1743,7 @@
     {
       "id": "starship",
       "nome": "Starship (Shell Prompt)",
-      "descricao": "Starship is a fast, customizable, cross-platform prompt for PowerShell and other shells.",
+      "descricao": "Prompt rápido, personalizável e multiplataforma para PowerShell e outros shells.",
       "categoria": "Desenvolvimento",
       "winget": "Starship.Starship",
       "choco": "starship",
@@ -1763,7 +1763,7 @@
     {
       "id": "roblox",
       "nome": "Roblox",
-      "descricao": "Roblox is a platform and game creation system that allows users to create and play games developed by the community.",
+      "descricao": "Plataforma para jogar e criar jogos feitos pela comunidade.",
       "categoria": "Jogos",
       "winget": "Roblox.Roblox",
       "choco": "na",
@@ -1773,7 +1773,7 @@
     {
       "id": "sublimetext",
       "nome": "Sublime Text",
-      "descricao": "Sublime Text is a sophisticated text editor for code, markup, and prose.",
+      "descricao": "Editor de texto sofisticado para código, marcação e prosa.",
       "categoria": "Desenvolvimento",
       "winget": "SublimeHQ.SublimeText.4",
       "choco": "sublimetext4",
@@ -1783,7 +1783,7 @@
     {
       "id": "sumatra",
       "nome": "Sumatra PDF",
-      "descricao": "Sumatra PDF is a lightweight and fast PDF viewer with minimalistic design.",
+      "descricao": "Leitor de PDF leve, rápido e minimalista.",
       "categoria": "Documentos",
       "winget": "SumatraPDF.SumatraPDF",
       "choco": "sumatrapdf",
@@ -1793,7 +1793,7 @@
     {
       "id": "sunshine",
       "nome": "Sunshine/GameStream Server",
-      "descricao": "Sunshine is a GameStream server that allows you to remotely play PC games on Android devices, offering low-latency streaming.",
+      "descricao": "Servidor de streaming de jogos (GameStream) para jogar os jogos do PC remotamente com baixa latência.",
       "categoria": "Auto-hospedado",
       "winget": "LizardByte.Sunshine",
       "choco": "sunshine",
@@ -1803,7 +1803,7 @@
     {
       "id": "synctrayzor",
       "nome": "SyncTrayzor",
-      "descricao": "SyncTrayzor is a Windows tray utility that bundles and wraps Syncthing, making it behave like a native application to easily manage and monitor file synchronization.",
+      "descricao": "Utilitário de bandeja que empacota o Syncthing e o faz funcionar como um aplicativo nativo do Windows.",
       "categoria": "Auto-hospedado",
       "winget": "GermanCoding.SyncTrayzor",
       "choco": "synctrayzor",
@@ -1813,7 +1813,7 @@
     {
       "id": "syncthing",
       "nome": "Syncthing (CLI / Web UI)",
-      "descricao": "Syncthing is a decentralized, peer-to-peer file synchronization tool that securely syncs files directly across devices without cloud servers, managed via a local web interface.",
+      "descricao": "Sincronização de arquivos ponto a ponto e descentralizada, sem servidor na nuvem, gerenciada por uma interface web local.",
       "categoria": "Auto-hospedado",
       "winget": "Syncthing.Syncthing",
       "choco": "syncthing",
@@ -1823,7 +1823,7 @@
     {
       "id": "tcpview",
       "nome": "TCPView",
-      "descricao": "SysInternals TCPView is a network monitoring tool that displays a detailed list of all TCP and UDP endpoints on your system.",
+      "descricao": "Monitor de rede da Sysinternals que lista todas as conexões TCP e UDP do sistema.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.Sysinternals.TCPView",
       "choco": "tcpview",
@@ -1833,7 +1833,7 @@
     {
       "id": "teams",
       "nome": "Teams",
-      "descricao": "Microsoft Teams is a collaboration platform that integrates with Office 365 and offers chat, video conferencing, file sharing, and more.",
+      "descricao": "Plataforma de colaboração da Microsoft com chat, videoconferência e compartilhamento de arquivos.",
       "categoria": "Comunicacao",
       "winget": "Microsoft.Teams",
       "choco": "microsoft-teams",
@@ -1843,7 +1843,7 @@
     {
       "id": "teamviewer",
       "nome": "TeamViewer",
-      "descricao": "TeamViewer is a popular remote access and support software that allows you to connect to and control remote devices.",
+      "descricao": "Software popular de acesso e suporte remoto para controlar outros dispositivos.",
       "categoria": "Utilitarios",
       "winget": "TeamViewer.TeamViewer",
       "choco": "teamviewer9",
@@ -1853,7 +1853,7 @@
     {
       "id": "teamspeak3",
       "nome": "TeamSpeak 3",
-      "descricao": "TEAMSPEAK. YOUR TEAM. YOUR RULES. Use crystal clear sound to communicate with your teammates cross-platform with military-grade security, lag-free performance & unparalleled reliability and uptime.",
+      "descricao": "Comunicação por voz para equipes e grupos de jogo, com som claro e baixa latência.",
       "categoria": "Comunicacao",
       "winget": "TeamSpeakSystems.TeamSpeakClient",
       "choco": "teamspeak",
@@ -1863,7 +1863,7 @@
     {
       "id": "teamspeak6",
       "nome": "TeamSpeak 6",
-      "descricao": "TEAMSPEAK. YOUR TEAM. YOUR RULES. Use crystal clear sound to communicate with your teammates cross-platform with military-grade security, lag-free performance & unparalleled reliability and uptime.",
+      "descricao": "Nova geração do TeamSpeak: comunicação por voz para equipes e grupos de jogo, com som claro e baixa latência.",
       "categoria": "Comunicacao",
       "winget": "TeamSpeakSystems.TeamSpeakClient.Beta.6",
       "choco": "na",
@@ -1873,7 +1873,7 @@
     {
       "id": "telegram",
       "nome": "Telegram",
-      "descricao": "Telegram is a cloud-based instant messaging app known for its security features, speed, and simplicity.",
+      "descricao": "Mensageiro baseado em nuvem, conhecido pela rapidez e simplicidade.",
       "categoria": "Comunicacao",
       "winget": "Telegram.TelegramDesktop",
       "choco": "telegram",
@@ -1883,7 +1883,7 @@
     {
       "id": "terminal",
       "nome": "Windows Terminal",
-      "descricao": "Windows Terminal is a modern, fast, and efficient terminal application for command-line users, supporting multiple tabs, panes, and more.",
+      "descricao": "Terminal moderno da Microsoft, com abas, painéis e suporte a PowerShell, CMD e WSL.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.WindowsTerminal",
       "choco": "microsoft-windows-terminal",
@@ -1893,7 +1893,7 @@
     {
       "id": "thunderbird",
       "nome": "Thunderbird",
-      "descricao": "Mozilla Thunderbird is a free and open-source email client, news client, and chat client with advanced features.",
+      "descricao": "Cliente de e-mail, notícias e chat livre e de código aberto da Mozilla.",
       "categoria": "Comunicacao",
       "winget": "Mozilla.Thunderbird",
       "choco": "thunderbird",
@@ -1903,7 +1903,7 @@
     {
       "id": "betterbird",
       "nome": "Betterbird",
-      "descricao": "Betterbird is a fork of Mozilla Thunderbird with additional features and bugfixes.",
+      "descricao": "Versão derivada do Thunderbird com recursos extras e correções de bugs.",
       "categoria": "Comunicacao",
       "winget": "Betterbird.Betterbird",
       "choco": "betterbird",
@@ -1913,7 +1913,7 @@
     {
       "id": "tor",
       "nome": "Tor Browser",
-      "descricao": "Tor Browser is designed for anonymous web browsing, utilizing the Tor network to protect user privacy and security.",
+      "descricao": "Navegador para navegação anônima pela rede Tor.",
       "categoria": "Navegadores",
       "winget": "TorProject.TorBrowser",
       "choco": "tor-browser",
@@ -1923,7 +1923,7 @@
     {
       "id": "totalcommander",
       "nome": "Total Commander",
-      "descricao": "Total Commander is a file manager for Windows that provides a powerful and intuitive interface for file management.",
+      "descricao": "Gerenciador de arquivos para Windows com interface de dois painéis.",
       "categoria": "Utilitarios",
       "winget": "Ghisler.TotalCommander",
       "choco": "TotalCommander",
@@ -1933,7 +1933,7 @@
     {
       "id": "treesize",
       "nome": "TreeSize Free",
-      "descricao": "TreeSize Free is a disk space manager that helps you analyze and visualize the space usage on your drives.",
+      "descricao": "Analisa e mostra o uso de espaço em disco por pasta.",
       "categoria": "Utilitarios",
       "winget": "JAMSoftware.TreeSize.Free",
       "choco": "treesizefree",
@@ -1943,7 +1943,7 @@
     {
       "id": "ttaskbar",
       "nome": "TranslucentTB",
-      "descricao": "TranslucentTB is a tool that allows you to customize the transparency of the Windows Taskbar.",
+      "descricao": "Deixa a barra de tarefas do Windows transparente ou translúcida.",
       "categoria": "Utilitarios",
       "winget": "CharlesMilette.TranslucentTB",
       "choco": "translucenttb",
@@ -1953,7 +1953,7 @@
     {
       "id": "ubisoft",
       "nome": "Ubisoft Connect",
-      "descricao": "Ubisoft Connect is Ubisoft's digital distribution and online gaming service, providing access to Ubisoft's games and services.",
+      "descricao": "Plataforma de distribuição digital e jogos online da Ubisoft.",
       "categoria": "Jogos",
       "winget": "Ubisoft.Connect",
       "choco": "ubisoft-connect",
@@ -1963,7 +1963,7 @@
     {
       "id": "ungoogled",
       "nome": "Ungoogled Chromium",
-      "descricao": "Ungoogled Chromium is a version of Chromium without Google's integration for enhanced privacy and control.",
+      "descricao": "Chromium sem a integração com os serviços do Google, para mais privacidade e controle.",
       "categoria": "Navegadores",
       "winget": "eloston.ungoogled-chromium",
       "choco": "ungoogled-chromium",
@@ -1973,7 +1973,7 @@
     {
       "id": "unity",
       "nome": "Unity Game Engine",
-      "descricao": "Unity is a powerful game development platform for creating 2D, 3D, augmented reality, and virtual reality games.",
+      "descricao": "Plataforma de desenvolvimento de jogos 2D, 3D, realidade aumentada e realidade virtual.",
       "categoria": "Desenvolvimento",
       "winget": "Unity.UnityHub",
       "choco": "unityhub",
@@ -1983,7 +1983,7 @@
     {
       "id": "vagrant",
       "nome": "Vagrant",
-      "descricao": "Vagrant builds and manages reproducible virtual machine development environments from declarative configuration.",
+      "descricao": "Cria e gerencia ambientes de desenvolvimento em máquinas virtuais reproduzíveis a partir de configuração declarativa.",
       "categoria": "Desenvolvimento",
       "winget": "Hashicorp.Vagrant",
       "choco": "vagrant",
@@ -1993,7 +1993,7 @@
     {
       "id": "everything",
       "nome": "Everything",
-      "descricao": "Everything is a search engine that locates files and folders by filename instantly for Windows. Unlike Windows search Everything initially displays every file and folder on your computer (hence the name Everything). You type in a search filter to limit what files and folders are displayed.",
+      "descricao": "Busca instantânea de arquivos e pastas pelo nome, muito mais rápida que a pesquisa do Windows.",
       "categoria": "Utilitarios",
       "winget": "voidtools.Everything",
       "choco": "everything",
@@ -2003,7 +2003,7 @@
     {
       "id": "vc2015_32",
       "nome": "Visual C++ 2015-2022 32-bit",
-      "descricao": "Visual C++ 2015-2022 32-bit redistributable package installs runtime components of Visual C++ libraries required to run 32-bit applications.",
+      "descricao": "Pacote redistribuível do Visual C++ 2015-2022 (32 bits), necessário para rodar muitos programas.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.VCRedist.2015+.x86",
       "choco": "vcredist2015",
@@ -2013,7 +2013,7 @@
     {
       "id": "vc2015_64",
       "nome": "Visual C++ 2015-2022 64-bit",
-      "descricao": "Visual C++ 2015-2022 64-bit redistributable package installs runtime components of Visual C++ libraries required to run 64-bit applications.",
+      "descricao": "Pacote redistribuível do Visual C++ 2015-2022 (64 bits), necessário para rodar muitos programas.",
       "categoria": "Ferramentas Microsoft",
       "winget": "Microsoft.VCRedist.2015+.x64",
       "choco": "vcredist2015",
@@ -2023,7 +2023,7 @@
     {
       "id": "ventoy",
       "nome": "Ventoy",
-      "descricao": "Ventoy is an open-source tool for creating bootable USB drives. It supports multiple ISO files on a single USB drive, making it a versatile solution for installing operating systems.",
+      "descricao": "Cria pendrives inicializáveis que aceitam vários arquivos ISO no mesmo dispositivo.",
       "categoria": "Ferramentas Pro",
       "winget": "Ventoy.Ventoy",
       "choco": "ventoy",
@@ -2033,7 +2033,7 @@
     {
       "id": "vesktop",
       "nome": "Vesktop",
-      "descricao": "A cross-platform electron-based desktop app aiming to give you a snappier Discord experience with Vencord pre-installed.",
+      "descricao": "Aplicativo de desktop do Discord mais rápido, com o Vencord pré-instalado.",
       "categoria": "Comunicacao",
       "winget": "Vencord.Vesktop",
       "choco": "na",
@@ -2043,7 +2043,7 @@
     {
       "id": "viber",
       "nome": "Viber",
-      "descricao": "Viber is a free messaging and calling app with features like group chats, video calls, and more.",
+      "descricao": "Aplicativo gratuito de mensagens e chamadas, com grupos e videochamadas.",
       "categoria": "Comunicacao",
       "winget": "Rakuten.Viber",
       "choco": "viber",
@@ -2053,7 +2053,7 @@
     {
       "id": "visualstudio2022",
       "nome": "Visual Studio 2022",
-      "descricao": "Visual Studio 2022 is an integrated development environment (IDE) for building, debugging, and deploying applications.",
+      "descricao": "Ambiente de desenvolvimento integrado (IDE) da Microsoft para criar, depurar e publicar aplicações.",
       "categoria": "Desenvolvimento",
       "winget": "Microsoft.VisualStudio.2022.Community",
       "choco": "visualstudio2022community",
@@ -2063,7 +2063,7 @@
     {
       "id": "visualstudio2026",
       "nome": "Visual Studio 2026",
-      "descricao": "Visual Studio 2026 is an integrated development environment (IDE) for building, debugging, and deploying applications.",
+      "descricao": "Ambiente de desenvolvimento integrado (IDE) da Microsoft para criar, depurar e publicar aplicações.",
       "categoria": "Desenvolvimento",
       "winget": "Microsoft.VisualStudio.Community",
       "choco": "visualstudio2026community",
@@ -2073,7 +2073,7 @@
     {
       "id": "vivaldi",
       "nome": "Vivaldi",
-      "descricao": "Vivaldi is a highly customizable web browser with a focus on user personalization and productivity features.",
+      "descricao": "Navegador altamente personalizável, com foco em produtividade.",
       "categoria": "Navegadores",
       "winget": "Vivaldi.Vivaldi",
       "choco": "vivaldi",
@@ -2093,7 +2093,7 @@
     {
       "id": "vrdesktopstreamer",
       "nome": "Virtual Desktop Streamer",
-      "descricao": "Virtual Desktop Streamer is a tool that allows you to stream your desktop screen to VR devices.",
+      "descricao": "Transmite a tela do PC para óculos de realidade virtual (app Virtual Desktop).",
       "categoria": "Jogos",
       "winget": "VirtualDesktop.Streamer",
       "choco": "na",
@@ -2113,7 +2113,7 @@
     {
       "id": "vscodium",
       "nome": "VS Codium",
-      "descricao": "VSCodium is a community-driven, freely-licensed binary distribution of Microsoft's VS Code.",
+      "descricao": "Distribuição comunitária e de licença livre do VS Code, sem a telemetria da Microsoft.",
       "categoria": "Desenvolvimento",
       "winget": "VSCodium.VSCodium",
       "choco": "vscodium",
@@ -2123,7 +2123,7 @@
     {
       "id": "waterfox",
       "nome": "Waterfox",
-      "descricao": "Waterfox is a fast, privacy-focused web browser based on Firefox, designed to preserve user choice and privacy.",
+      "descricao": "Navegador baseado no Firefox com foco em privacidade e liberdade de escolha.",
       "categoria": "Navegadores",
       "winget": "Waterfox.Waterfox",
       "choco": "waterfox",
@@ -2133,7 +2133,7 @@
     {
       "id": "whatsapp",
       "nome": "WhatsApp Desktop",
-      "descricao": "WhatsApp Desktop is the official Windows desktop messaging app from Meta, distributed through the Microsoft Store.",
+      "descricao": "Aplicativo oficial do WhatsApp para Windows, distribuído pela Microsoft Store.",
       "categoria": "Comunicacao",
       "winget": "msstore:9NKSQGP7F2NH",
       "choco": "na",
@@ -2143,7 +2143,7 @@
     {
       "id": "wingetui",
       "nome": "UniGetUI",
-      "descricao": "UniGetUI is a GUI for WinGet, Chocolatey, and other Windows CLI package managers.",
+      "descricao": "Interface gráfica para o WinGet, o Chocolatey e outros gerenciadores de pacotes do Windows.",
       "categoria": "Utilitarios",
       "winget": "Devolutions.UniGetUI",
       "choco": "wingetui",
@@ -2163,7 +2163,7 @@
     {
       "id": "winscp",
       "nome": "WinSCP",
-      "descricao": "WinSCP is a popular open-source SFTP, FTP, and SCP client for Windows. It allows secure file transfers between a local and a remote computer.",
+      "descricao": "Cliente SFTP, FTP e SCP de código aberto para transferir arquivos com segurança entre computadores.",
       "categoria": "Ferramentas Pro",
       "winget": "WinSCP.WinSCP",
       "choco": "winscp",
@@ -2173,7 +2173,7 @@
     {
       "id": "wireguard",
       "nome": "WireGuard",
-      "descricao": "WireGuard is a fast and modern VPN (Virtual Private Network) protocol. It aims to be simpler and more efficient than other VPN protocols, providing secure and reliable connections.",
+      "descricao": "Protocolo e cliente de VPN moderno, rápido e mais simples que os protocolos tradicionais.",
       "categoria": "Ferramentas Pro",
       "winget": "WireGuard.WireGuard",
       "choco": "wireguard",
@@ -2183,7 +2183,7 @@
     {
       "id": "wireshark",
       "nome": "Wireshark",
-      "descricao": "Wireshark is a widely-used open-source network protocol analyzer. It allows users to capture and analyze network traffic in real-time, providing detailed insights into network activities.",
+      "descricao": "Analisador de protocolos de rede que captura e examina o tráfego em tempo real.",
       "categoria": "Ferramentas Pro",
       "winget": "WiresharkFoundation.Wireshark",
       "choco": "wireshark",
@@ -2193,7 +2193,7 @@
     {
       "id": "wiztree",
       "nome": "WizTree",
-      "descricao": "WizTree is a fast disk space analyzer that helps you quickly find the files and folders consuming the most space on your hard drive.",
+      "descricao": "Analisador de espaço em disco muito rápido, que mostra o que mais ocupa espaço.",
       "categoria": "Utilitarios",
       "winget": "AntibodySoftware.WizTree",
       "choco": "wiztree",
@@ -2203,7 +2203,7 @@
     {
       "id": "xeheditor",
       "nome": "HxD Hex Editor",
-      "descricao": "HxD is a free hex editor that allows you to edit, view, search, and analyze binary files.",
+      "descricao": "HxD: editor hexadecimal gratuito para ver, editar e analisar arquivos binários.",
       "categoria": "Utilitarios",
       "winget": "MHNexus.HxD",
       "choco": "HxD",
@@ -2213,7 +2213,7 @@
     {
       "id": "xournal",
       "nome": "Xournal++",
-      "descricao": "Xournal++ is an open-source handwriting notetaking software with PDF annotation capabilities.",
+      "descricao": "Aplicativo de anotações à mão de código aberto, com anotação em PDF.",
       "categoria": "Documentos",
       "winget": "Xournal++.Xournal++",
       "choco": "xournalplusplus",
@@ -2223,7 +2223,7 @@
     {
       "id": "yarn",
       "nome": "Yarn",
-      "descricao": "Yarn is a fast, reliable, and secure dependency management tool for JavaScript projects.",
+      "descricao": "Gerenciador de dependências para projetos JavaScript.",
       "categoria": "Desenvolvimento",
       "winget": "Yarn.Yarn",
       "choco": "yarn",
@@ -2233,7 +2233,7 @@
     {
       "id": "zoom",
       "nome": "Zoom",
-      "descricao": "Zoom is a popular video conferencing and web conferencing service for online meetings, webinars, and collaborative projects.",
+      "descricao": "Serviço de videoconferência para reuniões, webinars e trabalho em grupo.",
       "categoria": "Comunicacao",
       "winget": "Zoom.Zoom",
       "choco": "zoom",
@@ -2243,7 +2243,7 @@
     {
       "id": "uv",
       "nome": "uv",
-      "descricao": "uv is a fast Python package and project manager written in Rust.",
+      "descricao": "Gerenciador de pacotes e projetos Python muito rápido, escrito em Rust.",
       "categoria": "Desenvolvimento",
       "winget": "astral-sh.uv",
       "choco": "uv",
@@ -2253,7 +2253,7 @@
     {
       "id": "tightvnc",
       "nome": "TightVNC",
-      "descricao": "TightVNC is a free and open-source remote desktop software that lets you access and control a computer over the network. With its intuitive interface, you can interact with the remote screen as if you were sitting in front of it. You can open files, launch applications, and perform other actions on the remote desktop almost as if you were physically there.",
+      "descricao": "Acesso remoto livre e de código aberto (VNC) para controlar outro computador pela rede.",
       "categoria": "Utilitarios",
       "winget": "GlavSoft.TightVNC",
       "choco": "TightVNC",
@@ -2263,7 +2263,7 @@
     {
       "id": "glazewm",
       "nome": "GlazeWM",
-      "descricao": "GlazeWM is a tiling window manager for Windows inspired by i3 and Polybar.",
+      "descricao": "Gerenciador de janelas lado a lado (tiling) para Windows, inspirado no i3.",
       "categoria": "Utilitarios",
       "winget": "glzr-io.glazewm",
       "choco": "glazewm",
@@ -2273,7 +2273,7 @@
     {
       "id": "overwolf",
       "nome": "CurseForge",
-      "descricao": "CurseForge is a desktop application for managing mods and modpacks across multiple games, powered by Overwolf.",
+      "descricao": "CurseForge: aplicativo para gerenciar mods e modpacks de vários jogos, da Overwolf.",
       "categoria": "Jogos",
       "winget": "Overwolf.CurseForge",
       "choco": null,
@@ -2283,7 +2283,7 @@
     {
       "id": "ofgb",
       "nome": "OFGB (Oh Frick Go Back)",
-      "descricao": "GUI Tool to remove ads from various places around Windows 11",
+      "descricao": "Ferramenta gráfica que remove anúncios de vários lugares do Windows 11.",
       "categoria": "Utilitarios",
       "winget": "xM4ddy.OFGB",
       "choco": "ofgb",
@@ -2293,7 +2293,7 @@
     {
       "id": "zenbrowser",
       "nome": "Zen Browser",
-      "descricao": "The modern, privacy-focused, performance-driven browser built on Firefox.",
+      "descricao": "Navegador moderno baseado no Firefox, com foco em privacidade e desempenho.",
       "categoria": "Navegadores",
       "winget": "Zen-Team.Zen-Browser",
       "choco": "zen-browser",
@@ -2303,7 +2303,7 @@
     {
       "id": "zed",
       "nome": "Zed",
-      "descricao": "Zed is a modern, high-performance code editor designed from the ground up for speed and collaboration.",
+      "descricao": "Editor de código moderno e de alto desempenho, feito para velocidade e colaboração.",
       "categoria": "Desenvolvimento",
       "winget": "ZedIndustries.Zed",
       "choco": "zed",
@@ -2313,7 +2313,7 @@
     {
       "id": "zotero",
       "nome": "Zotero",
-      "descricao": "Zotero is a free, easy-to-use tool to help you collect, organize, cite, and share your research materials.",
+      "descricao": "Ferramenta gratuita para coletar, organizar, citar e compartilhar referências de pesquisa.",
       "categoria": "Documentos",
       "winget": "DigitalScholar.Zotero",
       "choco": "zotero",
@@ -2323,7 +2323,7 @@
     {
       "id": "deskflow",
       "nome": "Deskflow",
-      "descricao": "Deskflow is a free and open-source software KVM that lets you share a single keyboard and mouse across multiple computers.",
+      "descricao": "KVM por software, livre e de código aberto: usa um único teclado e mouse em vários computadores.",
       "categoria": "Utilitarios",
       "winget": "Deskflow.Deskflow",
       "choco": "deskflow",
@@ -2333,7 +2333,7 @@
     {
       "id": "ruby",
       "nome": "Ruby",
-      "descricao": "A Ruby language execution environment with a MSYS2 installation.",
+      "descricao": "Ambiente de execução da linguagem Ruby com instalação do MSYS2.",
       "categoria": "Desenvolvimento",
       "winget": "RubyInstallerTeam.Ruby.4.0",
       "choco": "ruby",
@@ -2343,7 +2343,7 @@
     {
       "id": "lua",
       "nome": "Lua",
-      "descricao": "A 'batteries included environment' for the Lua scripting language on Windows.",
+      "descricao": "Ambiente completo para a linguagem de script Lua no Windows.",
       "categoria": "Desenvolvimento",
       "winget": "rjpcomputing.luaforwindows",
       "choco": "lua",
@@ -2353,7 +2353,7 @@
     {
       "id": "cloudflarewarp",
       "nome": "Cloudflare WARP",
-      "descricao": "WARP is a freemium VPN service provided by Cloudflare. Includes usage of Cloudflare's DNS",
+      "descricao": "VPN freemium da Cloudflare, que também usa o DNS da Cloudflare.",
       "categoria": "Utilitarios",
       "winget": "Cloudflare.Warp",
       "choco": "warp",
