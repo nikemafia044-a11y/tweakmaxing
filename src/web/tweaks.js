@@ -148,8 +148,8 @@
     'otim.fechar': 'Fechar',
     'otim.continuar': 'Continuar',
 
-    'otim.bloat.titulo': 'Remover bloatware: o que manter?',
-    'otim.bloat.texto': 'Marque os aplicativos que você quer MANTER. Os demais, se estiverem instalados, serão removidos. Eles voltam pela Microsoft Store.',
+    'otim.bloat.titulo': 'Remover bloatware: o que remover?',
+    'otim.bloat.texto': 'Marque só os aplicativos que você quer REMOVER. O que ficar desmarcado continua instalado. Bloco de Notas, Paint, Calculadora, Ferramenta de Captura, Fotos, Câmera, Dev Home e os apps do Xbox nunca são removidos aqui. O que sair volta pela Microsoft Store.',
     'otim.bloat.lendo': 'Lendo os aplicativos instalados…',
     'otim.bloat.nenhum': 'Nenhum aplicativo do catálogo está instalado.',
     'otim.gp.titulo': 'Você usa o Xbox Game Pass?',
@@ -351,8 +351,8 @@
     'otim.fechar': 'Close',
     'otim.continuar': 'Continue',
 
-    'otim.bloat.titulo': 'Remove bloatware: what to keep?',
-    'otim.bloat.texto': 'Check the apps you want to KEEP. The others, if installed, will be removed. They come back from the Microsoft Store.',
+    'otim.bloat.titulo': 'Remove bloatware: what to remove?',
+    'otim.bloat.texto': 'Check only the apps you want to REMOVE. Anything left unchecked stays installed. Notepad, Paint, Calculator, Snipping Tool, Photos, Camera, Dev Home and the Xbox apps are never removed here. Removed apps come back from the Microsoft Store.',
     'otim.bloat.lendo': 'Reading the installed apps…',
     'otim.bloat.nenhum': 'No app from the catalog is installed.',
     'otim.gp.titulo': 'Do you use Xbox Game Pass?',
@@ -1222,9 +1222,11 @@
           {
             rotulo: t('otim.continuar'), classe: 'btn-primary', mantemAberto: true,
             onClick: function () {
-              var marcados = document.querySelectorAll('#tw-bloat input[type=checkbox]:checked');
+              // Caixa marcada = remover. O back-end recebe o que fica (manter):
+              // tudo o que NAO foi marcado. Sem marcar nada, nada e removido.
+              var soltos = document.querySelectorAll('#tw-bloat input[type=checkbox]:not(:checked)');
               var manter = [];
-              for (var i = 0; i < marcados.length; i++) { manter.push(marcados[i].value); }
+              for (var i = 0; i < soltos.length; i++) { manter.push(soltos[i].value); }
               tmx.bridge.call('plan.setParams', { id: 'APM-006', parametros: { manter: manter } }).then(function () {
                 tmx.modal.close();
                 fim(true);

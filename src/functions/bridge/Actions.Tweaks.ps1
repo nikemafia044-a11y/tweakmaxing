@@ -756,7 +756,7 @@ function Get-TmxTweakBloatwareList {
     }
 
     $lista = New-Object 'System.Collections.Generic.List[object]'
-    foreach ($app in @(Get-TmxV2AppxCatalog)) {
+    foreach ($app in @(Get-TmxV2BloatwareCatalog)) {
         if ($null -eq $app) { continue }
         $inst = $null
         if ($consultou) { $inst = $instalados.Contains("$($app.id)") }

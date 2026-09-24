@@ -541,6 +541,30 @@ Describe 'Set-/Test-/Undo-TmxBloatwareChooser (APM-006)' -Tag 'TweaksV2' {
         $r.ok | Should -BeTrue
         $r.naoAplicavel | Should -BeTrue
     }
+
+    It 'regressao: com manter vazio (modo Ultimate/headless) nunca remove Bloco de Notas, Paint, Calculadora, Captura, Dev Home nem Xbox' {
+        $essenciais = @('Microsoft.WindowsNotepad', 'Microsoft.Paint', 'Microsoft.WindowsCalculator',
+                        'Microsoft.ScreenSketch', 'Microsoft.Windows.DevHome', 'Microsoft.GamingApp', 'Microsoft.XboxGamingOverlay')
+        foreach ($p in $essenciais) { $global:TmxT_Presentes[$p] = $true }
+        Mock Get-TmxConfigDocument -ModuleName TweakMaxing {
+            param($Name)
+            if ("$Name" -ne 'appx') { return $null }
+            $lista = @([pscustomobject]@{ id = 'WPFAppxA'; nome = 'App A'; pacote = 'Contoso.A'; storeId = '9AAA' })
+            foreach ($p in 'Microsoft.WindowsNotepad', 'Microsoft.Paint', 'Microsoft.WindowsCalculator',
+                           'Microsoft.ScreenSketch', 'Microsoft.Windows.DevHome', 'Microsoft.GamingApp', 'Microsoft.XboxGamingOverlay') {
+                $lista += [pscustomobject]@{ id = "WPFAppx_$p"; nome = $p; pacote = $p; storeId = '9XXX' }
+            }
+            [pscustomobject]@{ appx = $lista }
+        }
+
+        Set-TmxBloatwareChooser -Tweak $script:Tweak -Profile $null -Parametros ([pscustomobject]@{ manter = @() }) | Out-Null
+
+        $global:TmxT_Removidos | Should -Contain 'Contoso.A_1.0.0.0_x64__abc'
+        foreach ($p in $essenciais) {
+            @($global:TmxT_Removidos | Where-Object { $_ -like "$p`_*" }).Count | Should -Be 0 -Because "$p e protegido"
+        }
+        @(Get-TmxTweakBloatwareList | ForEach-Object { $_.pacote }) | Should -Not -Contain 'Microsoft.WindowsNotepad'
+    }
 }
 
 # ---------------------------------------------------------------------------

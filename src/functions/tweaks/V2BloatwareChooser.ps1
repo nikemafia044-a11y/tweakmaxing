@@ -4,7 +4,8 @@
 # Contrato de parametros (T6 / UI): { manter: string[] } - lista de 'id' ou
 # 'pacote' (campo do catalogo src/config/appx.json) dos aplicativos que NAO
 # devem ser removidos. Vazio ou ausente = remove todo o catalogo de appx que
-# estiver instalado.
+# estiver instalado. Os pacotes de Get-TmxV2BloatwareProtegidos nunca sao
+# removidos, com ou sem 'manter'.
 #
 # Reversibilidade PARCIAL: a volta e reinstalacao pela Microsoft Store
 # (Install-TmxStoreApp), pacote a pacote, por storeId - o mesmo mecanismo
@@ -22,6 +23,40 @@ function Get-TmxV2AppxCatalog {
     $doc = Get-TmxConfigDocument -Name 'appx'
     if (-not $doc) { return @() }
     @($doc.appx | Where-Object { $_ -and "$($_.pacote)" })
+}
+
+function Get-TmxV2BloatwareProtegidos {
+    <#
+    .SYNOPSIS
+        Pacotes que o APM-006 NUNCA remove e nem oferece na lista.
+    .DESCRIPTION
+        - Ferramentas basicas do Windows que quase todo mundo usa (Bloco de
+          Notas, Paint, Calculadora, Ferramenta de Captura, Fotos, Camera, Dev
+          Home): remove-las por um modo de otimizacao nao traz ganho e quebra
+          o dia a dia.
+        - Apps de jogos do Xbox: sao do APM-007, que pergunta se a pessoa usa
+          Game Pass. Deixar o APM-006 remove-los ignorava essa resposta.
+    #>
+    [CmdletBinding()]
+    param()
+    @(
+        'Microsoft.WindowsNotepad', 'Microsoft.Paint', 'Microsoft.WindowsCalculator',
+        'Microsoft.ScreenSketch', 'Microsoft.Windows.Photos', 'Microsoft.WindowsCamera',
+        'Microsoft.Windows.DevHome',
+        'Microsoft.GamingApp', 'Microsoft.XboxApp', 'Microsoft.XboxGamingOverlay',
+        'Microsoft.XboxIdentityProvider', 'Microsoft.XboxSpeechToTextOverlay', 'Microsoft.Xbox.TCUI'
+    )
+}
+
+function Get-TmxV2BloatwareCatalog {
+    <#
+    .SYNOPSIS
+        Catalogo de appx do APM-006: appx.json sem os pacotes protegidos.
+    #>
+    [CmdletBinding()]
+    param()
+    $protegidos = Get-TmxV2BloatwareProtegidos
+    @(Get-TmxV2AppxCatalog | Where-Object { "$($_.pacote)" -notin $protegidos })
 }
 
 function Get-TmxV2ManterSet {
@@ -45,7 +80,7 @@ function Get-TmxV2BloatwareInstalado {
 
     $manterSet = Get-TmxV2ManterSet -Parametros $Parametros
     $out = New-Object 'System.Collections.Generic.List[object]'
-    foreach ($app in (Get-TmxV2AppxCatalog)) {
+    foreach ($app in (Get-TmxV2BloatwareCatalog)) {
         $id     = "$($app.id)"
         $pacote = "$($app.pacote)"
         if ($manterSet.Contains($id) -or $manterSet.Contains($pacote)) { continue }
