@@ -62,19 +62,32 @@
       });
     },
 
+    /* Quantas chamadas callComEspera estao PENDURADAS agora (incrementado no
+       inicio, decrementado so quando a chamada finalmente resolve OU rejeita
+       - inclusive as que ainda estao no meio de uma espera/retentativa).
+       Outras partes do app (o lote de icones de install.js, por exemplo)
+       consultam isso pra dar prioridade a uma acao de usuario esperando o
+       slot em vez de disparar mais um lote de fundo bem na hora em que o
+       usuario clicou em algo. */
+    esperandoUsuario: 0,
+
     /* Como call(), mas quando a ponte recusa porque o unico slot de job esta
        ocupado ("ja existe um trabalho em andamento") espera e tenta de novo
        ate esperaMs. Repetir e seguro: nessa recusa nenhum job chegou a nascer.
        Qualquer outro erro sobe na hora. */
     callComEspera: function (action, payload, esperaMs) {
       var limite = Date.now() + (esperaMs || 30000);
+      bridge.esperandoUsuario++;
       function tentar() {
         return bridge.call(action, payload).catch(function (e) {
           if (!/trabalho em andamento/i.test((e && e.message) || '') || Date.now() > limite) { throw e; }
           return new Promise(function (r) { setTimeout(r, 400); }).then(tentar);
         });
       }
-      return tentar();
+      return tentar().then(
+        function (v) { bridge.esperandoUsuario--; return v; },
+        function (e) { bridge.esperandoUsuario--; throw e; }
+      );
     },
 
     on: function (evento, fn) {

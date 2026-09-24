@@ -66,17 +66,21 @@
 
   /* ---------------- ponte: correlaciona job.done pelo jobId ---------------- */
 
+  function aguardarJobDone(jobId) {
+    return new Promise(function (resolve, reject) {
+      var ouvinte = tmx.bridge.on('job.done', function (p) {
+        if (!p || p.jobId !== jobId) { return; }
+        tmx.bridge.off('job.done', ouvinte);
+        if (p.ok) { resolve(p.result); } else { reject(new Error((p.error && p.error.message) || 'o trabalho falhou')); }
+      });
+    });
+  }
+
   function chamarAcaoAssincrona(nome, payload) {
     return tmx.bridge.call(nome, payload).then(function (resp) {
       var jobId = resp && resp.jobId;
       if (!jobId) { throw new Error('resposta sem jobId'); }
-      return new Promise(function (resolve, reject) {
-        var ouvinte = tmx.bridge.on('job.done', function (p) {
-          if (!p || p.jobId !== jobId) { return; }
-          tmx.bridge.off('job.done', ouvinte);
-          if (p.ok) { resolve(p.result); } else { reject(new Error((p.error && p.error.message) || 'o trabalho falhou')); }
-        });
-      });
+      return aguardarJobDone(jobId);
     });
   }
 
@@ -86,20 +90,17 @@
      slot bem na hora em que o usuario clica em Instalar/Desinstalar/etc.
      Sem espera, esse clique falharia na hora com "ja existe um trabalho em
      andamento" por causa de um lote de icone que nem apareceu na tela.
-     Mesmo padrao de src/web/configure.js (chamarJobComEspera), portado
-     aqui: tenta, e se a falha for especificamente "trabalho em andamento",
-     espera um pouco e tenta de novo, ate ~20s. Qualquer outro erro
-     repropaga na hora. */
+     Usa tmx.bridge.callComEspera (src/web/app.js) em vez de reimplementar a
+     mesma espera aqui: alem de nao duplicar a logica, isso incrementa
+     tmx.bridge.esperandoUsuario emquanto espera - e o mesmo contador que o
+     lote de icones (mais abaixo) consulta pra dar prioridade a uma acao de
+     usuario tentando pegar o slot. */
   function chamarAcaoAssincronaComEspera(nome, payload) {
-    var limite = Date.now() + 20000;
-
-    function tentar() {
-      return chamarAcaoAssincrona(nome, payload).catch(function (e) {
-        if (!/trabalho em andamento/i.test(e.message) || Date.now() > limite) { throw e; }
-        return new Promise(function (resolve) { setTimeout(resolve, 700); }).then(tentar);
-      });
-    }
-    return tentar();
+    return tmx.bridge.callComEspera(nome, payload).then(function (resp) {
+      var jobId = resp && resp.jobId;
+      if (!jobId) { throw new Error('resposta sem jobId'); }
+      return aguardarJobDone(jobId);
+    });
   }
 
   /* ---------------- esqueleto ---------------- */
@@ -239,12 +240,17 @@
    *     'pendentes' (cortados pelo orcamento de tempo do LOTE, nao
    *     resolvidos) NAO viram 'solicitados' - continuam na fila pro proximo
    *     lote, so os processados de verdade saem;
-   *   - se o MESMO lote (a cabeca da fila) falhar de verdade 3 vezes
-   *     seguidas (nao contando "trabalho em andamento", que e esperado e
-   *     transitorio - ate a propria carga inicial da aba Ajustes pode
-   *     segurar o slot por varios segundos), desiste desses ids por esta
-   *     sessao (ficam com as iniciais) pra nao travar os ids atras deles
-   *     pra sempre (bloqueio de cabeca de fila);
+   *   - se o MESMO CONJUNTO de ids (a assinatura do lote, nao um contador
+   *     global) falhar de verdade 3 vezes seguidas (nao contando "trabalho
+   *     em andamento", que e esperado e transitorio - ate a propria carga
+   *     inicial da aba Ajustes pode segurar o slot por varios segundos),
+   *     desiste desses ids por esta sessao (ficam com as iniciais) pra nao
+   *     travar os ids atras deles pra sempre (bloqueio de cabeca de fila);
+   *   - uma acao do USUARIO tentando pegar o slot (tmx.bridge.esperandoUsuario,
+   *     de app.js) sempre tem prioridade: o lote de icone espera e tenta de
+   *     novo em vez de competir; e entre lotes consecutivos ha sempre pelo
+   *     menos 400ms de espaco, pro slot ficar livre tempo suficiente pra uma
+   *     chamada do usuario conseguir a vez;
    *   - lote de 10 no front (o back-end aceita ate 40, mas um lote grande
    *     demora mais e atrasa a descoberta de que o slot esta ocupado).
    */
@@ -258,12 +264,14 @@
     elementos: {},     // id -> elemento <span class="app-icone">
     processando: false,
     backoffMs: 1000,
-    falhasConsecutivas: 0
+    falhasConsecutivas: 0,
+    assinaturaFalhas: null  // ids do ultimo lote que falhou, junto - ver ICONES_MAX_FALHAS_CONSECUTIVAS
   };
 
   var ICONES_LOTE_MAX = 10;
   var ICONES_BACKOFF_MAX_MS = 15000;
   var ICONES_MAX_FALHAS_CONSECUTIVAS = 3;
+  var ICONES_ESPACAMENTO_MIN_MS = 400; // >= 400ms entre lotes: da tempo de uma acao do usuario pegar o slot
 
   function calcularIniciais(nome) {
     var partes = String(nome || '').trim().split(/\s+/).filter(Boolean);
@@ -323,6 +331,16 @@
     if (iconesEstado.processando) { return; } // no maximo um lote em voo
     if (!iconesEstado.fila.length) { return; }
 
+    // Uma acao do USUARIO esta tentando pegar o slot unico da ponte agora
+    // (tmx.bridge.esperandoUsuario, incrementado por bridge.callComEspera em
+    // app.js) - o lote de icone e trabalho de fundo, sem usuario esperando
+    // por ele; espera essa acao passar na frente em vez de competir pelo
+    // slot bem na hora em que o usuario clicou em algo.
+    if (window.tmx && tmx.bridge && tmx.bridge.esperandoUsuario > 0) {
+      agendarLoteIcones(ICONES_ESPACAMENTO_MIN_MS);
+      return;
+    }
+
     var lote = iconesEstado.fila.slice(0, ICONES_LOTE_MAX);
     iconesEstado.processando = true;
 
@@ -343,6 +361,7 @@
       });
       iconesEstado.backoffMs = 1000; // reseta o backoff apos um sucesso
       iconesEstado.falhasConsecutivas = 0;
+      iconesEstado.assinaturaFalhas = null;
 
       var icons = (r && r.icons) || {};
       Object.keys(icons).forEach(function (id) {
@@ -353,7 +372,10 @@
       });
 
       iconesEstado.processando = false;
-      if (iconesEstado.fila.length) { agendarLoteIcones(50); }
+      // >= 400ms (nao mais 50ms): da tempo de uma chamada callComEspera
+      // pendurada (contada em tmx.bridge.esperandoUsuario) conseguir a
+      // vez no slot antes do proximo lote de icone tentar de novo.
+      if (iconesEstado.fila.length) { agendarLoteIcones(ICONES_ESPACAMENTO_MIN_MS); }
     }).catch(function (e) {
       // Falha do LOTE: os ids CONTINUAM na fila (nunca saem - nada foi
       // marcado 'solicitado'), e a proxima tentativa espera um backoff
@@ -373,7 +395,18 @@
       // funcionado com so mais um pouco de espera.
       var ocupado = e && /trabalho em andamento/i.test(e.message);
       if (!ocupado) {
+        // O contador de desistencia e do LOTE (o conjunto de ids), nao
+        // global: se a fila mudou desde a ultima falha (ex.: um lote
+        // anterior desistiu, ou 'pendentes' devolveu um conjunto diferente),
+        // 3 falhas de lotes DIFERENTES nunca deveriam se somar - cada
+        // conjunto de ids merece suas proprias 3 chances.
+        var assinatura = lote.join(',');
+        if (assinatura !== iconesEstado.assinaturaFalhas) {
+          iconesEstado.assinaturaFalhas = assinatura;
+          iconesEstado.falhasConsecutivas = 0;
+        }
         iconesEstado.falhasConsecutivas++;
+
         if (iconesEstado.falhasConsecutivas >= ICONES_MAX_FALHAS_CONSECUTIVAS) {
           // Bloqueio de cabeca de fila: o MESMO lote falhou (de verdade) 3
           // vezes seguidas. Desiste DESTA SESSAO (ficam com as iniciais,
@@ -381,13 +414,14 @@
           lote.forEach(function (id) { iconesEstado.solicitados[id] = true; });
           iconesEstado.fila = iconesEstado.fila.filter(function (id) { return lote.indexOf(id) < 0; });
           iconesEstado.falhasConsecutivas = 0;
+          iconesEstado.assinaturaFalhas = null;
           iconesEstado.backoffMs = 1000;
-          if (iconesEstado.fila.length) { agendarLoteIcones(50); }
+          if (iconesEstado.fila.length) { agendarLoteIcones(ICONES_ESPACAMENTO_MIN_MS); }
           return;
         }
       }
 
-      var espera = iconesEstado.backoffMs;
+      var espera = Math.max(ICONES_ESPACAMENTO_MIN_MS, iconesEstado.backoffMs);
       iconesEstado.backoffMs = Math.min(iconesEstado.backoffMs * 2, ICONES_BACKOFF_MAX_MS);
       agendarLoteIcones(espera);
     });

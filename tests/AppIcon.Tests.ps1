@@ -303,7 +303,7 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
         It 'falha de rede (mock seta ErroRede) NAO grava cache negativo' {
             Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
             Mock -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -MockWith {
-                param($Url, $TimeoutMs, $MaxBytes, $MaxRedirects, $PrazoMs, $ErroRede, $OrcamentoEsgotado)
+                param($Url, $TimeoutMs, $MaxBytes, $MaxRedirects, $PrazoAbsolutoUtc, $ErroRede, $OrcamentoEsgotado)
                 if ($ErroRede) { $ErroRede.Value = $true }
                 $null
             }
@@ -330,12 +330,68 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
             Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr2.none') | Should -BeFalse
         }
 
-        It 'orcamento esgotado (PrazoRestanteMs=0) NAO grava cache negativo' {
+        It '503 (servico indisponivel) e transitorio: NAO grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ statusCode = 503; location = $null; bytes = $null; motivoFalha = $null }
+            }
+
+            $app = [pscustomobject]@{ id = 'appneterr4'; nome = 'App Net Err 4'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr4.none') | Should -BeFalse
+        }
+
+        It '429 (limite de taxa) e transitorio: NAO grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ statusCode = 429; location = $null; bytes = $null; motivoFalha = $null }
+            }
+
+            $app = [pscustomobject]@{ id = 'appneterr5'; nome = 'App Net Err 5'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr5.none') | Should -BeFalse
+        }
+
+        It 'corpo cortado por tempo (200 com motivoFalha=tempo) e falha de rede: NAO grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                # 200 chegou, mas a leitura do corpo caiu/estourou o tempo no
+                # meio - NAO e "servidor respondeu, sem icone".
+                [pscustomobject]@{ statusCode = 200; location = $null; bytes = $null; motivoFalha = 'tempo' }
+            }
+
+            $app = [pscustomobject]@{ id = 'appneterr6'; nome = 'App Net Err 6'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr6.none') | Should -BeFalse
+        }
+
+        It 'corpo maior que 512KB (200 com motivoFalha=tamanho) e recusa de verdade: grava cache negativo' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ statusCode = 200; location = $null; bytes = $null; motivoFalha = 'tamanho' }
+            }
+
+            $app = [pscustomobject]@{ id = 'appneterr7'; nome = 'App Net Err 7'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+            $r | Should -BeNullOrEmpty
+
+            Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr7.none') | Should -BeTrue `
+                -Because '>512KB e uma recusa de verdade (nao rede/tempo) - a unica candidata testada aqui, entao o site foi tentado ate o fim'
+        }
+
+        It 'orcamento esgotado (prazo absoluto no passado) NAO grava cache negativo' {
             Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
             Mock -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -MockWith { throw 'nao deveria ser chamado com orcamento zerado' }
 
             $app = [pscustomobject]@{ id = 'appneterr3'; nome = 'App Net Err 3'; link = 'https://example.org'; icon = $null }
-            $r = Get-TmxAppIcon -App $app -PrazoRestanteMs 0
+            $prazoNoPassado = (Get-Date).ToUniversalTime().AddSeconds(-1)
+            $r = Get-TmxAppIcon -App $app -PrazoAbsolutoUtc $prazoNoPassado
             $r | Should -BeNullOrEmpty
 
             Test-Path -LiteralPath (Join-Path (Get-TmxAppIconCacheDir) 'appneterr3.none') | Should -BeFalse
@@ -527,7 +583,7 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
         }
     }
 
-    Context 'Invoke-TmxIconDownload: orcamento de tempo (PrazoMs) propagado de verdade' {
+    Context 'Invoke-TmxIconDownload: orcamento de tempo (PrazoAbsolutoUtc) propagado de verdade' {
 
         It 'aborta a cadeia (sem tentar mais) quando o restante chega a zero' {
             $script:chamadas = 0
@@ -539,7 +595,8 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             $sw = [System.Diagnostics.Stopwatch]::StartNew()
             $erroLocal = $false
             $esgotadoLocal = $false
-            $r = Invoke-TmxIconDownload -Url 'https://example.org/a' -TimeoutMs 5000 -PrazoMs 100 `
+            $prazo = (Get-Date).ToUniversalTime().AddMilliseconds(100)
+            $r = Invoke-TmxIconDownload -Url 'https://example.org/a' -TimeoutMs 5000 -PrazoAbsolutoUtc $prazo `
                 -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
             $sw.Stop()
 
@@ -551,22 +608,30 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             $sw.Elapsed.TotalMilliseconds | Should -BeLessThan 240
         }
 
-        It 'capa o Timeout de cada salto ao restante, nunca ao TimeoutMs cheio' {
-            $script:temposVistos = New-Object 'System.Collections.Generic.List[int]'
+        It 'repassa o MESMO PrazoAbsolutoUtc pra cada salto (nunca um cronometro novo a cada tentativa)' {
+            $script:prazosVistos = New-Object 'System.Collections.Generic.List[DateTime]'
+            $script:chamadas = 0
             Mock -CommandName Invoke-TmxHttpRequestOnce -ModuleName TweakMaxing -MockWith {
-                param($Url, $TimeoutMs)
-                $script:temposVistos.Add($TimeoutMs)
-                [pscustomobject]@{ statusCode = 200; location = $null; bytes = [byte[]]@(1) }
+                param($Url, $TimeoutMs, $MaxBytes, $PrazoAbsolutoUtc)
+                $script:chamadas++
+                $script:prazosVistos.Add($PrazoAbsolutoUtc)
+                if ($script:chamadas -le 2) {
+                    [pscustomobject]@{ statusCode = 302; location = "https://example.org/salto$script:chamadas"; bytes = $null }
+                } else {
+                    [pscustomobject]@{ statusCode = 200; location = $null; bytes = [byte[]]@(1) }
+                }
             }
-            Invoke-TmxIconDownload -Url 'https://example.org/a' -TimeoutMs 5000 -PrazoMs 300 | Out-Null
-            $script:temposVistos.Count | Should -Be 1
-            $script:temposVistos[0] | Should -BeLessOrEqual 300
+            $prazoOriginal = (Get-Date).ToUniversalTime().AddMilliseconds(5000)
+            Invoke-TmxIconDownload -Url 'https://example.org/a' -TimeoutMs 5000 -PrazoAbsolutoUtc $prazoOriginal | Out-Null
+
+            $script:prazosVistos.Count | Should -Be 3
+            foreach ($p in $script:prazosVistos) { $p | Should -Be $prazoOriginal }
         }
     }
 
     Context 'Read-TmxLimitedStream: corte de 512 KB e de tempo total (a parte pura de Invoke-TmxHttpRequestOnce)' {
 
-        It 'devolve $null quando o cronometro ja passou do TimeoutMs, mesmo com Content-Length ok' {
+        It 'devolve Motivo=tempo quando o prazo absoluto ja passou, mesmo com Content-Length ok' {
             $fluxoLento = [pscustomobject]@{ }
             $fluxoLento | Add-Member -MemberType ScriptMethod -Name Read -Value {
                 param($buf, $offset, $count)
@@ -574,12 +639,13 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
                 1
             } -Force
 
-            $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
-            $r = Read-TmxLimitedStream -Stream $fluxoLento -MaxBytes 524288 -ContentLength -1 -Stopwatch $cronometro -TimeoutMs 20
-            $r | Should -BeNullOrEmpty
+            $prazo = (Get-Date).ToUniversalTime().AddMilliseconds(20)
+            $r = Read-TmxLimitedStream -Stream $fluxoLento -MaxBytes 524288 -ContentLength -1 -PrazoAbsolutoUtc $prazo
+            $r.Bytes  | Should -BeNullOrEmpty
+            $r.Motivo | Should -Be 'tempo'
         }
 
-        It 'devolve $null so de olhar o Content-Length declarado, sem ler o stream' {
+        It 'devolve Motivo=tamanho so de olhar o Content-Length declarado, sem ler o stream' {
             $fluxoFalso = [pscustomobject]@{ LeituraChamada = $false }
             $fluxoFalso | Add-Member -MemberType ScriptMethod -Name Read -Value {
                 param($buf, $offset, $count)
@@ -588,31 +654,143 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             } -Force
 
             $r = Read-TmxLimitedStream -Stream $fluxoFalso -MaxBytes 524288 -ContentLength 600000
-            $r | Should -BeNullOrEmpty
+            $r.Bytes  | Should -BeNullOrEmpty
+            $r.Motivo | Should -Be 'tamanho'
             $fluxoFalso.LeituraChamada | Should -BeFalse -Because 'o Content-Length ja bastou para recusar'
         }
 
-        It 'devolve $null quando o corpo de verdade passa do limite (Content-Length desconhecido)' {
+        It 'devolve Motivo=tamanho quando o corpo de verdade passa do limite (Content-Length desconhecido)' {
             $grande = New-Object byte[] (524288 + 10)
             $fluxo = New-Object System.IO.MemoryStream(, $grande)
             try {
                 $r = Read-TmxLimitedStream -Stream $fluxo -MaxBytes 524288 -ContentLength -1
-                $r | Should -BeNullOrEmpty
+                $r.Bytes  | Should -BeNullOrEmpty
+                $r.Motivo | Should -Be 'tamanho'
             } finally {
                 $fluxo.Dispose()
             }
         }
 
-        It 'devolve os bytes certos quando o corpo esta dentro do limite' {
+        It 'devolve os bytes certos (Motivo=$null) quando o corpo esta dentro do limite' {
             $corpo = [System.Text.Encoding]::ASCII.GetBytes('conteudo pequeno de teste')
             $fluxo = New-Object System.IO.MemoryStream(, $corpo)
             try {
                 $r = Read-TmxLimitedStream -Stream $fluxo -MaxBytes 524288 -ContentLength $corpo.Length
-                $r | Should -Not -BeNullOrEmpty
-                [System.Text.Encoding]::ASCII.GetString($r) | Should -Be 'conteudo pequeno de teste'
+                $r.Motivo | Should -BeNullOrEmpty
+                [System.Text.Encoding]::ASCII.GetString($r.Bytes) | Should -Be 'conteudo pequeno de teste'
             } finally {
                 $fluxo.Dispose()
             }
+        }
+
+        It 'devolve Motivo=tempo quando o proprio Read() lanca (ReadTimeout estourado de verdade)' {
+            $fluxoQueLanca = [pscustomobject]@{ }
+            $fluxoQueLanca | Add-Member -MemberType NoteProperty -Name CanTimeout -Value $true -Force
+            $fluxoQueLanca | Add-Member -MemberType ScriptProperty -Name ReadTimeout -Value { 0 } -SecondValue { param($v) } -Force
+            $fluxoQueLanca | Add-Member -MemberType ScriptMethod -Name Read -Value {
+                param($buf, $offset, $count)
+                throw (New-Object System.IO.IOException('simulando ReadTimeout estourado'))
+            } -Force
+
+            $prazo = (Get-Date).ToUniversalTime().AddSeconds(5)
+            $r = Read-TmxLimitedStream -Stream $fluxoQueLanca -MaxBytes 524288 -ContentLength -1 -PrazoAbsolutoUtc $prazo
+            $r.Bytes  | Should -BeNullOrEmpty
+            $r.Motivo | Should -Be 'tempo'
+        }
+    }
+
+    Context 'Invoke-TmxHttpRequestOnce: prazo absoluto de verdade (servidor TCP local, sem IP privado bloqueando)' {
+        # Chamada DIRETA em Invoke-TmxHttpRequestOnce (nao Invoke-TmxIconDownload):
+        # a guarda de IP privado/https so existe em Invoke-TmxIconDownload, entao
+        # http://127.0.0.1 funciona aqui sem precisar contornar nada.
+
+        BeforeAll {
+            # Servidor bruto em C# puro (nenhum objeto PowerShell tocado na
+            # thread de fundo) - evita de proposito qualquer questao de
+            # "pipeline ja em execucao" que apareceria se o corpo da thread
+            # fosse um scriptblock do PowerShell rodando em paralelo com o
+            # pipeline principal (que fica bloqueado dentro da chamada .NET
+            # HttpWebRequest.GetResponse/Stream.Read enquanto esse servidor
+            # responde).
+            if (-not ('TmxTestSlowServer' -as [type])) {
+                Add-Type -Language CSharp -TypeDefinition @'
+using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Text;
+using System.Threading;
+
+public static class TmxTestSlowServer {
+    public static int Start(int headerDelayMs, int totalBodyBytes, int dripDelayMs, int dripChunkBytes) {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        int port = ((IPEndPoint)listener.LocalEndpoint).Port;
+        var thread = new Thread(() => {
+            try {
+                using (var client = listener.AcceptTcpClient())
+                using (var stream = client.GetStream()) {
+                    var buf = new byte[4096];
+                    try { stream.Read(buf, 0, buf.Length); } catch { }
+
+                    Thread.Sleep(headerDelayMs);
+
+                    string header = "HTTP/1.1 200 OK\r\nConnection: close\r\nContent-Length: " + totalBodyBytes + "\r\n\r\n";
+                    var headerBytes = Encoding.ASCII.GetBytes(header);
+                    stream.Write(headerBytes, 0, headerBytes.Length);
+                    stream.Flush();
+
+                    int sent = 0;
+                    var chunk = new byte[Math.Max(1, dripChunkBytes)];
+                    while (sent < totalBodyBytes) {
+                        int n = Math.Min(chunk.Length, totalBodyBytes - sent);
+                        Thread.Sleep(dripDelayMs);
+                        stream.Write(chunk, 0, n);
+                        stream.Flush();
+                        sent += n;
+                    }
+                }
+            } catch { }
+        });
+        thread.IsBackground = true;
+        thread.Start();
+        return port;
+    }
+}
+'@
+            }
+        }
+
+        It 'nao passa muito do prazo mesmo com header atrasado + corpo gotejado (medido: sem o fix, 3x+ do prazo)' {
+            # Servidor: atrasa o cabecalho 900ms, depois goteja 4KB em pedacos
+            # de 512 bytes com 900ms entre cada um - se o orcamento nao for
+            # respeitado de verdade (deadline absoluto, ReadTimeout reapertado
+            # a cada Read), isso facilmente passa de 3s com um prazo de 1s.
+            #
+            # Uma chamada de "aquecimento" primeiro (mesmo servidor/padrao,
+            # descartada): a primeira chamada de verdade a um tipo C# recem
+            # compilado (Add-Type acima) paga o custo de JIT do METODO (nao
+            # so da compilacao do tipo, que ja aconteceu no BeforeAll) e podia
+            # sozinha somar varias centenas de ms so de runtime .NET, sem
+            # relacao nenhuma com o bug medido aqui.
+            $portaAquecimento = [TmxTestSlowServer]::Start(0, 8, 0, 8)
+            Invoke-TmxHttpRequestOnce -Url "http://127.0.0.1:$portaAquecimento/" -TimeoutMs 2000 -MaxBytes 524288 | Out-Null
+
+            $porta = [TmxTestSlowServer]::Start(900, 4096, 900, 512)
+            $url = "http://127.0.0.1:$porta/"
+
+            $sw = [System.Diagnostics.Stopwatch]::StartNew()
+            $r = Invoke-TmxHttpRequestOnce -Url $url -TimeoutMs 1000 -MaxBytes 524288
+            $sw.Stop()
+
+            # $r pode vir $null (corte de verdade) ou com bytes/motivoFalha=tempo,
+            # dependendo de exatamente quando o corte bateu - o que importa aqui
+            # e o TEMPO, nao o resultado exato. Medido com o fix (aquecido):
+            # ~1000-1050ms, bem colado no TimeoutMs de 1000; sem o fix (bug
+            # original relatado): 3114ms pro mesmo cenario - a folga de 700ms
+            # aqui e generosa o bastante pra nao piscar por jitter de agendamento
+            # do SO/GC, mas nunca chegaria perto de 3x o timeout.
+            $sw.Elapsed.TotalMilliseconds | Should -BeLessThan 1700 `
+                -Because 'TimeoutMs=1000 + folga generosa pra jitter - sem o deadline absoluto isso media 3100ms+ (quase 3x)'
         }
     }
 }
@@ -689,6 +867,15 @@ Describe 'Ponte: apps.icons' -Tag 'AppIcon' {
         $entry = Get-TmxBridgeAction -Name 'apps.icons'
         $r = & $entry.handler ([pscustomobject]@{ ids = @('iconapp1', 'iconapp2') })
         $r.icons.Keys.Count | Should -Be 0
+    }
+
+    It 'o resultado sempre inclui a chave pendentes (mesmo vazia)' {
+        Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith { $null }
+        $entry = Get-TmxBridgeAction -Name 'apps.icons'
+        $r = & $entry.handler ([pscustomobject]@{ ids = @('iconapp1') })
+        # Hashtable (nao pscustomobject) - .Contains() e o jeito certo de
+        # checar a chave, ver a nota em 'apps.icons de ponta a ponta' abaixo.
+        $r.Contains('pendentes') | Should -BeTrue
     }
 
     Context 'Payload ausente/sem ids: lista vazia, nao erro' {
@@ -806,11 +993,35 @@ Describe 'Invoke-TmxAppIconBatch' -Tag 'AppIcon' {
         $r.Pendentes.Count | Should -Be 0
     }
 
-    It 'repassa o orcamento RESTANTE (nao o total) pra Get-TmxAppIcon a cada app' {
-        $script:prazosVistos = New-Object 'System.Collections.Generic.List[int]'
+    It 'Pendentes com exatamente 1 id serializa como array JSON, nao como string solta' {
+        # Pegadinha classica do PowerShell: um array de 1 elemento que passou
+        # por Where-Object/pipeline sem @() vira ESCALAR, e ConvertTo-Json
+        # serializa como string solta ("id") em vez de array (["id"]) - o
+        # front-end faria (r.pendentes||[]).forEach e quebraria com uma
+        # string. .ToArray() de uma List[string] (o que Invoke-TmxAppIconBatch
+        # usa) nao tem esse problema; este teste tranca esse contrato.
         Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith {
-            param($App, $PrazoRestanteMs)
-            $script:prazosVistos.Add($PrazoRestanteMs)
+            param($App)
+            Start-Sleep -Milliseconds 60
+            $null
+        }
+        $apps = 1..2 | ForEach-Object { [pscustomobject]@{ id = "jsonpend$_"; nome = "Json Pend $_" } }
+        $r = Invoke-TmxAppIconBatch -Apps $apps -BudgetMs 50
+
+        $r.Pendentes.Count | Should -Be 1
+        $r.Pendentes | Should -BeOfType [string]
+        $r.Pendentes.GetType().IsArray | Should -BeTrue
+
+        $payloadResposta = @{ icons = $r.Icones; pendentes = $r.Pendentes }
+        $json = $payloadResposta | ConvertTo-Json -Depth 12 -Compress
+        $json | Should -Match '"pendentes":\[".*"\]'
+    }
+
+    It 'repassa o MESMO instante absoluto (nao um novo cronometro) pra Get-TmxAppIcon a cada app' {
+        $script:prazosVistos = New-Object 'System.Collections.Generic.List[DateTime]'
+        Mock -CommandName Get-TmxAppIcon -ModuleName TweakMaxing -MockWith {
+            param($App, $UninstallEntries, $PrazoAbsolutoUtc)
+            $script:prazosVistos.Add($PrazoAbsolutoUtc)
             Start-Sleep -Milliseconds 40
             $null
         }
@@ -818,10 +1029,11 @@ Describe 'Invoke-TmxAppIconBatch' -Tag 'AppIcon' {
         Invoke-TmxAppIconBatch -Apps $apps -BudgetMs 1000 | Out-Null
 
         $script:prazosVistos.Count | Should -Be 3
-        # Cada prazo visto tem que ser MENOR que o anterior (o orcamento vai
-        # encolhendo a cada app, nunca fica fixo em 1000).
+        # Todo app ve o MESMO instante absoluto - e o ponto central do fix:
+        # nenhum nivel recomeca um cronometro relativo do zero, entao o
+        # tempo ja gasto em apps anteriores sempre conta.
         for ($i = 1; $i -lt $script:prazosVistos.Count; $i++) {
-            $script:prazosVistos[$i] | Should -BeLessThan $script:prazosVistos[$i - 1]
+            $script:prazosVistos[$i] | Should -Be $script:prazosVistos[0]
         }
     }
 

@@ -107,14 +107,40 @@ function Test-TmxIconUrlHttps {
     [bool]("$Url" -match '^https://')
 }
 
+function Test-TmxIconIPv4RangeReserved {
+    <#
+    .SYNOPSIS
+        As faixas de IPv4 reservadas/privadas que a guarda recusa, isoladas
+        numa funcao so pra poder ser reaplicada nos dois formatos de IPv4
+        escondido dentro de um literal IPv6 (::ffff:a.b.c.d mapeado e
+        ::a.b.c.d "compativel", o formato antigo/obsoleto).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [byte[]] $Bytes)
+    $b = $Bytes
+    if ($b[0] -eq 0) { return $true }    # 0.0.0.0/8 ("esta rede", usado como curinga por alguns servicos)
+    if ($b[0] -eq 10) { return $true }   # 10/8
+    if ($b[0] -eq 100 -and $b[1] -ge 64 -and $b[1] -le 127) { return $true }  # 100.64.0.0/10 (CGN/shared address space)
+    if ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) { return $true }   # 172.16.0.0/12
+    if ($b[0] -eq 192 -and $b[1] -eq 168) { return $true }                   # 192.168.0.0/16
+    if ($b[0] -eq 169 -and $b[1] -eq 254) { return $true }                   # 169.254.0.0/16 (link-local)
+    $false
+}
+
 function Test-TmxIconUrlPrivateHost {
     <#
     .SYNOPSIS
         Guarda leve contra SSRF: recusa quando o host da URL e um IP LITERAL
-        (nao um dominio) dentro de faixa privada/loopback/link-local/reservada
-        (0.0.0.0/8, 10/8, 172.16/12, 192.168/16, 127/8, 169.254/16; em IPv6:
-        ::1, fe80::/10, fc00::/7 - e o mapeamento IPv4 dentro de IPv6,
-        ::ffff:a.b.c.d, reaplicando as mesmas faixas de IPv4).
+        (nao um dominio) dentro de faixa privada/loopback/link-local/reservada:
+          IPv4: 0.0.0.0/8, 10/8, 100.64.0.0/10, 172.16/12, 192.168/16, 127/8,
+                169.254/16.
+          IPv6: ::1, fe80::/10 (link-local), fec0::/10 (site-local, obsoleto),
+                fc00::/7 (unique local) - e o IPv4 escondido dentro de um
+                literal IPv6, nos dois formatos (::ffff:a.b.c.d "mapeado" e
+                ::a.b.c.d "compativel", ambos obsoletos mas ainda aceitos por
+                TryParse), reaplicando as faixas de IPv4 acima; tambem
+                64:ff9b::/96 (prefixo NAT64 bem-conhecido - um IPv4 sintetico
+                ali dentro pode alcancar rede interna atras do gateway NAT64).
     .DESCRIPTION
         So olha o literal escrito na URL - nao resolve DNS. Protege contra o
         caso obvio (icon do catalogo ou favicon.ico apontando direto pra um IP
@@ -136,19 +162,43 @@ function Test-TmxIconUrlPrivateHost {
         if ([System.Net.IPAddress]::IsLoopback($ip)) { return $true }
 
         if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetwork) {
-            $b = $ip.GetAddressBytes()
-            if ($b[0] -eq 0) { return $true }   # 0.0.0.0/8 ("esta rede", usado como curinga por alguns servicos)
-            if ($b[0] -eq 10) { return $true }
-            if ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) { return $true }
-            if ($b[0] -eq 192 -and $b[1] -eq 168) { return $true }
-            if ($b[0] -eq 169 -and $b[1] -eq 254) { return $true }
-            return $false
+            return Test-TmxIconIPv4RangeReserved -Bytes $ip.GetAddressBytes()
         }
         if ($ip.AddressFamily -eq [System.Net.Sockets.AddressFamily]::InterNetworkV6) {
             if ($ip.Equals([System.Net.IPAddress]::IPv6Loopback)) { return $true }
             $b6 = $ip.GetAddressBytes()
+
+            # ::a.b.c.d "IPv4-compativel" (obsoleto, RFC 4291): 12 bytes
+            # zerados na frente, os ultimos 4 sao um IPv4 puro. Diferente do
+            # "mapeado" (::ffff:a.b.c.d, ja tratado acima via
+            # IsIPv4MappedToIPv6), que tem os bytes 10-11 = 0xFFFF em vez de
+            # zero - por isso o teste explicito dos bytes 10-11 aqui.
+            $primeiros10Zerados = $true
+            for ($i = 0; $i -lt 10; $i++) { if ($b6[$i] -ne 0) { $primeiros10Zerados = $false; break } }
+            if ($primeiros10Zerados -and $b6[10] -eq 0 -and $b6[11] -eq 0) {
+                $ultimos4 = $b6[12..15]
+                # ::0 (nao especificado) e ::1 (loopback, ja tratado acima)
+                # nao contam - so vale quando sobra um IPv4 de verdade.
+                if (($ultimos4 | Where-Object { $_ -ne 0 }).Count -gt 0) {
+                    if (Test-TmxIconIPv4RangeReserved -Bytes $ultimos4) { return $true }
+                }
+            }
+
+            # 64:ff9b::/96 (prefixo NAT64 bem-conhecido, RFC 6052): bloqueia o
+            # prefixo inteiro, nao so reaplica as faixas de IPv4 - um
+            # gateway NAT64 pode alcancar rede interna que nao aparece nas
+            # faixas publicas de IPv4 normais.
+            if ($b6[0] -eq 0x00 -and $b6[1] -eq 0x64 -and $b6[2] -eq 0xFF -and $b6[3] -eq 0x9B -and
+                $b6[4] -eq 0 -and $b6[5] -eq 0 -and $b6[6] -eq 0 -and $b6[7] -eq 0 -and
+                $b6[8] -eq 0 -and $b6[9] -eq 0 -and $b6[10] -eq 0 -and $b6[11] -eq 0) {
+                return $true
+            }
+
             # fe80::/10 (link-local): primeiro byte 0xFE, dois bits mais altos do segundo byte = '10'.
             if ($b6[0] -eq 0xFE -and ($b6[1] -band 0xC0) -eq 0x80) { return $true }
+            # fec0::/10 (site-local, obsoleto pela RFC 3879): primeiro byte
+            # 0xFE, dois bits mais altos do segundo byte = '11'.
+            if ($b6[0] -eq 0xFE -and ($b6[1] -band 0xC0) -eq 0xC0) { return $true }
             # fc00::/7 (unique local, o "10/8" do IPv6): primeiro byte 0xFC ou 0xFD.
             if (($b6[0] -band 0xFE) -eq 0xFC) { return $true }
             return $false
@@ -183,59 +233,110 @@ function Test-TmxAppIconIdSafe {
     [bool]($Id -cmatch '^[A-Za-z0-9_.-]+$')
 }
 
+function Get-TmxIconDefaultDeadlineUtc {
+    <#
+    .SYNOPSIS
+        'Agora + TimeoutMs' em UTC - o prazo absoluto usado quando quem chama
+        nao passou um (uso direto/testes, sem orcamento de lote nenhum).
+    #>
+    [CmdletBinding()]
+    param([int] $TimeoutMs = 5000)
+    (Get-Date).ToUniversalTime().AddMilliseconds($TimeoutMs)
+}
+
+function Get-TmxIconRemainingMs {
+    <#
+    .SYNOPSIS
+        Quantos ms faltam ate um prazo absoluto (pode ser negativo - quem
+        chama decide o que fazer quando ja estourou).
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] [DateTime] $PrazoAbsolutoUtc)
+    ($PrazoAbsolutoUtc - (Get-Date).ToUniversalTime()).TotalMilliseconds
+}
+
 function Read-TmxLimitedStream {
     <#
     .SYNOPSIS
-        Le um stream ate o fim, ou devolve $null assim que passa de MaxBytes
-        (pelo Content-Length declarado, ou - quando ele nao veio/mentiu -
-        pela contagem de bytes lidos de verdade) OU do tempo limite total.
+        Le um stream ate o fim, ou para assim que passa de MaxBytes (pelo
+        Content-Length declarado, ou - quando ele nao veio/mentiu - pela
+        contagem de bytes lidos de verdade) OU do prazo absoluto dado.
     .DESCRIPTION
         Isolado do resto de Invoke-TmxHttpRequestOnce de proposito: e so
         leitura de stream, sem HttpWebRequest nenhum, entao os testes
         exercitam o corte de tamanho (e de tempo) com um MemoryStream comum,
         sem precisar de rede nem de servidor local.
+
+        O corte de tempo usa DOIS mecanismos, nao um so:
+          1. antes de CADA Read(), confere quanto falta pro prazo absoluto -
+             se ja estourou, nem tenta ler de novo;
+          2. tambem APERTA Stream.ReadTimeout pro restante, quando o stream
+             suporta (CanTimeout) - sem isso, um servidor que goteja o corpo
+             bem devagar consegue prender uma UNICA chamada de Read() por ate
+             ReadWriteTimeout inteiro (o valor fixo configurado la na frente,
+             na hora de abrir a conexao), mesmo que o relogio cumulativo so
+             va ser checado DEPOIS que ela finalmente retornar - o mecanismo
+             1 sozinho so detecta o estouro tarde demais nesse caso.
     .PARAMETER ContentLength
         -1 quando desconhecido (nenhum corte antecipado; so a contagem real
         durante a leitura decide).
-    .PARAMETER Stopwatch
-        Cronometro ja iniciado por quem chama. Junto com TimeoutMs, corta a
-        leitura se o tempo TOTAL passar do limite mesmo que cada Read()
-        individual volte rapido (defesa contra um servidor que manda poucos
-        bytes de vez em quando pra segurar a conexao aberta -
-        ReadWriteTimeout do HttpWebRequest sozinho nao pega esse caso).
+    .PARAMETER PrazoAbsolutoUtc
+        Instante (UTC) em que o tempo acaba. Omitido = sem limite de tempo
+        (so o limite de tamanho vale) - usado pelos testes que nao querem
+        nenhum corte por tempo.
     .OUTPUTS
-        [byte[]] ou $null. Nunca lanca (um Stream que lanca no Read()
-        tambem vira $null).
+        [pscustomobject] @{ Bytes; Motivo }. Motivo e $null em sucesso,
+        'tamanho' (passou de MaxBytes) ou 'tempo' (prazo estourou, incluindo
+        um Read() que lancou por causa do ReadTimeout apertado). Nunca lanca.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] $Stream,
         [int]  $MaxBytes      = 524288,
         [long] $ContentLength = -1,
-        [System.Diagnostics.Stopwatch] $Stopwatch,
-        [int]  $TimeoutMs     = 0
+        [Nullable[DateTime]] $PrazoAbsolutoUtc = $null
     )
 
-    if ($ContentLength -ge 0 -and $ContentLength -gt $MaxBytes) { return $null }
+    if ($ContentLength -ge 0 -and $ContentLength -gt $MaxBytes) {
+        return [pscustomobject]@{ Bytes = $null; Motivo = 'tamanho' }
+    }
 
     $buffer  = New-Object byte[] 8192
     $destino = New-Object System.IO.MemoryStream
     try {
         $total = 0
         while ($true) {
-            if ($null -ne $Stopwatch -and $TimeoutMs -gt 0 -and $Stopwatch.ElapsedMilliseconds -gt $TimeoutMs) {
-                return $null
+            if ($null -ne $PrazoAbsolutoUtc) {
+                # $PrazoAbsolutoUtc e um [DateTime] puro quando informado (o
+                # parametro [Nullable[DateTime]] do PowerShell NUNCA vira um
+                # wrapper de verdade com .Value - ou e $null, ou e o valor
+                # cru). Usar .Value aqui seria sempre $null, e o corte de
+                # tempo nunca funcionaria.
+                $restanteMs = Get-TmxIconRemainingMs -PrazoAbsolutoUtc $PrazoAbsolutoUtc
+                if ($restanteMs -le 0) { return [pscustomobject]@{ Bytes = $null; Motivo = 'tempo' } }
+                try {
+                    if ($Stream.CanTimeout) { $Stream.ReadTimeout = [Math]::Max(1, [int]$restanteMs) }
+                } catch {
+                    Write-Verbose "Stream nao aceitou ReadTimeout dinamico: $($_.Exception.Message)"
+                }
             }
-            $lidos = $Stream.Read($buffer, 0, $buffer.Length)
+
+            try {
+                $lidos = $Stream.Read($buffer, 0, $buffer.Length)
+            } catch {
+                # Read() que lanca por causa do ReadTimeout (ou qualquer outro
+                # problema de transporte no meio da leitura) e falha de
+                # rede/tempo esgotado, nunca "sem icone".
+                Write-Verbose "Falha ao ler stream: $($_.Exception.Message)"
+                return [pscustomobject]@{ Bytes = $null; Motivo = 'tempo' }
+            }
+
             if ($lidos -le 0) { break }
             $total += $lidos
-            if ($total -gt $MaxBytes) { return $null }
+            if ($total -gt $MaxBytes) { return [pscustomobject]@{ Bytes = $null; Motivo = 'tamanho' } }
             $destino.Write($buffer, 0, $lidos)
         }
-        $destino.ToArray()
-    } catch {
-        Write-Verbose "Falha ao ler stream: $($_.Exception.Message)"
-        $null
+        [pscustomobject]@{ Bytes = $destino.ToArray(); Motivo = $null }
     } finally {
         $destino.Dispose()
     }
@@ -246,26 +347,46 @@ function Invoke-TmxHttpRequestOnce {
     .SYNOPSIS
         Wrapper de baixo nivel: UMA requisicao GET, SEM seguir redirect
         automatico. Existe separado de Invoke-TmxIconDownload para os testes
-        poderem mockar um 3xx com Location e exercitar a logica de redirect
-        manual sem precisar de servidor de verdade.
+        poderem mockar um 3xx com Location (ou uma resposta lenta de
+        verdade) e exercitar a logica de redirect/prazo sem precisar de
+        servidor real - ou, no teste do prazo absoluto, chamando ela DIRETO
+        contra um servidor TCP local (sem passar pela guarda de IP
+        privado/https, que so existe em Invoke-TmxIconDownload).
+    .DESCRIPTION
+        NAO usa Timeout/ReadWriteTimeout fixos: o prazo (absoluto) e checado
+        ANTES de abrir a conexao (GetResponse cobre so ate a resposta
+        chegar - a resolucao de DNS pode passar do Timeout configurado, o
+        .NET nao da como cortar isso no meio) e de novo, com o tempo que
+        sobrou, pra ler o corpo (Read-TmxLimitedStream).
     .OUTPUTS
-        [pscustomobject] @{ statusCode; location; bytes } ou $null (falha de
-        rede/tempo esgotado antes de qualquer resposta chegar). 'bytes' e
-        $null quando statusCode nao e 2xx, ou quando Read-TmxLimitedStream
-        recusou o corpo (tamanho/tempo). Nunca lanca.
+        [pscustomobject] @{ statusCode; location; bytes; motivoFalha } ou
+        $null (nenhuma resposta chegou - rede/tempo esgotado ANTES do
+        GetResponse). 'motivoFalha' e $null | 'tamanho' | 'tempo' -
+        preenchido so quando 'bytes' e $null com statusCode 2xx (a leitura
+        do corpo que falhou). Nunca lanca.
     #>
     [CmdletBinding()]
     param(
         [Parameter(Mandatory)] [string] $Url,
         [int] $TimeoutMs = 5000,
-        [int] $MaxBytes = 524288
+        [int] $MaxBytes = 524288,
+        [Nullable[DateTime]] $PrazoAbsolutoUtc = $null
     )
+
+    $prazo = $PrazoAbsolutoUtc
+    if (-not $prazo) { $prazo = Get-TmxIconDefaultDeadlineUtc -TimeoutMs $TimeoutMs }
 
     $resposta = $null
     try {
+        $restanteAntes = Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazo
+        if ($restanteAntes -le 0) { return $null }
+
         $pedido = [System.Net.HttpWebRequest]::Create($Url)
-        $pedido.Timeout           = $TimeoutMs
-        $pedido.ReadWriteTimeout  = $TimeoutMs
+        # O menor entre TimeoutMs (teto por chamada) e o que sobra do prazo
+        # absoluto - nunca o TimeoutMs cheio de novo a cada salto/tentativa.
+        $tempoEfetivo = [Math]::Max(1, [Math]::Min($TimeoutMs, [int]$restanteAntes))
+        $pedido.Timeout           = $tempoEfetivo
+        $pedido.ReadWriteTimeout  = $tempoEfetivo
         $pedido.Method            = 'GET'
         $pedido.UserAgent         = 'TweakMaxing'
         # Redirect e tratado NA MAO por Invoke-TmxIconDownload: cada salto
@@ -279,20 +400,24 @@ function Invoke-TmxHttpRequestOnce {
             # 4xx/5xx chegam aqui como excecao (com Response preenchido);
             # 3xx NAO lanca com AllowAutoRedirect=false - volta normal do
             # GetResponse() acima, com StatusCode/Headers do redirect.
+            # Sem Response (DNS, timeout, recusa de conexao, TLS): nenhuma
+            # resposta chegou - $null e a falha de rede/transitoria aqui.
             if ($_.Exception.Response) { $resposta = $_.Exception.Response } else { return $null }
         }
 
         $statusCode = [int]$resposta.StatusCode
         $location   = "$($resposta.Headers['Location'])"
-        $bytes      = $null
+        $bytes       = $null
+        $motivoFalha = $null
 
         if ($statusCode -ge 200 -and $statusCode -lt 300) {
-            $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
-            $bytes = Read-TmxLimitedStream -Stream $resposta.GetResponseStream() -MaxBytes $MaxBytes `
-                -ContentLength $resposta.ContentLength -Stopwatch $cronometro -TimeoutMs $TimeoutMs
+            $leitura = Read-TmxLimitedStream -Stream $resposta.GetResponseStream() -MaxBytes $MaxBytes `
+                -ContentLength $resposta.ContentLength -PrazoAbsolutoUtc $prazo
+            $bytes       = $leitura.Bytes
+            $motivoFalha = $leitura.Motivo
         }
 
-        [pscustomobject]@{ statusCode = $statusCode; location = $location; bytes = $bytes }
+        [pscustomobject]@{ statusCode = $statusCode; location = $location; bytes = $bytes; motivoFalha = $motivoFalha }
     } catch {
         Write-Verbose "Falha na requisicao '$Url': $($_.Exception.Message)"
         $null
@@ -312,26 +437,29 @@ function Invoke-TmxIconDownload {
         resolvido contra a URL atual (pode vir relativo) e revalidado (https
         + nao IP privado) antes de seguir - um redirect https->http, ou pra
         um IP interno, para a cadeia na hora.
-    .PARAMETER PrazoMs
-        Orcamento TOTAL desta chamada (todos os saltos de redirect somados),
-        vindo de quem chama (Get-TmxAppIconFromSite, que por sua vez recebeu
-        de Invoke-TmxAppIconBatch). 0 = sem orcamento externo, usa TimeoutMs
-        cheio em cada salto (uso direto/testes). Com orcamento: aborta a
-        cadeia (sem tentar mais nada) assim que o restante chega a zero, e
-        cada salto usa o MENOR entre TimeoutMs e o restante - sem isso, 3
-        saltos de 5s cada podiam gastar 15s+ mesmo com um orcamento de lote
-        de so 8s.
+    .PARAMETER PrazoAbsolutoUtc
+        Instante (UTC) em que o orcamento desta chamada INTEIRA (todos os
+        saltos de redirect somados) acaba - vindo de quem chama
+        (Get-TmxAppIconFromSite, que por sua vez recebeu de
+        Invoke-TmxAppIconBatch/Get-TmxAppIcon). Omitido = 'agora + TimeoutMs'
+        (uso direto/testes, sem orcamento de lote externo). E o MESMO
+        instante em TODOS os niveis (nunca um cronometro novo comecando do
+        zero a cada chamada) - e exatamente essa reutilizacao que evita o
+        orcamento "esticar" (um app lento nao pode gastar TimeoutMs de novo
+        em cada tentativa so porque cada nivel tinha o seu proprio relogio).
     .PARAMETER ErroRede
         [ref] opcional: setado como $true quando a causa de nao ter bytes foi
-        uma falha de rede/tempo esgotado (DNS, timeout, recusa de conexao) -
-        NUNCA quando o servidor respondeu (mesmo com 404) ou quando a
-        recusa foi por regra nossa (https/IP privado/redirect demais). Quem
-        chama usa isso pra NAO gravar cache negativo numa falha transitoria.
+        uma falha de rede/tempo esgotado (DNS, timeout, recusa de conexao,
+        conexao cortada no meio do corpo) - NUNCA quando o servidor
+        respondeu com um corpo utilizavel (mesmo 404) ou quando a recusa foi
+        por regra nossa (https/IP privado/redirect demais/corpo grande
+        demais). Quem chama usa isso pra NAO gravar cache negativo numa
+        falha transitoria.
     .PARAMETER OrcamentoEsgotado
         [ref] opcional: setado como $true quando a cadeia foi abortada por
-        falta de tempo (PrazoMs), nao por uma resposta de verdade. Mesma
-        ideia do ErroRede: orcamento estourado nao e "sem icone", e "nao deu
-        tempo de saber".
+        falta de tempo (PrazoAbsolutoUtc), nao por uma resposta de verdade.
+        Mesma ideia do ErroRede: orcamento estourado nao e "sem icone", e
+        "nao deu tempo de saber".
     #>
     [CmdletBinding()]
     param(
@@ -339,7 +467,7 @@ function Invoke-TmxIconDownload {
         [int] $TimeoutMs = 5000,
         [int] $MaxBytes = 524288,
         [int] $MaxRedirects = 3,
-        [int] $PrazoMs = 0,
+        [Nullable[DateTime]] $PrazoAbsolutoUtc = $null,
         [ref] $ErroRede,
         [ref] $OrcamentoEsgotado
     )
@@ -353,21 +481,18 @@ function Invoke-TmxIconDownload {
         Write-Verbose "Nao foi possivel forcar TLS 1.2: $($_.Exception.Message)"
     }
 
-    $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
+    $prazo = $PrazoAbsolutoUtc
+    if (-not $prazo) { $prazo = Get-TmxIconDefaultDeadlineUtc -TimeoutMs $TimeoutMs }
+
     $urlAtual = $Url
     $saltos   = 0
     while ($true) {
-        $tempoSalto = $TimeoutMs
-        if ($PrazoMs -gt 0) {
-            $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
-            if ($restante -le 0) {
-                if ($OrcamentoEsgotado) { $OrcamentoEsgotado.Value = $true }
-                return $null
-            }
-            $tempoSalto = [Math]::Min($TimeoutMs, [int]$restante)
+        if ((Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazo) -le 0) {
+            if ($OrcamentoEsgotado) { $OrcamentoEsgotado.Value = $true }
+            return $null
         }
 
-        $r = Invoke-TmxHttpRequestOnce -Url $urlAtual -TimeoutMs $tempoSalto -MaxBytes $MaxBytes
+        $r = Invoke-TmxHttpRequestOnce -Url $urlAtual -TimeoutMs $TimeoutMs -MaxBytes $MaxBytes -PrazoAbsolutoUtc $prazo
         if ($null -eq $r) {
             # Invoke-TmxHttpRequestOnce so devolve $null quando nenhuma
             # resposta chegou (DNS, timeout, conexao recusada, TLS) - e
@@ -376,7 +501,15 @@ function Invoke-TmxIconDownload {
             return $null
         }
 
-        if ($r.statusCode -ge 200 -and $r.statusCode -lt 300) { return $r.bytes }
+        if ($r.statusCode -ge 200 -and $r.statusCode -lt 300) {
+            if ($null -eq $r.bytes -and $r.motivoFalha -eq 'tempo') {
+                # Corpo cortado por timeout/conexao caida no meio: falha de
+                # rede, nao "servidor respondeu, sem icone" - so 'tamanho'
+                # (>512KB) conta como recusa de verdade (nao e "nao sabemos").
+                if ($ErroRede) { $ErroRede.Value = $true }
+            }
+            return $r.bytes
+        }
 
         if ($r.statusCode -ge 300 -and $r.statusCode -lt 400 -and $r.location) {
             $saltos++
@@ -385,6 +518,13 @@ function Invoke-TmxIconDownload {
             if (-not (Test-TmxIconUrlAllowed -Url $proxima)) { return $null }
             $urlAtual = $proxima
             continue
+        }
+
+        # 429 (rate limit) e 5xx sao transitorios por natureza - o servidor
+        # esta de pe, mas recusando/falhando agora; nao prova que o app nao
+        # tem icone, so que agora nao deu.
+        if ($r.statusCode -eq 429 -or $r.statusCode -ge 500) {
+            if ($ErroRede) { $ErroRede.Value = $true }
         }
 
         return $null
@@ -651,12 +791,12 @@ function Get-TmxAppIconFromSite {
         Tenta baixar o icone do site oficial: icon do catalogo (se https) ->
         favicon.ico do host de link -> <link rel=icon> da propria pagina.
         $null se nada funcionar.
-    .PARAMETER PrazoMs
-        Orcamento TOTAL desta etapa inteira (todas as tentativas: catalogo,
-        favicon, pagina HTML, icone resolvido do HTML - cada uma pode
-        envolver ate 3 saltos de redirect). Repassado pra cada
-        Invoke-TmxIconDownload como o RESTANTE na hora daquela tentativa
-        especifica, nao o valor cheio de novo.
+    .PARAMETER PrazoAbsolutoUtc
+        Instante (UTC) em que o orcamento desta etapa INTEIRA acaba (todas
+        as tentativas: catalogo, favicon, pagina HTML, icone resolvido do
+        HTML - cada uma pode envolver ate 3 saltos de redirect). O MESMO
+        instante e repassado pra cada Invoke-TmxIconDownload, nunca um
+        cronometro novo a cada tentativa.
     .PARAMETER ErroRede
         [ref] opcional: $true se QUALQUER tentativa bateu em falha de
         rede/tempo esgotado (nao serve pra decidir "sem icone" - so pra quem
@@ -669,19 +809,21 @@ function Get-TmxAppIconFromSite {
     param(
         [string] $IconCatalogo,
         [string] $Link,
-        [int] $PrazoMs = 20000,
+        [Nullable[DateTime]] $PrazoAbsolutoUtc = $null,
         [ref] $ErroRede,
         [ref] $OrcamentoEsgotado
     )
 
-    $cronometro   = [System.Diagnostics.Stopwatch]::StartNew()
+    $prazo = $PrazoAbsolutoUtc
+    if (-not $prazo) { $prazo = Get-TmxIconDefaultDeadlineUtc -TimeoutMs 20000 }
+
     $teveErroRede = $false
     $teveEsgotado = $false
 
     # Sem funcao aninhada de proposito (evita depender de escopo dinamico pra
-    # enxergar $cronometro/$PrazoMs de dentro dela): cada tentativa repete o
-    # mesmo trio "calcula restante -> chama com refs -> acumula sinalizadores"
-    # na mao. Mais linhas, zero ambiguidade de escopo.
+    # enxergar $prazo de dentro dela): cada tentativa repete o mesmo trio
+    # "confere o prazo -> chama com refs -> acumula sinalizadores" na mao.
+    # Mais linhas, zero ambiguidade de escopo.
 
     $resultado = $null
     $candidatas = New-Object 'System.Collections.Generic.List[string]'
@@ -692,22 +834,22 @@ function Get-TmxAppIconFromSite {
     if ($hostLink) { $candidatas.Add("https://$hostLink/favicon.ico") }
 
     foreach ($url in $candidatas) {
-        $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
-        if ($restante -le 0) { $teveEsgotado = $true; break }
+        if ((Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazo) -le 0) { $teveEsgotado = $true; break }
         $erroLocal = $false
         $esgotadoLocal = $false
-        $bytes = Invoke-TmxIconDownload -Url $url -PrazoMs ([int]$restante) -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+        $bytes = Invoke-TmxIconDownload -Url $url -PrazoAbsolutoUtc $prazo -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
         if ($erroLocal) { $teveErroRede = $true }
         if ($esgotadoLocal) { $teveEsgotado = $true }
         if ($bytes -and $bytes.Length -gt 0) { $resultado = $bytes; break }
     }
 
     if (-not $resultado -and (Test-TmxIconUrlHttps -Url $Link)) {
-        $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
-        if ($restante -gt 0) {
+        if ((Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazo) -le 0) {
+            $teveEsgotado = $true
+        } else {
             $erroLocal = $false
             $esgotadoLocal = $false
-            $htmlBytes = Invoke-TmxIconDownload -Url $Link -PrazoMs ([int]$restante) -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+            $htmlBytes = Invoke-TmxIconDownload -Url $Link -PrazoAbsolutoUtc $prazo -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
             if ($erroLocal) { $teveErroRede = $true }
             if ($esgotadoLocal) { $teveEsgotado = $true }
 
@@ -717,22 +859,19 @@ function Get-TmxAppIconFromSite {
                 if ($href) {
                     $resolvida = ConvertTo-TmxIconAbsoluteUrl -Base $Link -Href $href
                     if (Test-TmxIconUrlHttps -Url $resolvida) {
-                        $restante = $PrazoMs - $cronometro.ElapsedMilliseconds
-                        if ($restante -gt 0) {
+                        if ((Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazo) -le 0) {
+                            $teveEsgotado = $true
+                        } else {
                             $erroLocal = $false
                             $esgotadoLocal = $false
-                            $bytes = Invoke-TmxIconDownload -Url $resolvida -PrazoMs ([int]$restante) -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
+                            $bytes = Invoke-TmxIconDownload -Url $resolvida -PrazoAbsolutoUtc $prazo -ErroRede ([ref]$erroLocal) -OrcamentoEsgotado ([ref]$esgotadoLocal)
                             if ($erroLocal) { $teveErroRede = $true }
                             if ($esgotadoLocal) { $teveEsgotado = $true }
                             if ($bytes -and $bytes.Length -gt 0) { $resultado = $bytes }
-                        } else {
-                            $teveEsgotado = $true
                         }
                     }
                 }
             }
-        } else {
-            $teveEsgotado = $true
         }
     }
 
@@ -806,17 +945,19 @@ function Get-TmxAppIcon {
         Get-TmxAppIconFromExe. Quem resolve varios apps de uma vez (a ponte
         apps.icons) le o registro de desinstalar UMA vez e passa aqui, em vez
         de deixar cada chamada varrer tudo de novo.
-    .PARAMETER PrazoRestanteMs
-        Orcamento (em ms) que a etapa de SITE desta chamada pode gastar -
-        repassado direto pra Get-TmxAppIconFromSite. Vem de
-        Invoke-TmxAppIconBatch (orcamento do LOTE menos o que ja foi gasto
-        nos apps anteriores). Padrao generoso (20s) pra uso direto/testes,
-        onde nao ha um orcamento de lote a respeitar.
+    .PARAMETER PrazoAbsolutoUtc
+        Instante (UTC) em que o orcamento desta chamada INTEIRA acaba -
+        cobre cache, exe E site (embora so a etapa de site realmente
+        verifique o relogio: cache/exe sao locais e rapidos, mas se eles
+        demorarem por algum motivo, o site step naturalmente recebe menos
+        tempo, porque e o MESMO instante, nunca um cronometro novo). Vem de
+        Invoke-TmxAppIconBatch (orcamento do LOTE, um instante por app).
+        Omitido = 'agora + 20s' (uso direto/testes, sem orcamento de lote).
     .DESCRIPTION
         Nunca lanca: qualquer falha vira $null + Write-TmxLog WARN. Uma
         chamada com icone achado grava/atualiza o cache em disco. Quando o
         id e seguro (Test-TmxAppIconIdSafe) e a etapa de site rodou ATE O FIM
-        (sem falha de rede, sem estourar PrazoRestanteMs) sem achar nada,
+        (sem falha de rede, sem estourar PrazoAbsolutoUtc) sem achar nada,
         grava o cache negativo (Set-TmxAppIconNegativeCache) para nao repetir
         a busca de rede por 7 dias - uma falha de rede transitoria ou um
         orcamento curto demais NUNCA gravam o marcador (senao um problema de
@@ -827,7 +968,7 @@ function Get-TmxAppIcon {
         [Parameter(Mandatory)] $App,
         [switch] $Offline,
         $UninstallEntries,
-        [int] $PrazoRestanteMs = 20000
+        [Nullable[DateTime]] $PrazoAbsolutoUtc = $null
     )
 
     $id = "$($App.id)"
@@ -887,12 +1028,15 @@ function Get-TmxAppIcon {
         $tentouSite = (-not $semRede) -and (-not $puloPorCacheNegativo)
 
         if ($tentouSite) {
+            $prazoSite = $PrazoAbsolutoUtc
+            if (-not $prazoSite) { $prazoSite = Get-TmxIconDefaultDeadlineUtc -TimeoutMs 20000 }
+
             $bytesSite = $null
             $erroRedeSite = $false
             $orcamentoEsgotadoSite = $false
             try {
                 $bytesSite = Get-TmxAppIconFromSite -IconCatalogo "$($App.icon)" -Link "$($App.link)" `
-                    -PrazoMs $PrazoRestanteMs -ErroRede ([ref]$erroRedeSite) -OrcamentoEsgotado ([ref]$orcamentoEsgotadoSite)
+                    -PrazoAbsolutoUtc $prazoSite -ErroRede ([ref]$erroRedeSite) -OrcamentoEsgotado ([ref]$orcamentoEsgotadoSite)
             } catch {
                 Write-TmxLog -Level WARN -Message "Falha ao buscar icone do site para '$id'" -Data @{ erro = $_.Exception.Message }
                 $erroRedeSite = $true
@@ -941,13 +1085,17 @@ function Invoke-TmxAppIconBatch {
         acao assincrona - instalar, listar instalados, etc. - consegue
         rodar enquanto o lote nao termina).
 
-        O orcamento RESTANTE (nao o total) e repassado pra cada
-        Get-TmxAppIcon como -PrazoRestanteMs, que por sua vez capa cada
-        download individual (Invoke-TmxIconDownload/Invoke-TmxHttpRequestOnce)
-        a esse mesmo restante - sem isso, um unico app lento (ate 3 URLs de
-        candidato, cada uma com ate 3 saltos de redirect de 5s) podia gastar
-        15s+ sozinho mesmo com um orcamento de lote de so 8s (a checagem
-        antiga so olhava o relogio ENTRE apps, nunca durante um app so).
+        O orcamento do LOTE vira UM instante absoluto (agora + BudgetMs),
+        calculado uma vez so aqui e repassado pra Get-TmxAppIcon como
+        -PrazoAbsolutoUtc - o MESMO instante em TODOS os niveis (Get-TmxAppIcon
+        -> Get-TmxAppIconFromSite -> Invoke-TmxIconDownload ->
+        Invoke-TmxHttpRequestOnce -> Read-TmxLimitedStream), nunca um
+        cronometro relativo recomecando do zero a cada nivel. Sem isso, um
+        unico app lento (ate 3 URLs de candidato, cada uma com ate 3 saltos
+        de redirect de 5s) podia gastar 15s+ sozinho mesmo com um orcamento
+        de lote de so 8s (a checagem antiga so olhava o relogio ENTRE apps,
+        nunca durante um app so, E cada nivel comecava seu proprio relogio
+        do zero em vez de saber quanto ja tinha passado nos niveis de fora).
 
         Ids que nao COUBEREM no orcamento (o relogio ja zerou antes de
         comecar) saem sem icone e SEM cache negativo, e voltam em
@@ -969,17 +1117,22 @@ function Invoke-TmxAppIconBatch {
         [int] $BudgetMs = 8000
     )
 
-    $icones     = [ordered]@{}
-    $pendentes  = New-Object 'System.Collections.Generic.List[string]'
-    $cronometro = [System.Diagnostics.Stopwatch]::StartNew()
+    $icones   = [ordered]@{}
+    $pendentes = New-Object 'System.Collections.Generic.List[string]'
+
+    # UM instante absoluto pro lote inteiro - repassado sem alteracao pra
+    # TODOS os niveis abaixo (ver Get-TmxAppIcon/Get-TmxAppIconFromSite/
+    # Invoke-TmxIconDownload/Invoke-TmxHttpRequestOnce). Nenhum nivel comeca
+    # o proprio cronometro relativo: todos perguntam "quanto falta ate ESTE
+    # instante", entao o tempo ja gasto em niveis de fora sempre conta.
+    $prazoLote = Get-TmxIconDefaultDeadlineUtc -TimeoutMs $BudgetMs
 
     for ($i = 0; $i -lt $Apps.Count; $i++) {
-        $restante = $BudgetMs - $cronometro.ElapsedMilliseconds
-        if ($restante -le 0) {
+        if ((Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazoLote) -le 0) {
             for ($j = $i; $j -lt $Apps.Count; $j++) { $pendentes.Add("$($Apps[$j].id)") }
             break
         }
-        $achado = Get-TmxAppIcon -App $Apps[$i] -UninstallEntries $UninstallEntries -PrazoRestanteMs ([int]$restante)
+        $achado = Get-TmxAppIcon -App $Apps[$i] -UninstallEntries $UninstallEntries -PrazoAbsolutoUtc $prazoLote
         if ($achado) { $icones["$($achado.id)"] = @{ src = $achado.src; origem = $achado.origem } }
     }
 
