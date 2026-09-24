@@ -47,11 +47,14 @@ function Assert-Tmx {
 }
 
 $abas = @(
-    @{ chave = 'instalar';    rotulo = 'Instalar' }
-    @{ chave = 'ajustes';     rotulo = 'Ajustes' }
-    @{ chave = 'configurar';  rotulo = 'Configurar' }
-    @{ chave = 'atualizacoes'; rotulo = 'Atualizacoes' }
-    @{ chave = 'microwin';    rotulo = 'MicroWin' }
+    @{ chave = 'painel';        rotulo = 'Painel' }
+    @{ chave = 'otimizacoes';   rotulo = 'Otimizacoes' }
+    @{ chave = 'limpeza';       rotulo = 'Limpeza' }
+    @{ chave = 'restauracao';   rotulo = 'Restauracao' }
+    @{ chave = 'aplicativos';   rotulo = 'Aplicativos' }
+    @{ chave = 'microwin';      rotulo = 'MicroWin' }
+    @{ chave = 'sistema';       rotulo = 'Sistema' }
+    @{ chave = 'configuracoes'; rotulo = 'Configuracoes' }
 )
 
 $gui = $null
@@ -86,7 +89,7 @@ try {
     Assert-Tmx -Nome "#versao = $versaoEsperada (veio da ponte)" -Condicao ($versao -eq $versaoEsperada) -Detalhe "obtido: '$versao'"
 
     $quantas = Invoke-AB 'get' 'count' 'nav [data-tab]'
-    Assert-Tmx -Nome 'nav tem 5 abas' -Condicao ("$quantas".Trim() -eq '5') -Detalhe "obtido: '$quantas'"
+    Assert-Tmx -Nome 'nav tem 8 abas (v2)' -Condicao ("$quantas".Trim() -eq '8') -Detalhe "obtido: '$quantas'"
 
     foreach ($aba in $abas) {
         Invoke-AB 'click' ("nav [data-tab={0}]" -f $aba.chave) | Out-Null
@@ -126,7 +129,7 @@ try {
                -Condicao ($logoDepois -like '*TweakMaxing*') -Detalhe "obtido: '$logoDepois'"
 
     # Volta para a aba padrao antes do print.
-    Invoke-AB 'click' 'nav [data-tab=ajustes]' | Out-Null
+    Invoke-AB 'click' 'nav [data-tab=painel]' | Out-Null
     $print = Join-Path (Initialize-TmxGuiOut) 'shell.png'
     Invoke-AB 'screenshot' $print | Out-Null
     Assert-Tmx -Nome 'screenshot gravado' -Condicao (Test-Path -LiteralPath $print) -Detalhe $print

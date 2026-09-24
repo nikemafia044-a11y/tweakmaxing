@@ -52,7 +52,12 @@ function Get-TmxGpuVramBytes {
         $sub  = Join-Path $classe $nome
         $desc = Get-TmxItemPropertySafe -Path $sub -Name 'DriverDesc'
         if (-not $desc) { continue }
-        if ("$desc" -ne "$Modelo") { continue }
+        # Espacos normalizados dos dois lados: o driver da AMD grava
+        # DriverDesc como "AMD  Radeon RX 7800 XT" (dois espacos) e o perfil
+        # (Get-TmxGpuSection) ja entrega o nome com espacos colapsados - a
+        # comparacao exata nunca casava e a VRAM caia no AdapterRAM (uint32,
+        # teto de 4 GB).
+        if ((("$desc" -replace '\s+', ' ').Trim()) -ne (("$Modelo" -replace '\s+', ' ').Trim())) { continue }
 
         $raw = Get-TmxItemPropertySafe -Path $sub -Name 'HardwareInformation.qwMemorySize'
         if ($null -eq $raw) { continue }

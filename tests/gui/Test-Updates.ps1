@@ -22,6 +22,10 @@ param(
 
 . (Join-Path $PSScriptRoot '_GuiHelpers.ps1')
 
+# Sessao isolada do agent-browser: com a sessao 'default' compartilhada, o
+# 'close' de um teste de GUI de outra porta derrubava a conexao deste.
+$env:AGENT_BROWSER_SESSION = "tmx-gui-$Port"
+
 $script:Falhas = 0
 
 # Chave de teste que o modo de teste usa no lugar da politica real. Uma rodada
@@ -144,7 +148,9 @@ try {
     Invoke-AB 'wait' '#st-rp' | Out-Null
     Close-TmxGuiWelcome
 
-    Invoke-AB 'click' 'nav [data-tab=atualizacoes]' | Out-Null
+    # v2: Atualizacoes mora dentro do item Sistema, como sub-aba.
+    Invoke-AB 'click' 'nav [data-tab=sistema]' | Out-Null
+    Invoke-AB 'click' '.subaba[data-subtab=atualizacoes]' | Out-Null
     Invoke-AB 'wait' '#upd-cartoes' | Out-Null
 
     $visivel = "$(Invoke-AB 'is' 'visible' '#tab-atualizacoes')".Trim()
@@ -184,7 +190,15 @@ try {
     $marcado = "$(Invoke-AB 'eval' "document.getElementById('upd-radio-UPD-003').checked")".Trim()
     Assert-Tmx -Nome 'o radio de UPD-003 fica marcado ao clicar' -Condicao ($marcado -match '(?i)true') -Detalhe "obtido: '$marcado'"
 
-    Invoke-AB 'click' '#upd-UPD-003 .upd-aplicar' | Out-Null
+    # Logo apos abrir a sessao a lista de cartoes e redesenhada; um clique
+    # nesse intervalo cai num botao que saiu do DOM. Rola ate o botao e
+    # repete o clique ate o modal abrir.
+    for ($tentativa = 1; $tentativa -le 3; $tentativa++) {
+        Invoke-AB 'scrollintoview' '#upd-UPD-003 .upd-aplicar' | Out-Null
+        Invoke-AB 'click' '#upd-UPD-003 .upd-aplicar' | Out-Null
+        Start-Sleep -Seconds 2
+        if ("$(Invoke-AB 'eval' "document.getElementById('modal').hidden")" -match '(?i)false') { break }
+    }
     Invoke-AB 'wait' '#modal-buttons .btn-primary' | Out-Null
 
     $tituloModal = "$(Invoke-AB 'get' 'text' '#modal-title')".Trim()

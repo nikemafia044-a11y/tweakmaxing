@@ -1,434 +1,570 @@
-/* tweaks.css - aba "Ajustes".
-   Arquivo próprio (o app.css é a casca comum): tudo aqui é prefixado por
-   #tab-ajustes ou por .tw-*, e reusa os tokens de cor de :root do app.css.
-   Nada de cor literal fora dos tokens, para o tema claro continuar valendo. */
+/* tweaks.css - aba "Otimizações" (v2).
+ * Só tokens do :root de app.css. Nada de azul (matiz 190-260). */
 
-/* ---------- barra superior ---------- */
+#tab-otimizacoes .otim {
+  max-width: 1180px;
+  margin: 0 auto;
+  font-family: var(--font-body);
+  color: var(--text-body);
+}
 
-#tab-ajustes .tw-topo {
+/* ---------- topo ---------- */
+
+.otim-topo {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  align-items: center;
-  margin-bottom: 10px;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
 }
 
-#tab-ajustes .tw-presets {
+.otim-eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent-text);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+#tab-otimizacoes .otim-h {
+  margin: 0 0 6px;
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+  color: var(--text-primary);
+}
+
+.otim-sub { margin: 0; color: var(--text-secondary); font-size: 14px; }
+
+.otim-topo-acoes { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+
+.otim-pill {
   display: inline-flex;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  overflow: hidden;
-  background: var(--panel);
-}
-
-#tab-ajustes .tw-preset {
-  padding: 7px 14px;
-  border: 0;
-  border-right: 1px solid var(--linha);
-  background: transparent;
-  color: var(--muted);
-  font: inherit;
-  cursor: pointer;
-}
-
-#tab-ajustes .tw-preset:last-child { border-right: 0; }
-#tab-ajustes .tw-preset:hover { background: var(--panel-2); color: var(--fg); }
-
-#tab-ajustes .tw-preset[aria-pressed="true"] {
-  background: var(--active);
-  color: var(--active-fg);
-  font-weight: 650;
-}
-
-#tab-ajustes #tw-busca {
-  flex: 1 1 240px;
-  min-width: 170px;
-  padding: 7px 10px;
-  border: 1px solid var(--linha);
-  border-radius: 6px;
-  background: var(--panel-2);
-  color: var(--fg);
-  font: inherit;
-}
-
-#tab-ajustes #tw-contadores {
-  color: var(--muted);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
+  align-items: center;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid var(--accent-tint);
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-size: 12.5px;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-#tab-ajustes .tw-legenda {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 14px;
-  align-items: center;
-  margin: 0 0 14px;
-  padding: 8px 12px;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  background: var(--panel-2);
-  color: var(--muted);
-  font-size: 12px;
-}
-
-#tab-ajustes .tw-legenda .selo { margin-right: 4px; }
-
-/* ---------- categorias ---------- */
-
-#tab-ajustes details.tw-cat {
-  margin-bottom: 8px;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  background: var(--panel);
-}
-
-#tab-ajustes details.tw-cat > summary {
-  padding: 10px 14px;
-  font-weight: 650;
+.otim-link {
+  position: relative;
+  min-height: var(--clique-min);
+  padding: 0 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-secondary);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
   cursor: pointer;
-  border-radius: var(--raio);
 }
 
-#tab-ajustes details.tw-cat > summary::marker { color: var(--muted); }
-#tab-ajustes details.tw-cat > summary:hover { background: var(--panel-2); }
-#tab-ajustes details.tw-cat > summary .tw-cat-conta {
-  margin-left: 8px;
-  color: var(--muted);
-  font-weight: 400;
-  font-size: 12px;
+.otim-link:hover { color: var(--text-primary); background: var(--bg-elevated); }
+.otim-link:disabled { opacity: 0.45; cursor: default; background: transparent; }
+
+/* ---------- seletor de modos ---------- */
+
+.otim-modos {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
 }
 
-#tab-ajustes details.tw-cat[hidden] { display: none; }
-
-#tab-ajustes .tw-lista {
-  padding: 2px 10px 10px;
-}
-
-/* ---------- cartão de um ajuste ---------- */
-/* Cada .tweak é um cartão compacto e didático: linha 1 (.tw-cabecalho) tem o
-   controle + nome + ações; linha 2 é a descrição resumida; linha 3
-   (.tw-badges) traz os selos; e .tw-mais é o <details> "Saiba mais". */
-
-#tab-ajustes .tweak {
+.otim-modo {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
-  border: 1px solid var(--linha);
-  border-left: 3px solid transparent;
-  border-radius: var(--raio);
-  background: var(--panel);
+  gap: 10px;
+  min-height: 150px;
+  padding: 18px 18px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  color: var(--text-body);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
 }
 
-#tab-ajustes .tweak:last-child { margin-bottom: 0; }
-#tab-ajustes .tweak:hover { background: var(--elevated); }
-#tab-ajustes .tweak[hidden] { display: none; }
+.otim-modo:hover { border-color: var(--border-strong); background: var(--bg-elevated); }
+.otim-modo:disabled { cursor: progress; }
 
-#tab-ajustes .tweak.tw-folclore {
-  border-left-color: var(--warn);
-  background: color-mix(in srgb, var(--warn) 7%, transparent);
+.otim-modo[aria-checked="true"] {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, var(--accent-tint), var(--bg-surface));
+  box-shadow: 0 0 0 1px var(--accent);
 }
 
-#tab-ajustes .tweak.tw-bloqueado { opacity: 0.6; }
+.otim-modo-topo { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 
-#tab-ajustes .tw-cabecalho {
+.otim-modo-nome {
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.otim-barras { display: inline-flex; gap: 3px; }
+.otim-barras > span { width: 5px; height: 16px; border-radius: 2px; background: var(--border-strong); }
+.otim-modo-leve .otim-barras > span.on,
+.otim-modo-moderado .otim-barras > span.on { background: var(--accent); }
+.otim-modo-avancado .otim-barras > span.on { background: var(--risk-medium); }
+.otim-modo-ultimate .otim-barras > span.on { background: var(--danger); }
+
+.otim-modo-desc { flex: 1; font-size: 13px; line-height: 1.5; color: var(--text-secondary); }
+.otim-modo-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- explicação do modo ---------- */
+
+.otim-explica {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 18px;
+  padding: 20px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-subtle);
+}
+
+.otim-explica p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text-body); }
+
+.otim-rotulo {
+  margin: 0 0 4px;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.otim-explica .otim-rotulo:not(.otim-rotulo-atencao) { color: var(--accent-text); }
+.otim-rotulo-beneficio { color: var(--accent-text); }
+.otim-rotulo-atencao { color: var(--risk-medium); }
+
+/* ---------- busca e filtros ---------- */
+
+.otim-busca {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-height: 46px;
+  margin-bottom: 14px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  color: var(--text-muted);
 }
 
-#tab-ajustes .tw-controle {
-  flex: 0 0 auto;
+.otim-busca:focus-within { border-color: var(--accent); }
+
+.otim-busca input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 14px;
+}
+
+.otim-busca input::placeholder { color: var(--text-muted); }
+
+.otim-ferramentas {
   display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.otim-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.otim-chip {
+  position: relative;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-body);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+/* área de clique de 44 px sem aumentar o desenho */
+.otim-chip::after { content: ""; position: absolute; left: 0; right: 0; top: -4px; bottom: -4px; }
+.otim-chip:hover { border-color: var(--border-strong); background: var(--bg-elevated); }
+.otim-chip[aria-pressed="true"] {
+  border-color: var(--text-primary);
+  background: var(--text-primary);
+  color: var(--bg-app);
+  font-weight: 600;
+}
+
+/* ---------- cards ---------- */
+
+.otim-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 14px;
+}
+
+#tab-otimizacoes .otim-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 22px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  transition: border-color 0.15s ease;
+}
+
+#tab-otimizacoes .otim-card:hover { border-color: var(--border-strong); }
+#tab-otimizacoes .otim-card[hidden] { display: none; }
+#tab-otimizacoes .otim-card.is-acima > :not(.otim-card-topo),
+#tab-otimizacoes .otim-card.is-acima .otim-tags { opacity: 0.5; }
+#tab-otimizacoes .otim-card.tw-bloqueado > :not(.tw-mais) { opacity: 0.6; }
+
+.otim-card-topo { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+.otim-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.otim-tag {
+  display: inline-flex;
   align-items: center;
   min-height: 22px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
 }
 
-#tab-ajustes .tw-controle input[type="checkbox"],
-#tab-ajustes .tw-controle input[type="radio"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--accent);
-  cursor: pointer;
-}
+.otim-tag-modo { background: transparent; border: 1px solid var(--border-strong); }
 
-#tab-ajustes .tw-controle input:disabled { cursor: not-allowed; }
-
-#tab-ajustes .tw-nome {
+#tab-otimizacoes .tw-nome {
+  margin: 0 0 10px;
+  font-family: var(--font-title);
+  font-size: 17px;
   font-weight: 600;
-  cursor: pointer;
+  line-height: 1.35;
+  color: var(--text-primary);
 }
 
-#tab-ajustes .tw-id {
-  color: var(--muted);
-  font-size: 11px;
-  font-family: Consolas, "Cascadia Mono", monospace;
-}
+.otim-card-corpo { flex: 1; }
+.otim-card-corpo .otim-rotulo { margin-top: 10px; }
+.otim-card-corpo .otim-rotulo:first-child { margin-top: 0; }
+.otim-card-corpo p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text-body); }
 
-#tab-ajustes .tw-desc {
-  margin: 0;
-  color: var(--muted);
+#tab-otimizacoes .tw-motivo {
+  margin: 12px 0 0;
+  padding: 8px 10px;
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+  color: var(--text-secondary);
   font-size: 12.5px;
 }
 
-#tab-ajustes .tw-desc-principal {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
+#tab-otimizacoes .tw-folclore .tw-motivo { color: var(--risk-medium); background: var(--risk-medium-bg); }
 
-#tab-ajustes .tw-motivo {
-  margin: 1px 0 0;
-  color: var(--warn);
-  font-size: 12px;
-}
+.otim-opcao { display: flex; align-items: center; gap: 10px; margin-top: 12px; font-size: 12.5px; color: var(--text-secondary); }
+.otim-opcao select { flex: 1; min-height: 36px; }
 
-#tab-ajustes .tw-badges {
-  display: flex;
-  flex-wrap: wrap;
+/* "Saiba mais" */
+#tab-otimizacoes .tw-mais { margin-top: 12px; font-size: 13px; }
+
+#tab-otimizacoes .tw-mais > summary {
+  display: inline-flex;
   align-items: center;
-  gap: 6px;
-  margin-top: 1px;
-}
-
-#tab-ajustes .tw-mais {
-  margin-top: 1px;
-  font-size: 12.5px;
-}
-
-#tab-ajustes .tw-mais > summary {
-  cursor: pointer;
-  color: var(--accent);
+  min-height: 32px;
+  color: var(--accent-text);
   font-weight: 600;
+  cursor: pointer;
   list-style: none;
 }
 
-#tab-ajustes .tw-mais > summary::-webkit-details-marker { display: none; }
-#tab-ajustes .tw-mais > summary::before { content: "▸ "; }
-#tab-ajustes .tw-mais[open] > summary::before { content: "▾ "; }
-#tab-ajustes .tw-mais .tw-bloco:first-of-type { margin-top: 8px; }
+#tab-otimizacoes .tw-mais > summary::-webkit-details-marker { display: none; }
+#tab-otimizacoes .tw-mais > summary::before { content: "▸"; margin-right: 6px; font-size: 11px; }
+#tab-otimizacoes .tw-mais[open] > summary::before { content: "▾"; }
+#tab-otimizacoes .tw-mais[open] { padding-bottom: 4px; }
+#tab-otimizacoes .tw-mais .tw-bloco:first-of-type { margin-top: 6px; }
+.tw-mais-botoes { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 0; }
 
-#tab-ajustes .tw-acoes {
-  flex: 0 0 auto;
+.otim-card-pe {
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-left: auto;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
 }
 
-/* ---------- selos e estado ---------- */
+#tab-otimizacoes .tw-badges { display: flex; flex-wrap: wrap; gap: 6px; }
+#tab-otimizacoes .tw-acoes { display: flex; align-items: center; gap: 6px; }
 
-/* Selos de risco e reversibilidade: mesma família visual dos .selo-medido /
-   .selo-tecnico / .selo-folclore / .selo-parcial / .selo-irreversivel /
-   .selo-reboot definidos (sem prefixo de aba, de propósito) no app.css. */
-.selo-risco-baixo { color: var(--ok); }
-.selo-risco-medio { color: var(--warn); }
-.selo-risco-alto  { color: var(--danger); }
-.selo-reversivel  { color: var(--ok); }
-
-#tab-ajustes .estado {
-  display: inline-block;
-  padding: 1px 8px;
-  border-radius: 999px;
-  background: var(--panel-2);
-  border: 1px solid var(--linha);
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 650;
-  white-space: nowrap;
+/* selos dentro da aba e do modal: pílulas preenchidas, sem borda */
+#tab-otimizacoes .selo,
+#modal .tw-titulo .selo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
-#tab-ajustes .estado.estado-ok    { color: var(--ok);     border-color: var(--ok); }
-#tab-ajustes .estado.estado-undo  { color: var(--accent); border-color: var(--accent); }
-#tab-ajustes .estado.estado-falha { color: var(--danger); border-color: var(--danger); }
-#tab-ajustes .estado.estado-pulado{ color: var(--warn);   border-color: var(--warn); }
+#tab-otimizacoes .selo-risco-baixo, #modal .tw-titulo .selo-risco-baixo { background: var(--risk-low-bg); color: var(--risk-low); }
+#tab-otimizacoes .selo-risco-medio, #modal .tw-titulo .selo-risco-medio { background: var(--risk-medium-bg); color: var(--risk-medium); }
+#tab-otimizacoes .selo-risco-alto,  #modal .tw-titulo .selo-risco-alto  { background: var(--risk-high-bg); color: var(--risk-high); }
+#tab-otimizacoes .selo-medido,      #modal .tw-titulo .selo-medido      { background: var(--accent-tint); color: var(--accent-text); }
+#tab-otimizacoes .selo-folclore,    #modal .tw-titulo .selo-folclore    { background: var(--risk-medium-bg); color: var(--risk-medium); }
+#tab-otimizacoes .selo-parcial,     #modal .tw-titulo .selo-parcial     { background: var(--risk-medium-bg); color: var(--risk-medium); }
+#tab-otimizacoes .selo-irreversivel, #modal .tw-titulo .selo-irreversivel { background: var(--risk-high-bg); color: var(--risk-high); }
+#tab-otimizacoes .selo-aplicado { background: var(--accent-tint); color: var(--accent-text); }
+#tab-otimizacoes .selo[hidden] { display: none; }
 
-/* ---------- interruptor (controle toggle) ---------- */
-
-#tab-ajustes .tw-switch {
+/* chave liga/desliga: desenho de 44x24, área de clique de 52x44 */
+#tab-otimizacoes .tw-switch {
   position: relative;
-  width: 40px;
-  height: 22px;
+  flex: none;
+  width: 52px;
+  height: var(--clique-min);
   padding: 0;
-  border: 1px solid var(--linha);
-  border-radius: 999px;
-  background: var(--panel-2);
+  border: 0;
+  background: transparent;
   cursor: pointer;
 }
 
-#tab-ajustes .tw-switch::after {
+#tab-otimizacoes .tw-switch::before {
   content: "";
   position: absolute;
-  top: 2px;
-  left: 2px;
+  left: 4px;
+  top: 10px;
+  width: 44px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--border-strong);
+  transition: background 0.15s ease;
+}
+
+#tab-otimizacoes .tw-switch::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 14px;
   width: 16px;
   height: 16px;
   border-radius: 50%;
-  background: var(--muted);
-  transition: left 0.12s ease, background 0.12s ease;
+  background: var(--text-muted);
+  transition: transform 0.15s ease, background 0.15s ease;
 }
 
-#tab-ajustes .tw-switch[aria-checked="true"] {
-  background: var(--active);
-  border-color: var(--active);
-}
+#tab-otimizacoes .tw-switch[aria-checked="true"]::before { background: var(--accent); }
+#tab-otimizacoes .tw-switch[aria-checked="true"]::after { transform: translateX(20px); background: var(--on-accent); }
+#tab-otimizacoes .tw-switch:hover:not(:disabled)::before { box-shadow: 0 0 0 1px var(--accent); }
+#tab-otimizacoes .tw-switch:disabled { cursor: not-allowed; opacity: 0.5; }
+#tab-otimizacoes .tw-switch:focus-visible { outline: 2px solid var(--accent); outline-offset: 0; border-radius: var(--r-sm); }
 
-#tab-ajustes .tw-switch[aria-checked="true"]:hover {
-  background: var(--active-hover);
-  border-color: var(--active-hover);
-}
-
-#tab-ajustes .tw-switch[aria-checked="true"]::after {
-  left: 20px;
-  background: var(--active-fg);
-}
-
-#tab-ajustes .tw-switch:disabled { opacity: 0.45; cursor: not-allowed; }
-
-/* ---------- combobox e botões por item ---------- */
-
-#tab-ajustes .tw-opcoes {
-  padding: 5px 8px;
-  border: 1px solid var(--linha);
+/* estado da última ação no item */
+#tab-otimizacoes .estado,
+#modal .estado {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
   border-radius: 6px;
-  background: var(--panel-2);
-  color: var(--fg);
-  font: inherit;
-  max-width: 260px;
+  font-size: 11.5px;
+  font-weight: 600;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
 }
 
-#tab-ajustes .tw-info {
-  width: 26px;
-  height: 26px;
-  padding: 0;
-  border-radius: 50%;
-  font-weight: 700;
-  line-height: 1;
+#tab-otimizacoes .estado.estado-ok, #modal .estado.estado-ok { background: var(--risk-low-bg); color: var(--risk-low); }
+#tab-otimizacoes .estado.estado-undo, #modal .estado.estado-undo { background: var(--accent-tint); color: var(--accent-text); }
+#tab-otimizacoes .estado.estado-falha, #modal .estado.estado-falha { background: var(--risk-high-bg); color: var(--risk-high); }
+#tab-otimizacoes .estado.estado-pulado, #modal .estado.estado-pulado { background: var(--risk-medium-bg); color: var(--risk-medium); }
+
+/* ---------- extras ---------- */
+
+.otim-extras { margin-top: 32px; }
+.otim-extras[hidden] { display: none; }
+
+#tab-otimizacoes .otim-sec {
+  margin: 0 0 4px;
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
-/* ---------- rodapé fixo da aba ---------- */
+.otim-sec-texto { margin: 0 0 14px; max-width: 760px; color: var(--text-secondary); font-size: 13.5px; line-height: 1.5; }
 
-#tab-ajustes .tw-rodape {
+#tab-otimizacoes #tw-nada[hidden] { display: none; }
+#tab-otimizacoes #tw-nada { margin-top: 14px; }
+
+/* ---------- barra fixa de ação ---------- */
+
+.otim-barra {
   position: sticky;
-  bottom: 0;
+  bottom: -28px;           /* compensa o padding inferior de <main> */
   z-index: 5;
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
   align-items: center;
-  margin-top: 14px;
-  padding: 10px 14px;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  background: var(--panel);
-  box-shadow: 0 -6px 18px rgba(0, 0, 0, 0.25);
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 28px;
+  padding: 16px 0 44px;    /* 16 + 28 do padding de <main> */
+  border-top: 1px solid var(--border);
+  background: var(--bg-app);
 }
 
-#tab-ajustes .tw-rodape .tw-nota {
-  color: var(--muted);
-  font-size: 12px;
-  margin-left: auto;
+.otim-barra-texto { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.otim-barra-texto strong { color: var(--text-primary); font-size: 14px; font-weight: 600; }
+.otim-barra-texto span { color: var(--text-secondary); font-size: 12.5px; }
+.otim-barra-botoes { display: flex; gap: 10px; flex: none; }
+.otim-btn-sec { background: transparent; font-weight: 600; }
+.otim-btn-pri { padding: 6px 18px; }
+
+/* ---------- modais desta aba ---------- */
+
+.otim-ult-lista { margin: 0 0 12px; padding: 0; list-style: none; }
+.otim-ult-lista li {
+  margin-bottom: 6px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  background: var(--risk-high-bg);
+}
+.otim-ult-lista strong { display: block; color: var(--risk-high); font-size: 13.5px; }
+.otim-ult-lista span { display: block; color: var(--text-body); font-size: 12.5px; }
+.otim-ult-nota { color: var(--text-secondary); font-size: 13px; }
+
+.otim-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--clique-min);
+  cursor: pointer;
 }
 
-/* ---------- conteúdo dentro do modal ---------- */
+.otim-check input { width: 18px; height: 18px; accent-color: var(--accent); flex: none; }
+
+.otim-bloat {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+}
+
+.otim-bloat .otim-check { min-height: 38px; border-bottom: 1px solid var(--border); }
+.otim-bloat .otim-check:last-child { border-bottom: 0; }
+
+/* ---------- prévia, resultado, histórico (dentro de #modal) ---------- */
 
 .tw-tabela {
   width: 100%;
+  margin: 8px 0 12px;
   border-collapse: collapse;
   font-size: 12.5px;
 }
 
 .tw-tabela th,
 .tw-tabela td {
-  padding: 5px 8px;
-  border-bottom: 1px solid var(--linha);
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
   text-align: left;
   vertical-align: top;
 }
 
-.tw-tabela th { color: var(--muted); font-weight: 650; }
-.tw-tabela td.tw-antes  { color: var(--muted); }
-.tw-tabela td.tw-depois { color: var(--ok); font-weight: 600; }
-.tw-tabela tr.tw-grupo td {
-  padding-top: 10px;
-  border-bottom: 0;
-  color: var(--fg);
-  font-weight: 650;
-}
+.tw-tabela th { color: var(--text-secondary); font-weight: 600; }
+.tw-tabela td.tw-antes  { color: var(--text-secondary); }
+.tw-tabela td.tw-depois { color: var(--risk-low); font-weight: 600; white-space: nowrap; }
+.tw-tabela tr.tw-grupo td { color: var(--text-primary); font-weight: 600; background: var(--bg-subtle); }
+.tw-tabela .tw-cel-mono { font-family: var(--font-mono); font-size: 12px; word-break: break-all; }
 
-.tw-tabela .tw-cel-mono {
-  font-family: Consolas, "Cascadia Mono", monospace;
-  /* anywhere em vez de break-all: caminhos de registro longos quebram, mas
-     valores curtos ("1", "<ausente>") continuam inteiros. */
-  overflow-wrap: anywhere;
-}
-
-.tw-tabela td.tw-antes,
-.tw-tabela td.tw-depois { white-space: nowrap; }
-
-/* A tabela antes->depois precisa de mais largura que os 560 px padrão do modal. */
 #modal .modal-box:has(.tw-tabela) { width: min(860px, calc(100vw - 48px)); }
 
 .tw-consentimento {
-  margin: 10px 0;
-  padding: 10px 12px;
-  border-left: 3px solid var(--danger);
-  border-radius: 4px;
-  background: var(--panel-2);
+  margin: 12px 0;
+  padding: 12px 14px;
+  border: 1px solid var(--risk-medium-bg);
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
 }
 
-.tw-consentimento h4 { margin: 0 0 4px; font-size: 13px; }
-.tw-consentimento .tw-tradeoff { color: var(--muted); font-size: 12.5px; }
+.tw-consentimento h4 { margin: 0 0 4px; font-size: 13px; color: var(--risk-medium); }
+.tw-consentimento .tw-tradeoff { color: var(--text-secondary); font-size: 12.5px; }
 
 .tw-barra {
-  height: 8px;
+  height: 6px;
   margin: 10px 0 4px;
-  border: 1px solid var(--linha);
   border-radius: 999px;
-  background: var(--panel-2);
+  background: var(--bg-elevated);
   overflow: hidden;
 }
 
-.tw-barra > span {
-  display: block;
-  height: 100%;
-  width: 0;
-  background: var(--active);
-  transition: width 0.2s ease;
-}
+.tw-barra[hidden] { display: none; }
+.tw-barra > span { display: block; width: 0; height: 100%; background: var(--accent); transition: width 0.2s ease; }
 
 .tw-bloco { margin: 0 0 10px; }
-.tw-bloco h4 { margin: 0 0 2px; font-size: 13px; }
-.tw-bloco p { margin: 0; color: var(--muted); }
+.tw-bloco h4 { margin: 0 0 2px; font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.8px; }
+.tw-bloco p { margin: 0; color: var(--text-body); font-size: 13px; line-height: 1.5; }
 
 .tw-aviso-reboot {
   padding: 8px 12px;
-  border-left: 3px solid var(--warn);
-  border-radius: 4px;
-  background: var(--panel-2);
-  color: var(--warn);
+  border-radius: var(--r-sm);
+  background: var(--risk-medium-bg);
+  color: var(--risk-medium);
   font-weight: 600;
 }
 
 .tw-mono {
-  padding: 8px 10px;
-  border: 1px solid var(--linha);
-  border-radius: 6px;
-  background: var(--panel-2);
-  font-family: Consolas, "Cascadia Mono", monospace;
+  padding: 6px 10px;
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+  font-family: var(--font-mono);
+  font-size: 12.5px;
   word-break: break-all;
-  user-select: all;
 }
+
+.tw-titulo { display: flex; flex-wrap: wrap; gap: 6px; }
 
 /* ---------- telas estreitas ---------- */
 
-@media (max-width: 900px) {
-  #tab-ajustes .tw-topo { gap: 8px; }
-  #tab-ajustes #tw-contadores { width: 100%; }
-  #tab-ajustes .tw-acoes { margin-left: 0; width: 100%; justify-content: flex-end; }
-  #tab-ajustes .tw-rodape .tw-nota { margin-left: 0; width: 100%; }
-  .tw-tabela { font-size: 12px; }
+@media (max-width: 1100px) {
+  .otim-modos { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .otim-explica { grid-template-columns: 1fr; gap: 14px; }
+}
+
+@media (max-width: 760px) {
+  .otim-topo { flex-direction: column; align-items: flex-start; }
+  .otim-grid { grid-template-columns: 1fr; }
+  .otim-ferramentas { flex-direction: column; align-items: flex-start; }
+  .otim-barra { flex-direction: column; align-items: stretch; }
+  .otim-barra-botoes { justify-content: flex-end; }
 }

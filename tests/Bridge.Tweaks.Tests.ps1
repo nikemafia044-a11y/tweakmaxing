@@ -224,6 +224,112 @@ Describe 'Ajustes (ponte)' -Tag 'Tweaks' {
             (Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-003').selecionado | Should -BeFalse
         }
 
+        It 'catalog.get leva ao front os campos da v2 (modo, filtros, textos e i18n.en)' {
+            $t1 = Get-TmxTweakTestItem -Catalogo $global:TmxTesteCatalogo -Id 'TST-001'
+            $t1.modo | Should -Be 'leve'
+            @($t1.categoriasV2) | Should -Be @('geral', 'desempenho')
+            $t1.oQueFaz | Should -Not -BeNullOrEmpty
+            $t1.beneficio | Should -Not -BeNullOrEmpty
+            $t1.atencao | Should -Be 'Nenhuma.'
+            $t1.i18n.en.nome | Should -Be 'Test - registry value'
+            $t1.i18n.en.oQueFaz | Should -Not -BeNullOrEmpty
+
+            # Um tweak de producao tambem chega com os textos e a traducao.
+            $real = Get-TmxTweakTestItem -Catalogo $global:TmxTesteCatalogo -Id 'RED-001'
+            $real | Should -Not -BeNullOrEmpty
+            $real.modo | Should -Be 'moderado'
+            @($real.categoriasV2) | Should -Contain 'rede'
+            $real.oQueFaz | Should -Not -BeNullOrEmpty
+            $real.i18n.en.nome | Should -Not -BeNullOrEmpty
+
+            # Folclore e irreversivel ficam em extras.
+            (Get-TmxTweakTestItem -Catalogo $global:TmxTesteCatalogo -Id 'TST-003').modo | Should -Be 'extras'
+            (Get-TmxTweakTestItem -Catalogo $global:TmxTesteCatalogo -Id 'TST-004').modo | Should -Be 'extras'
+        }
+
+        It 'mode.select moderado soma leve e moderado e deixa o Ultimate de fora' {
+            $r = Invoke-TmxTweakBridge -Action 'mode.select' -Payload @{ mode = 'moderado' }
+
+            $r.ok | Should -BeTrue -Because $r.mensagem
+            $r.resultado.preset | Should -Be 'moderado'
+            (Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-001').selecionado | Should -BeTrue
+            (Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-002').selecionado | Should -BeTrue
+            $t5 = Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-005'
+            $t5.selecionado | Should -BeFalse
+            $t5.status | Should -Be 'foraDoPreset'
+            (Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-003').selecionado | Should -BeFalse
+        }
+
+        It 'mode.select ultimate inclui o risco alto, que continua exigindo consentimento' {
+            $r = Invoke-TmxTweakBridge -Action 'mode.select' -Payload @{ mode = 'ultimate' }
+
+            $r.ok | Should -BeTrue -Because $r.mensagem
+            $t5 = Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-005'
+            $t5.selecionado | Should -BeTrue
+            $t5.risco | Should -Be 'alto'
+            $t5.requerConsentimentoExtra | Should -BeTrue
+            $t5.consentido | Should -BeFalse
+            (Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-004').selecionado | Should -BeFalse
+
+            $previa = Invoke-TmxTweakBridge -Action 'plan.preview' -Payload @{ ids = @('TST-005') }
+            $previa.ok | Should -BeTrue -Because $previa.mensagem
+            @($previa.resultado.faltaConsentimento) | Should -Contain 'TST-005'
+        }
+
+        It 'mode.select recusa um modo fora dos quatro' {
+            $r = Invoke-TmxTweakBridge -Action 'mode.select' -Payload @{ mode = 'extras' }
+            $r.ok | Should -BeFalse
+            $r.mensagem | Should -BeLike 'modo invalido*'
+        }
+
+        It 'preset.apply tambem aceita os modos e volta ao desktop' {
+            $r = Invoke-TmxTweakBridge -Action 'preset.apply' -Payload @{ preset = 'leve' }
+            $r.ok | Should -BeTrue -Because $r.mensagem
+            $r.resultado.preset | Should -Be 'leve'
+            (Get-TmxTweakTestItem -Catalogo $r.resultado -Id 'TST-002').selecionado | Should -BeFalse
+
+            $volta = Invoke-TmxTweakBridge -Action 'preset.apply' -Payload @{ preset = 'desktop' }
+            $volta.resultado.preset | Should -Be 'desktop'
+        }
+
+        It 'plan.setParams grava o que manter do APM-006 so numa copia do tweak' {
+            $r = Invoke-TmxTweakBridge -Action 'plan.setParams' -Payload @{ id = 'APM-006'; parametros = @{ manter = @('Microsoft.WindowsCalculator') } }
+
+            $r.ok | Should -BeTrue -Because $r.mensagem
+            $r.resultado.ok | Should -BeTrue
+            $item = Get-TmxTweakPlanItem -Id 'APM-006'
+            $func = @($item.tweak.acoes | Where-Object { $_.tipo -eq 'funcao' })[0]
+            @($func.parametros.manter) | Should -Be @('Microsoft.WindowsCalculator')
+
+            # O catalogo em cache continua com a lista vazia.
+            $orig = @($sync.tweaks.catalog | Where-Object { $_.id -eq 'APM-006' })[0]
+            @(@($orig.acoes)[0].parametros.manter).Count | Should -Be 0
+        }
+
+        It 'plan.setParams grava usaGamePass do APM-007 e recusa outros ids' {
+            $r = Invoke-TmxTweakBridge -Action 'plan.setParams' -Payload @{ id = 'APM-007'; parametros = @{ usaGamePass = $true } }
+            $r.ok | Should -BeTrue -Because $r.mensagem
+            $func = @((Get-TmxTweakPlanItem -Id 'APM-007').tweak.acoes | Where-Object { $_.tipo -eq 'funcao' })[0]
+            $func.parametros.usaGamePass | Should -BeTrue
+
+            $nao = Invoke-TmxTweakBridge -Action 'plan.setParams' -Payload @{ id = 'TST-001'; parametros = @{ x = 1 } }
+            $nao.ok | Should -BeFalse
+            $nao.mensagem | Should -BeLike '*nao aceita parametros*'
+
+            $ruim = Invoke-TmxTweakBridge -Action 'plan.setParams' -Payload @{ id = 'APM-006'; parametros = @{ manter = @('a;b') } }
+            $ruim.ok | Should -BeFalse
+        }
+
+        It 'tweaks.bloatwareList devolve o catalogo de appx sem consultar o sistema no modo de teste' {
+            $r = Invoke-TmxTweakBridge -Action 'tweaks.bloatwareList' -Payload @{}
+            $r.ok | Should -BeTrue -Because $r.mensagem
+            $apps = @($r.resultado.apps)
+            $apps.Count | Should -BeGreaterThan 5
+            $apps[0].id | Should -Not -BeNullOrEmpty
+            $apps[0].nome | Should -Not -BeNullOrEmpty
+            $apps[0].instalado | Should -BeNullOrEmpty
+        }
+
         It 'plan.preview mostra o valor atual e o valor alvo de TST-001' {
             $r = Invoke-TmxTweakBridge -Action 'plan.preview' -Payload @{ ids = @('TST-001') }
 

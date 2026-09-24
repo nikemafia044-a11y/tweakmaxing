@@ -1,22 +1,23 @@
-/* updates.css - aba "Atualizações".
-   Só tokens de app.css: nenhuma cor literal nasce aqui, para o tema claro
-   (prefers-color-scheme) continuar valendo sem uma segunda folha. */
+/* updates.css - sub-aba "Windows Update" do item Sistema
+   (#tab-sistema > #tab-atualizacoes).
+   v2 (T5): mesmo visual das telas novas - cartões --bg-surface com raio
+   --r-lg, títulos em Sora, acento teal. Só tokens de app.css. */
 
 .upd-banner {
-  margin: 0 0 16px;
-  padding: 10px 14px;
-  border: 1px solid var(--linha);
+  margin: 0 0 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--accent-tint);
   border-left: 3px solid var(--accent);
-  border-radius: var(--raio);
-  background: var(--panel);
-  color: var(--fg);
+  border-radius: var(--r-md);
+  background: var(--accent-tint);
+  color: var(--accent-text);
   font-size: 13px;
 }
 
 .upd-cartoes {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
+  gap: 20px;
   align-items: start;
 }
 
@@ -26,76 +27,98 @@
 
 .upd-card {
   min-width: 0;
-  padding: 14px 16px 16px;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  background: var(--panel);
+  padding: 20px 22px 22px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+  transition: border-color 0.12s ease;
 }
 
-.upd-card-ativa,
-.upd-card-selecionada {
-  border-color: var(--active);
+.upd-card:hover { border-color: var(--border-strong); }
+
+.upd-card-selecionada { border-color: var(--accent); }
+
+.upd-card-ativa {
+  border-color: var(--accent);
+  background: var(--bg-subtle);
 }
 
 .upd-card-topo {
   display: flex;
   align-items: flex-start;
-  gap: 8px;
-  margin-bottom: 6px;
+  gap: 10px;
+  min-height: 32px;
+  margin-bottom: 8px;
   cursor: pointer;
 }
 
 .upd-card-topo input[type="radio"] {
-  margin-top: 3px;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
   flex: 0 0 auto;
-  accent-color: var(--active);
+  accent-color: var(--accent);
 }
 
 .upd-nome {
   flex: 1 1 auto;
-  font-size: 14px;
-  font-weight: 650;
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
 }
 
 .upd-selo-ativa {
   flex: 0 0 auto;
-  color: var(--ok);
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
 }
 
+.upd-selo-ativa[hidden] { display: none; }
+
 .upd-desc {
-  margin: 0 0 10px;
-  color: var(--muted);
-  font-size: 12px;
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .upd-detalhes {
-  margin: 0 0 10px;
-  font-size: 12px;
+  margin: 0 0 12px;
+  font-size: 13px;
 }
 
 .upd-detalhes summary {
   cursor: pointer;
-  color: var(--fg);
+  color: var(--text-primary);
   font-weight: 600;
 }
 
-.upd-detalhes summary:hover { color: var(--accent); }
+.upd-detalhes summary:hover { color: var(--accent-text); }
 
 .upd-chaves {
   max-height: 220px;
   overflow-y: auto;
   margin: 8px 0 0;
   padding-left: 18px;
-  color: var(--muted);
+  color: var(--text-secondary);
+  font: 500 12px var(--font-mono);
 }
 
 .upd-chaves li { overflow-wrap: anywhere; }
 
 .upd-porque {
-  margin: 0 0 12px;
-  color: var(--muted);
-  font-size: 12px;
+  margin: 0 0 14px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
 }
+
+.upd-porque strong { color: var(--text-body); }
 
 .upd-rodape {
   display: flex;

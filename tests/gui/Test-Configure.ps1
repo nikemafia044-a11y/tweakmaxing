@@ -23,6 +23,10 @@ param(
 
 . (Join-Path $PSScriptRoot '_GuiHelpers.ps1')
 
+# Sessao isolada do agent-browser: com a sessao 'default' compartilhada, o
+# 'close' de um teste de GUI de outra porta derrubava a conexao deste.
+$env:AGENT_BROWSER_SESSION = "tmx-gui-$Port"
+
 $script:Falhas = 0
 
 function Assert-Tmx {
@@ -111,7 +115,9 @@ try {
     Invoke-AB 'wait' '#st-rp' | Out-Null
     Close-TmxGuiWelcome
 
-    Invoke-AB 'click' 'nav [data-tab=configurar]' | Out-Null
+    # v2: Configurar mora dentro do item Sistema (sub-aba padrao).
+    Invoke-AB 'click' 'nav [data-tab=sistema]' | Out-Null
+    Invoke-AB 'click' '.subaba[data-subtab=configurar]' | Out-Null
     Invoke-AB 'wait' '#cfg-colunas' | Out-Null
 
     $visivel = "$(Invoke-AB 'is' 'visible' '#tab-configurar')".Trim()

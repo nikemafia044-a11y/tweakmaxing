@@ -590,6 +590,209 @@ Describe 'MicroWin' -Tag 'MicroWin' {
     }
 
     # -----------------------------------------------------------------------
+    Context 'Opcoes novas do build (v2) e cancelamento' {
+
+        BeforeAll { . (Join-Path $PSScriptRoot '_Helpers.ps1') }
+
+        BeforeEach {
+            New-TmxMicroWinTestSync -TestMode $false | Out-Null
+            $script:Falsa    = New-TmxFakeIso
+            $global:TmxOrdem = [System.Collections.ArrayList]::Synchronized((New-Object System.Collections.ArrayList))
+            $global:TmxReg   = [System.Collections.ArrayList]::Synchronized((New-Object System.Collections.ArrayList))
+            $global:TmxMontagem = $null
+
+            Mock -CommandName Get-TmxOscdimgPath -ModuleName TweakMaxing -MockWith { 'C:\ADK\oscdimg.exe' }
+            Mock -CommandName Get-TmxFreeSpaceGB -ModuleName TweakMaxing -MockWith { 120.0 }
+            Mock -CommandName Test-TmxElevation  -ModuleName TweakMaxing -MockWith { $true }
+            Mock -CommandName Mount-TmxDiskImageWrapper    -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('mount-iso'); 'Z' }
+            Mock -CommandName Dismount-TmxDiskImageWrapper -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('dismount-iso'); $true }
+            Mock -CommandName Copy-TmxIsoTree              -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add('copy'); [pscustomobject]@{ codigo = 1; saida = '' } }
+            Mock -CommandName Get-TmxInstallImagePath      -ModuleName TweakMaxing -MockWith {
+                [pscustomobject]@{ caminho = (Join-Path $Raiz 'sources\install.wim'); formato = 'wim' }
+            }
+            # A "imagem montada" e uma arvore falsa com o que as opcoes procuram.
+            Mock -CommandName Mount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('mount-image')
+                $global:TmxMontagem = $Path
+                foreach ($rel in @('Windows\System32\config', 'Windows\SysWOW64', 'Users\Default',
+                                   'Program Files (x86)\Microsoft\Edge\Application', 'Program Files (x86)\Microsoft\EdgeUpdate',
+                                   'Program Files (x86)\Microsoft\EdgeWebView\Application')) {
+                    New-Item -ItemType Directory -Path (Join-Path $Path $rel) -Force | Out-Null
+                }
+                foreach ($rel in @('Windows\System32\config\SOFTWARE', 'Windows\System32\config\SYSTEM', 'Users\Default\NTUSER.DAT',
+                                   'Windows\System32\OneDriveSetup.exe', 'Windows\SysWOW64\OneDriveSetup.exe',
+                                   'Program Files (x86)\Microsoft\Edge\Application\msedge.exe')) {
+                    Set-Content -LiteralPath (Join-Path $Path $rel) -Value 'x' -Encoding ASCII
+                }
+            }
+            Mock -CommandName Get-TmxProvisionedAppxWrapper -ModuleName TweakMaxing -MockWith {
+                @(
+                    (New-TmxFakeAppx -Nome 'Microsoft.BingWeather'),
+                    (New-TmxFakeAppx -Nome 'Microsoft.MicrosoftEdge.Stable'),
+                    (New-TmxFakeAppx -Nome 'Microsoft.SecHealthUI'),
+                    (New-TmxFakeAppx -Nome 'Microsoft.WindowsCalculator')
+                )
+            }
+            Mock -CommandName Remove-TmxProvisionedAppxWrapper -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add("appx:$PackageName") }
+            Mock -CommandName Get-TmxWindowsPackageWrapper -ModuleName TweakMaxing -MockWith {
+                @(
+                    [pscustomobject]@{ PackageName = 'Windows-Defender-Client-Package~31bf3856ad364e35~amd64~~10.0.26100.1' },
+                    [pscustomobject]@{ PackageName = 'Microsoft-Windows-InternetExplorer-Optional-Package~31bf3856ad364e35~amd64~~11.0' }
+                )
+            }
+            Mock -CommandName Remove-TmxWindowsPackageWrapper -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add("pkg:$PackageName") }
+            Mock -CommandName Dismount-TmxWindowsImageWrapper -ModuleName TweakMaxing -MockWith {
+                if ($Save) {
+                    [void]$global:TmxOrdem.Add('dismount-save')
+                    # A pasta de montagem some no fim do build com sucesso: o
+                    # retrato da imagem e tirado aqui, na hora de gravar.
+                    $global:TmxRetrato = @{}
+                    foreach ($rel in @('Windows\System32\OneDriveSetup.exe', 'Windows\SysWOW64\OneDriveSetup.exe', 'Program Files (x86)\Microsoft\Edge',
+                                       'Program Files (x86)\Microsoft\EdgeUpdate', 'Program Files (x86)\Microsoft\EdgeWebView')) {
+                        $global:TmxRetrato[$rel] = Test-Path -LiteralPath (Join-Path $Path $rel)
+                    }
+                } else { [void]$global:TmxOrdem.Add('dismount-discard') }
+            }
+            Mock -CommandName Invoke-TmxOscdimg -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('oscdimg')
+                $destino = @($Arguments)[@($Arguments).Count - 1]
+                Set-Content -LiteralPath $destino -Value 'iso gerada' -Encoding ASCII
+                [pscustomobject]@{ codigo = 0; saida = '' }
+            }
+            Mock -CommandName Invoke-TmxRegExe -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxReg.Add((@($Arguments) -join ' '))
+                [pscustomobject]@{ codigo = 0; saida = '' }
+            }
+            Mock -CommandName Invoke-TmxTakeOwnership -ModuleName TweakMaxing -MockWith { [pscustomobject]@{ codigo = 0; saida = '' } }
+            Mock -CommandName Export-TmxWindowsDriverWrapper -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add('export-drivers')
+                @([pscustomobject]@{ Driver = 'oem1.inf' }, [pscustomobject]@{ Driver = 'oem2.inf' })
+            }
+            Mock -CommandName Add-TmxWindowsDriverWrapper -ModuleName TweakMaxing -MockWith { [void]$global:TmxOrdem.Add("add-drivers:$Driver") }
+        }
+
+        AfterEach {
+            Remove-Item -LiteralPath $script:Falsa.pasta -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Variable -Name TmxOrdem, TmxReg, TmxMontagem, TmxRetrato -Scope Global -ErrorAction SilentlyContinue
+        }
+
+        It 'com todas as opcoes roda os passos novos, na ordem, dentro da imagem' {
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 -AppxRemover @('Microsoft.BingWeather') `
+                -Usuario 'fantasy' -Senha 'Abc12345' -Destino $script:Falsa.destino `
+                -RemoverOneDrive $true -RemoverEdge $true -DesativarTelemetria $true -IncluirDrivers $true -RemoverDefender $true
+
+            $r.ok | Should -BeTrue -Because ("{0} | {1}" -f $r.mensagem, ((@($r.passos) | ForEach-Object { "$($_.nome)=$($_.ok):$($_.detalhe)" }) -join "; "))
+            $nomes = @($r.passos | ForEach-Object { "$($_.nome)" })
+            $esperados = @('exportar-drivers', 'montar-imagem', 'remover-appx', 'remover-pacotes', 'remover-onedrive',
+                           'remover-edge', 'remover-defender', 'telemetria', 'adicionar-drivers', 'autounattend', 'gravar-imagem')
+            $ultimo = -1
+            foreach ($e in $esperados) {
+                $i = [array]::IndexOf($nomes, $e)
+                $i | Should -BeGreaterThan $ultimo -Because "o passo '$e' precisa vir depois do anterior"
+                $ultimo = $i
+            }
+
+            # drivers: exportados antes de montar, adicionados da pasta de trabalho
+            $ordem = @($global:TmxOrdem.ToArray())
+            [array]::IndexOf($ordem, 'export-drivers') | Should -BeLessThan ([array]::IndexOf($ordem, 'mount-image'))
+            ($ordem | Where-Object { $_ -like 'add-drivers:*' }) | Should -Match '\\drivers$'
+
+            # OneDrive e Edge sairam da imagem; o EdgeWebView ficou
+            $global:TmxRetrato | Should -Not -BeNullOrEmpty
+            $global:TmxRetrato['Windows\System32\OneDriveSetup.exe'] | Should -BeFalse
+            $global:TmxRetrato['Windows\SysWOW64\OneDriveSetup.exe'] | Should -BeFalse
+            $global:TmxRetrato['Program Files (x86)\Microsoft\Edge'] | Should -BeFalse
+            $global:TmxRetrato['Program Files (x86)\Microsoft\EdgeUpdate'] | Should -BeFalse
+            $global:TmxRetrato['Program Files (x86)\Microsoft\EdgeWebView'] | Should -BeTrue
+
+            # appx do Edge e da Seguranca do Windows, pacote do Defender; a Calculadora fica
+            ($ordem -join ' ') | Should -Match 'appx:Microsoft\.MicrosoftEdge\.Stable'
+            ($ordem -join ' ') | Should -Match 'appx:Microsoft\.SecHealthUI'
+            ($ordem -join ' ') | Should -Match 'pkg:Windows-Defender-Client-Package'
+            ($ordem -join ' ') | Should -Not -Match 'Calculator'
+            ($ordem -join ' ') | Should -Not -Match 'InternetExplorer'
+
+            # registro offline: load -> add -> unload, nos dois hives, e a entrada Run do OneDrive
+            $reg = @($global:TmxReg.ToArray())
+            ($reg -join "`n") | Should -Match 'load HKLM\\TMX_SOFTWARE .*config\\SOFTWARE'
+            ($reg -join "`n") | Should -Match 'add HKLM\\TMX_SOFTWARE\\Policies\\Microsoft\\Windows\\DataCollection /v AllowTelemetry /t REG_DWORD /d 0 /f'
+            ($reg -join "`n") | Should -Match 'add HKLM\\TMX_SYSTEM\\ControlSet001\\Services\\DiagTrack /v Start /t REG_DWORD /d 4 /f'
+            ($reg -join "`n") | Should -Match 'delete HKLM\\TMX_NTUSER\\Software\\Microsoft\\Windows\\CurrentVersion\\Run /v OneDriveSetup /f'
+            foreach ($h in @('TMX_SOFTWARE', 'TMX_SYSTEM', 'TMX_NTUSER')) {
+                @($reg | Where-Object { $_ -eq "unload HKLM\$h" }).Count | Should -Be 1 -Because "o hive $h precisa ser descarregado"
+            }
+            [array]::IndexOf($ordem, 'dismount-save') | Should -BeGreaterThan -1
+        }
+
+        It 'sem conta local nao grava o autounattend.xml e nao exige usuario' {
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 -Destino $script:Falsa.destino -ContaLocal $false
+            $r.ok | Should -BeTrue
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'autounattend' }).Count | Should -Be 0
+        }
+
+        It 'com conta local e sem usuario nem comeca' {
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 -Destino $script:Falsa.destino
+            $r.ok | Should -BeFalse
+            "$($r.mensagem)" | Should -Match 'usuario'
+            @($global:TmxOrdem.ToArray()).Count | Should -Be 0
+        }
+
+        It 'reg add que falha interrompe no passo telemetria, descarrega o hive e descarta a imagem' {
+            Mock -CommandName Invoke-TmxRegExe -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxReg.Add((@($Arguments) -join ' '))
+                if (@($Arguments)[0] -eq 'add') { return [pscustomobject]@{ codigo = 1; saida = 'ERRO: acesso negado' } }
+                [pscustomobject]@{ codigo = 0; saida = '' }
+            }
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 -Usuario 'fantasy' -Senha 'x' `
+                -Destino $script:Falsa.destino -DesativarTelemetria $true
+
+            $r.ok | Should -BeFalse
+            $falho = @($r.passos | Where-Object { -not $_.ok })[0]
+            "$($falho.nome)" | Should -Be 'telemetria'
+            @($global:TmxReg.ToArray()) | Should -Contain 'unload HKLM\TMX_SOFTWARE'
+            @($global:TmxOrdem.ToArray()) | Should -Contain 'dismount-discard'
+            @($global:TmxOrdem.ToArray()) | Should -Not -Contain 'dismount-save'
+        }
+
+        It 'cancelamento no meio descarta a imagem, apaga a pasta de trabalho e marca cancelado' {
+            # O pedido de cancelamento chega enquanto os appx estao saindo.
+            Mock -CommandName Remove-TmxProvisionedAppxWrapper -ModuleName TweakMaxing -MockWith {
+                [void]$global:TmxOrdem.Add("appx:$PackageName")
+                $sync.microwinCancelar = $true
+            }
+            $r = Invoke-TmxMicroWinBuild -IsoPath $script:Falsa.iso -EdicaoIndex 1 -AppxRemover @('Microsoft.BingWeather') `
+                -Usuario 'fantasy' -Senha 'x' -Destino $script:Falsa.destino
+
+            $r.ok | Should -BeFalse
+            $r.cancelado | Should -BeTrue
+            $ordem = @($global:TmxOrdem.ToArray())
+            $ordem | Should -Contain 'dismount-discard'
+            $ordem | Should -Not -Contain 'dismount-save'
+            $ordem | Should -Not -Contain 'oscdimg'
+            @($r.passos | Where-Object { "$($_.nome)" -eq 'cancelado' }).Count | Should -Be 1
+            Test-Path -LiteralPath "$($r.pastaTrabalho)" | Should -BeFalse
+            @(Get-ChildItem -LiteralPath $script:Falsa.destino -Filter '*.iso' -File).Count | Should -Be 0
+        }
+
+        It 'espaco necessario = tamanho da ISO x 3 + 5 GB (20 GB sem ISO)' {
+            Get-TmxMicroWinSpaceNeededGB -IsoPath $script:Falsa.iso | Should -Be 5
+            Get-TmxMicroWinSpaceNeededGB -IsoPath 'C:\nao\existe.iso' | Should -Be 20
+            Get-TmxMicroWinSpaceNeededGB | Should -Be 20
+
+            Mock -CommandName Get-Item -ModuleName TweakMaxing -MockWith { [pscustomobject]@{ Length = [int64](5.4GB) } }
+            Get-TmxMicroWinSpaceNeededGB -IsoPath $script:Falsa.iso | Should -Be 22
+        }
+
+        It 'ConvertTo-TmxMicroWinBool so liga com $true de verdade' {
+            ConvertTo-TmxMicroWinBool -Valor $true | Should -BeTrue
+            ConvertTo-TmxMicroWinBool -Valor 'true' | Should -BeFalse
+            ConvertTo-TmxMicroWinBool -Valor 1 | Should -BeFalse
+            ConvertTo-TmxMicroWinBool -Valor $null | Should -BeFalse
+            ConvertTo-TmxMicroWinBool -Valor $null -Padrao $true | Should -BeTrue
+        }
+    }
+
+    # -----------------------------------------------------------------------
     Context 'Copia, somente-leitura e limpeza' {
 
         BeforeAll { . (Join-Path $PSScriptRoot '_Helpers.ps1') }
@@ -726,6 +929,10 @@ Describe 'MicroWin' -Tag 'MicroWin' {
         }
 
         AfterEach {
+            # Cada teste tem o proprio $sync (e o proprio pool): fecha o pool
+            # aqui para nao acumular runspaces de um teste para o outro.
+            if (Get-Command Wait-TmxRemainingWork -ErrorAction SilentlyContinue) { Wait-TmxRemainingWork -TimeoutSeconds 30 | Out-Null }
+            if (Get-Command Close-TmxRunspacePool -ErrorAction SilentlyContinue) { Close-TmxRunspacePool }
             Remove-Item -LiteralPath $script:Falsa.pasta -Recurse -Force -ErrorAction SilentlyContinue
         }
 
@@ -807,6 +1014,90 @@ Describe 'MicroWin' -Tag 'MicroWin' {
             $arquivo = Join-Path $script:Falsa.destino 'microwin-simulado.txt'
             Test-Path -LiteralPath $arquivo | Should -BeTrue
             @(Get-ChildItem -LiteralPath $script:Falsa.destino -Filter '*.iso' -File).Count | Should -Be 0
+        }
+
+        It 'a build simulada passa pelas etapas das opcoes ligadas' {
+            $r = Invoke-TmxBridgeTest -Action 'microwin.build' -Payload @{
+                iso = $script:Falsa.iso; edicao = 1; contaLocal = $false
+                destino = $script:Falsa.destino; simular = $true
+                removerOneDrive = $true; removerEdge = $true; desativarTelemetria = $true; incluirDrivers = $true; removerDefender = $false
+            }
+            $r.ok | Should -BeTrue
+            $done = Wait-TmxJobDoneById -JobId "$($r.result.jobId)" -TimeoutSeconds 60
+            $done.result.ok | Should -BeTrue
+            $nomes = @($done.result.passos | ForEach-Object { "$($_.nome)" })
+            foreach ($n in @('remover-onedrive', 'remover-edge', 'telemetria', 'exportar-drivers', 'adicionar-drivers')) { $nomes | Should -Contain $n }
+            $nomes | Should -Not -Contain 'remover-defender'
+            $nomes | Should -Not -Contain 'autounattend'
+            (Get-Content -LiteralPath (Join-Path $script:Falsa.destino 'microwin-simulado.txt') -Raw) | Should -Match 'opcoes: removerOneDrive, removerEdge, desativarTelemetria, incluirDrivers'
+        }
+
+        It 'sem conta local o build aceita usuario e senha vazios' {
+            $d = Assert-TmxMicroWinBuildPayload -Payload ([pscustomobject]@{
+                iso = $script:Falsa.iso; edicao = 1; contaLocal = $false; destino = $script:Falsa.destino
+            })
+            $d.contaLocal | Should -BeFalse
+            $d.usuario | Should -Be ''
+            $d.removerDefender | Should -BeFalse
+        }
+
+        It 'microwin.cancel sem build em andamento responde que nao ha o que cancelar' {
+            $r = Invoke-TmxBridgeTest -Action 'microwin.cancel'
+            $r.ok | Should -BeTrue
+            $r.result.ok | Should -BeFalse
+            $r.result.cancelando | Should -BeFalse
+            $sync.microwinCancelar | Should -Not -BeTrue
+        }
+
+        It 'microwin.cancel interrompe a build simulada no meio' {
+            $r = Invoke-TmxBridgeTest -Action 'microwin.build' -Payload @{
+                iso = $script:Falsa.iso; edicao = 1; usuario = 'fantasy'; senha = 'Abc12345'
+                destino = $script:Falsa.destino; simular = $true; simularAtrasoMs = 400
+            }
+            $r.ok | Should -BeTrue
+            Start-Sleep -Milliseconds 700
+            $c = Invoke-TmxBridgeTest -Action 'microwin.cancel'
+            $c.result.ok | Should -BeTrue
+            $c.result.cancelando | Should -BeTrue
+
+            $done = Wait-TmxJobDoneById -JobId "$($r.result.jobId)" -TimeoutSeconds 60
+            $done.ok | Should -BeTrue
+            $done.result.ok | Should -BeFalse
+            $done.result.cancelado | Should -BeTrue
+            Test-Path -LiteralPath (Join-Path $script:Falsa.destino 'microwin-simulado.txt') | Should -BeFalse
+        }
+
+        It 'um build novo zera o pedido de cancelamento anterior' {
+            $sync.microwinCancelar = $true
+            $r = Invoke-TmxBridgeTest -Action 'microwin.build' -Payload @{
+                iso = $script:Falsa.iso; edicao = 1; usuario = 'fantasy'; senha = 'Abc12345'
+                destino = $script:Falsa.destino; simular = $true
+            }
+            $done = Wait-TmxJobDoneById -JobId "$($r.result.jobId)" -TimeoutSeconds 60
+            $done.result.ok | Should -BeTrue
+            $done.result.cancelado | Should -BeFalse
+        }
+
+        It 'microwin.info simulado (modo de teste) nao monta nada e devolve edicoes fixas' {
+            Mock -CommandName Get-TmxIsoInfo -ModuleName TweakMaxing -MockWith { throw 'nao pode montar' }
+            $entry = Get-TmxBridgeAction -Name 'microwin.info'
+            $r = & $entry.handler ([pscustomobject]@{ iso = $script:Falsa.iso; simular = $true })
+            $r.ok | Should -BeTrue
+            @($r.edicoes).Count | Should -Be 3
+            @($r.edicoes | ForEach-Object { $_.nome }) | Should -Contain 'Windows 11 Pro'
+            Should -Invoke -CommandName Get-TmxIsoInfo -ModuleName TweakMaxing -Times 0
+
+            $r2 = & $entry.handler ([pscustomobject]@{ iso = 'C:\nao\existe.iso'; simular = $true })
+            $r2.ok | Should -BeFalse
+            "$($r2.mensagem)" | Should -Match 'ISO nao encontrada'
+        }
+
+        It 'microwin.check com a ISO calcula o espaco pelo tamanho dela' {
+            Mock -CommandName Get-TmxOscdimgPath -ModuleName TweakMaxing -MockWith { 'C:\ADK\oscdimg.exe' }
+            Mock -CommandName Get-TmxFreeSpaceGB -ModuleName TweakMaxing -MockWith { 10.0 }
+            $r = Invoke-TmxBridgeTest -Action 'microwin.check' -Payload @{ iso = $script:Falsa.iso }
+            [int]$r.result.espacoMinGB | Should -Be 5
+            $r.result.espacoOk | Should -BeTrue
         }
     }
 

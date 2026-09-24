@@ -22,6 +22,80 @@ function Get-TmxCatalogAppOrThrow {
     $achado
 }
 
+function Get-TmxAppCategoryOrder {
+    <#
+    .SYNOPSIS
+        Ids das categorias da tela Aplicativos, na ordem das abas (spec 10).
+    #>
+    [CmdletBinding()]
+    param()
+    @('navegadores', 'comunicacao', 'jogos', 'desenvolvimento', 'multimidia', 'utilitarios')
+}
+
+function Get-TmxAppCategoryLabels {
+    <#
+    .SYNOPSIS
+        Rotulo pt-BR de cada categoria v2 (acentos via [char]: o .ps1 e ASCII).
+    #>
+    [CmdletBinding()]
+    param()
+    @{
+        navegadores     = 'Navegadores'
+        comunicacao     = ('Comunica' + [char]0x00E7 + [char]0x00E3 + 'o')
+        jogos           = 'Jogos'
+        desenvolvimento = 'Desenvolvimento'
+        multimidia      = ('Multim' + [char]0x00ED + 'dia')
+        utilitarios     = ('Utilit' + [char]0x00E1 + 'rios')
+    }
+}
+
+function Get-TmxAppCategoryV2 {
+    <#
+    .SYNOPSIS
+        Categoria v2 de um app: 'categoriaV2' do catalogo quando valida; senao
+        mapeia a 'categoria' antiga (Navegadores, Comunicacao, Jogos,
+        Desenvolvimento, Multimidia); todo o resto cai em 'utilitarios'.
+    #>
+    [CmdletBinding()]
+    param([Parameter(Mandatory)] $App)
+
+    $ordem = @(Get-TmxAppCategoryOrder)
+    $v2 = "$($App.categoriaV2)".ToLowerInvariant()
+    if ($v2 -and ($ordem -contains $v2)) { return $v2 }
+
+    switch -Regex ("$($App.categoria)") {
+        '^Navegadores$'     { return 'navegadores' }
+        '^Comunica'         { return 'comunicacao' }
+        '^Jogos$'           { return 'jogos' }
+        '^Desenvolvimento$' { return 'desenvolvimento' }
+        '^Multim'           { return 'multimidia' }
+    }
+    'utilitarios'
+}
+
+function Get-TmxSimulatedInstalledPackages {
+    <#
+    .SYNOPSIS
+        Lista de "instalados" do modo de teste: um item por id do catalogo
+        pedido, no mesmo formato de Get-TmxInstalledPackages -Catalog. Ids fora
+        do catalogo sao ignorados. Nunca chama o winget.
+    #>
+    [CmdletBinding()]
+    param([object[]] $Ids = @())
+
+    $catalogo = Get-TmxAppCatalog
+    $itens = New-Object System.Collections.Generic.List[object]
+    foreach ($id in @($Ids | ForEach-Object { "$_" } | Where-Object { $_ })) {
+        $app = @($catalogo | Where-Object { "$($_.id)" -ieq $id }) | Select-Object -First 1
+        if (-not $app) { continue }
+        $itens.Add([pscustomobject]@{
+            id = "$($app.winget)"; nome = "$($app.nome)"; versao = '1.0'; disponivel = $null
+            instalado = $true; catalogId = "$($app.id)"
+        })
+    }
+    ,$itens.ToArray()
+}
+
 function Register-TmxInstallActions {
     <#
     .SYNOPSIS
@@ -34,32 +108,39 @@ function Register-TmxInstallActions {
     Register-TmxBridgeAction -Name 'apps.catalog' -Handler {
         param($payload)
 
+        # v2 (spec 10): seis categorias fixas, na ordem da tela. Cada grupo
+        # leva 'id' (chave estavel: o front traduz por ela) e 'nome' (rotulo
+        # pt-BR). A descricao em ingles vem de i18n.en.descricao do catalogo.
         $apps = Get-TmxAppCatalog
         $grupos = [ordered]@{}
+        foreach ($idCat in @(Get-TmxAppCategoryOrder)) {
+            $grupos[$idCat] = New-Object System.Collections.Generic.List[object]
+        }
         foreach ($a in $apps) {
-            $cat = "$($a.categoria)"
-            if (-not $cat) { $cat = 'Outros' }
-            if (-not $grupos.Contains($cat)) {
-                $grupos[$cat] = New-Object System.Collections.Generic.List[object]
-            }
+            $cat = Get-TmxAppCategoryV2 -App $a
+            $descricaoEn = ''
+            if ($a.i18n -and $a.i18n.en -and $a.i18n.en.descricao) { $descricaoEn = "$($a.i18n.en.descricao)" }
             $grupos[$cat].Add([ordered]@{
-                id        = "$($a.id)"
-                nome      = "$($a.nome)"
-                descricao = "$($a.descricao)"
-                categoria = $cat
-                winget    = "$($a.winget)"
-                choco     = "$($a.choco)"
-                link      = "$($a.link)"
-                foss      = [bool]$a.foss
+                id          = "$($a.id)"
+                nome        = "$($a.nome)"
+                descricao   = "$($a.descricao)"
+                descricaoEn = $descricaoEn
+                categoria   = $cat
+                winget      = "$($a.winget)"
+                choco       = "$($a.choco)"
+                link        = "$($a.link)"
+                foss        = [bool]$a.foss
             })
         }
 
+        $rotulos = Get-TmxAppCategoryLabels
         $categorias = New-Object System.Collections.Generic.List[object]
-        foreach ($nomeCategoria in $grupos.Keys) {
-            $categorias.Add([ordered]@{ nome = $nomeCategoria; apps = $grupos[$nomeCategoria].ToArray() })
+        foreach ($idCat in $grupos.Keys) {
+            if ($grupos[$idCat].Count -eq 0) { continue }
+            $categorias.Add([ordered]@{ id = $idCat; nome = "$($rotulos[$idCat])"; apps = $grupos[$idCat].ToArray() })
         }
 
-        @{ categorias = $categorias.ToArray() }
+        @{ categorias = $categorias.ToArray(); total = @($apps).Count }
     }
 
     Register-TmxBridgeAction -Name 'apps.managers' -Handler {
@@ -96,6 +177,13 @@ function Register-TmxInstallActions {
 
     Register-TmxBridgeAction -Name 'apps.installed' -Async -Handler {
         param($payload)
+        # Modo de teste com 'simular': nada de winget - a lista de instalados
+        # e montada a partir dos ids pedidos (so os que existem no catalogo).
+        # Sem 'simular' o caminho normal continua (os testes Pester mockam o
+        # winget e contam com isso).
+        if ($null -ne $sync -and $sync.testMode -and $null -ne $payload -and $null -ne $payload.simular) {
+            return @{ itens = (Get-TmxSimulatedInstalledPackages -Ids @($payload.simular)); simulado = $true }
+        }
         @{ itens = Get-TmxInstalledPackages -Catalog }
     }
 

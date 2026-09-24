@@ -92,7 +92,7 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
             Mock -CommandName Invoke-TmxIconDownload   -ModuleName TweakMaxing -MockWith { $null }
 
             $dir = Get-TmxAppIconCacheDir
-            $bytesFixture = New-TmxTestPngBytes -Tamanho 64
+            $bytesFixture = New-TmxTestPngBytes -Tamanho 88
             [System.IO.File]::WriteAllBytes((Join-Path $dir 'appcache.png'), $bytesFixture)
 
             $app = [pscustomobject]@{ id = 'appcache'; nome = 'App Cache'; link = 'https://example.org' }
@@ -104,6 +104,26 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
 
             Should -Invoke -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -Times 0
             Should -Invoke -CommandName Invoke-TmxIconDownload   -ModuleName TweakMaxing -Times 0
+        }
+
+        It 'ignora um cache antigo de 64x64 e resolve (e regrava) em 88x88' {
+            Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
+            Mock -CommandName Invoke-TmxIconDownload   -ModuleName TweakMaxing -MockWith { New-TmxTestPngBytes -Tamanho 20 }
+
+            $dir = Get-TmxAppIconCacheDir
+            [System.IO.File]::WriteAllBytes((Join-Path $dir 'appvelho.png'), (New-TmxTestPngBytes -Tamanho 64))
+
+            $app = [pscustomobject]@{ id = 'appvelho'; nome = 'App Velho'; link = 'https://example.org'; icon = $null }
+            $r = Get-TmxAppIcon -App $app
+
+            $r | Should -Not -BeNullOrEmpty
+            $r.origem | Should -Not -Be 'cache'
+            Get-TmxPngWidth -Bytes ([System.IO.File]::ReadAllBytes((Join-Path $dir 'appvelho.png'))) | Should -Be 88
+        }
+
+        It 'Get-TmxPngWidth devolve 0 para bytes que nao sao PNG' {
+            Get-TmxPngWidth -Bytes ([byte[]](1..30)) | Should -Be 0
+            Get-TmxPngWidth -Bytes $null | Should -Be 0
         }
 
         It 'usa o icone do exe quando ha match no registro de desinstalar, sem consultar o site' {
@@ -202,8 +222,8 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
         }
     }
 
-    Context 'Cache gravado e 64x64 PNG de verdade' {
-        It 'grava <id>.png com 64x64 pixels apos resolver pelo site' {
+    Context 'Cache gravado e 88x88 PNG de verdade' {
+        It 'grava <id>.png com 88x88 pixels apos resolver pelo site' {
             Mock -CommandName Get-TmxUninstallEntries -ModuleName TweakMaxing -MockWith { , @() }
             Mock -CommandName Invoke-TmxIconDownload -ModuleName TweakMaxing -MockWith { New-TmxTestPngBytes -Tamanho 20 }
 
@@ -217,8 +237,8 @@ Describe 'Get-TmxAppIcon' -Tag 'AppIcon' {
             Add-Type -AssemblyName System.Drawing
             $img = [System.Drawing.Image]::FromFile($arquivo)
             try {
-                $img.Width  | Should -Be 64
-                $img.Height | Should -Be 64
+                $img.Width  | Should -Be 88
+                $img.Height | Should -Be 88
                 $img.RawFormat.Guid | Should -Be ([System.Drawing.Imaging.ImageFormat]::Png.Guid)
             } finally {
                 $img.Dispose()

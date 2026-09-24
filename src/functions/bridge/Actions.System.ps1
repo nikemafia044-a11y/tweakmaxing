@@ -19,7 +19,7 @@ function Register-TmxSystemActions {
     <#
     .SYNOPSIS
         Registra settings.*, system.info, system.optimizationStatus,
-        cleanup.*, restore.*, app.checkUpdate, app.clearCache, app.openLogs,
+        cleanup.*, restore.*, app.checkUpdate, app.clearCache, app.openLogs, app.paths,
         app.oldBackups, app.deleteOldBackups, apps.export, apps.import,
         shell.saveFile e shell.openFile.
     #>
@@ -160,6 +160,11 @@ function Register-TmxSystemActions {
     Register-TmxBridgeAction -Name 'app.openLogs' -Handler {
         param($payload)
         Open-TmxLogsFolder
+    }
+
+    Register-TmxBridgeAction -Name 'app.paths' -Handler {
+        param($payload)
+        Get-TmxAppPaths
     }
 
     Register-TmxBridgeAction -Name 'app.oldBackups' -Async -Handler {

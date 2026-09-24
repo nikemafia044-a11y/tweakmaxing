@@ -644,15 +644,38 @@ function ConvertFrom-TmxIconImageBytes {
     }
 }
 
+function Get-TmxAppIconSize {
+    <#
+    .SYNOPSIS
+        Lado (px) do PNG de icone gravado em cache: 88 = 2x dos 44 px do card.
+    #>
+    [CmdletBinding()]
+    param()
+    88
+}
+
+function Get-TmxPngWidth {
+    <#
+    .SYNOPSIS
+        Largura de um PNG lida do cabecalho IHDR (bytes 16-19, big-endian).
+        0 quando os bytes nao sao um PNG.
+    #>
+    [CmdletBinding()]
+    param([byte[]] $Bytes)
+    if ($null -eq $Bytes -or $Bytes.Length -lt 24) { return 0 }
+    if ($Bytes[0] -ne 0x89 -or $Bytes[1] -ne 0x50 -or $Bytes[2] -ne 0x4E -or $Bytes[3] -ne 0x47) { return 0 }
+    ([int]$Bytes[16] -shl 24) -bor ([int]$Bytes[17] -shl 16) -bor ([int]$Bytes[18] -shl 8) -bor [int]$Bytes[19]
+}
+
 function ConvertTo-TmxIconPngBytes {
     <#
     .SYNOPSIS
-        Redimensiona uma Image para 64x64 (alta qualidade) e devolve os bytes
+        Redimensiona uma Image para 88x88 (alta qualidade) e devolve os bytes
         PNG. Sempre descarta a Image de entrada (e o FluxoParaDescartar, se
         veio um). $null em qualquer falha.
     .PARAMETER Imagem
         Bitmap (do icone do exe) ou Image (do site, via
-        ConvertFrom-TmxIconImageBytes) - desenhada DIRETO no destino 64x64,
+        ConvertFrom-TmxIconImageBytes) - desenhada DIRETO no destino 88x88,
         sem copia intermediaria em tamanho cheio. Tambem revalidada aqui por
         Test-TmxIconImageDimensionsSafe (defesa em profundidade: o icone do
         exe nao passa por ConvertFrom-TmxIconImageBytes, entao essa e a
@@ -678,7 +701,8 @@ function ConvertTo-TmxIconPngBytes {
             return $null
         }
 
-        $destino = New-Object System.Drawing.Bitmap(64, 64)
+        $lado = Get-TmxAppIconSize
+        $destino = New-Object System.Drawing.Bitmap($lado, $lado)
         try {
             $graficos = [System.Drawing.Graphics]::FromImage($destino)
             try {
@@ -686,9 +710,9 @@ function ConvertTo-TmxIconPngBytes {
                 $graficos.SmoothingMode     = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
                 $graficos.PixelOffsetMode   = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
                 # Desenha DIRETO da imagem de origem (Icon.ToBitmap() ou
-                # Image.FromStream) pro destino 64x64 - nunca existe um
+                # Image.FromStream) pro destino 88x88 - nunca existe um
                 # Bitmap intermediario em tamanho cheio.
-                $graficos.DrawImage($Imagem, 0, 0, 64, 64)
+                $graficos.DrawImage($Imagem, 0, 0, $lado, $lado)
             } finally {
                 $graficos.Dispose()
             }
@@ -704,7 +728,7 @@ function ConvertTo-TmxIconPngBytes {
             $destino.Dispose()
         }
     } catch {
-        Write-Verbose "Falha ao converter icone para PNG 64x64: $($_.Exception.Message)"
+        Write-Verbose "Falha ao converter icone para PNG 88x88: $($_.Exception.Message)"
         $null
     } finally {
         try { $Imagem.Dispose() } catch { }
@@ -992,7 +1016,10 @@ function Get-TmxAppIcon {
         if (Test-Path -LiteralPath $arquivoCache) {
             try {
                 $bytesCache = [System.IO.File]::ReadAllBytes($arquivoCache)
-                if ($bytesCache.Length -gt 0) {
+                # Cache de versao anterior (64x64) nao serve mais: o card novo
+                # mostra 44 px e pede 88x88 (2x). Largura diferente vira falta
+                # de cache e o icone e resolvido (e regravado) de novo.
+                if ($bytesCache.Length -gt 0 -and (Get-TmxPngWidth -Bytes $bytesCache) -eq (Get-TmxAppIconSize)) {
                     return [pscustomobject]@{
                         id     = $id
                         src    = ('data:image/png;base64,' + [Convert]::ToBase64String($bytesCache))

@@ -588,16 +588,65 @@ Describe 'Ponte da aba Instalar' -Tag 'Install' {
     }
 
     Context 'apps.catalog' {
-        It 'agrupa o catalogo por categoria' {
+        It 'agrupa o catalogo pelas categorias v2, na ordem da tela' {
             $r = Invoke-TmxBridgeRequest -Json '{"id":"1","action":"apps.catalog"}' | ConvertFrom-Json
             $r.ok | Should -BeTrue
             $r.result.categorias.Count | Should -Be 2
-            $nomes = @($r.result.categorias | ForEach-Object { $_.nome })
-            $nomes | Should -Contain 'Utilitarios'
-            $nomes | Should -Contain 'Jogos'
-            $util = $r.result.categorias | Where-Object { $_.nome -eq 'Utilitarios' }
+            $ids = @($r.result.categorias | ForEach-Object { $_.id })
+            # 'categoria' antiga (sem categoriaV2) e mapeada; jogos vem antes de utilitarios
+            $ids | Should -Be @('jogos', 'utilitarios')
+            $util = $r.result.categorias | Where-Object { $_.id -eq 'utilitarios' }
+            $util.nome | Should -Match '^Utilit'
             $util.apps.Count | Should -Be 1
             $util.apps[0].id | Should -Be 'testapp'
+            $r.result.total | Should -Be 2
+        }
+
+        It 'usa categoriaV2 quando existe e manda a descricao em ingles' {
+            $sync.configs.applications = [pscustomobject]@{
+                aplicativos = @(
+                    [pscustomobject]@{ id = 'nav'; nome = 'Nav'; descricao = 'navegador'; categoria = 'Utilitarios'; categoriaV2 = 'navegadores'
+                        winget = 'Vendor.Nav'; choco = ''; link = 'https://example.org'; foss = $true
+                        i18n = [pscustomobject]@{ en = [pscustomobject]@{ descricao = 'a browser' } } }
+                    [pscustomobject]@{ id = 'x'; nome = 'X'; descricao = 'outro'; categoria = 'Documentos'
+                        winget = 'Vendor.X'; choco = ''; link = 'https://example.org'; foss = $false }
+                )
+            }
+            $r = Invoke-TmxBridgeRequest -Json '{"id":"1b","action":"apps.catalog"}' | ConvertFrom-Json
+            $r.ok | Should -BeTrue
+            @($r.result.categorias | ForEach-Object { $_.id }) | Should -Be @('navegadores', 'utilitarios')
+            $r.result.categorias[0].apps[0].descricaoEn | Should -Be 'a browser'
+            $r.result.categorias[1].apps[0].descricaoEn | Should -Be ''
+        }
+
+        It 'Get-TmxAppCategoryV2 mapeia as categorias antigas e cai em utilitarios' {
+            Get-TmxAppCategoryV2 -App ([pscustomobject]@{ categoria = 'Navegadores' }) | Should -Be 'navegadores'
+            Get-TmxAppCategoryV2 -App ([pscustomobject]@{ categoria = 'Comunicacao' }) | Should -Be 'comunicacao'
+            Get-TmxAppCategoryV2 -App ([pscustomobject]@{ categoria = 'Multimidia' }) | Should -Be 'multimidia'
+            Get-TmxAppCategoryV2 -App ([pscustomobject]@{ categoria = 'Ferramentas Pro' }) | Should -Be 'utilitarios'
+            Get-TmxAppCategoryV2 -App ([pscustomobject]@{ categoria = 'Jogos'; categoriaV2 = 'invalida' }) | Should -Be 'jogos'
+        }
+    }
+
+    Context 'apps.installed simulado (modo de teste)' {
+        It 'com simular devolve so os ids do catalogo, sem winget' {
+            Mock -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -MockWith { throw 'winget nao pode rodar' }
+            $entry = Get-TmxBridgeAction -Name 'apps.installed'
+            $r = & $entry.handler ([pscustomobject]@{ simular = @('testapp2', 'naoexiste') })
+            $r.simulado | Should -BeTrue
+            @($r.itens).Count | Should -Be 1
+            @($r.itens)[0].catalogId | Should -Be 'testapp2'
+            @($r.itens)[0].instalado | Should -BeTrue
+            Should -Invoke -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -Times 0
+        }
+
+        It 'fora do modo de teste ignora simular e usa o winget' {
+            $sync.testMode = $false
+            Mock -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -MockWith { @{ codigo = 0; saida = $script:FixtureTextoGlobal } }
+            $entry = Get-TmxBridgeAction -Name 'apps.installed'
+            $r = & $entry.handler ([pscustomobject]@{ simular = @('testapp2') })
+            $r.simulado | Should -BeNullOrEmpty
+            Should -Invoke -CommandName Invoke-TmxWingetProcess -ModuleName TweakMaxing -Times 1
         }
     }
 

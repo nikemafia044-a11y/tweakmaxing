@@ -1,68 +1,230 @@
-/* install.js - aba "Instalar".
+/* install.js - tela "Aplicativos" (spec v2 §10, docs/design/03-aplicativos.png).
  *
  * Catalogo (apps.catalog) e gerenciadores (apps.managers) sao acoes sincronas;
  * instalar/desinstalar/atualizar tudo/listar instalados/reparar winget/
- * instalar choco sao assincronas (bridge.call devolve so { jobId } na hora -
- * o resultado de verdade chega depois via evento job.done, correlacionado
- * aqui pelo jobId porque a ponte nao amarra id de pedido a evento).
+ * instalar choco/icones sao assincronas (bridge.call devolve so { jobId } na
+ * hora - o resultado de verdade chega depois via evento job.done,
+ * correlacionado aqui pelo jobId porque a ponte nao amarra id de pedido a
+ * evento). Exportar/importar usam apps.export/apps.import + os dialogos
+ * nativos shell.saveFile/shell.openFile (Actions.System.ps1).
+ *
+ * Todos os cards (236) ficam no DOM de uma vez: a categoria ativa e a busca
+ * so escondem/mostram (classe app-oculto). A classe 'app' fica so nos cards
+ * visiveis - e o que os testes de GUI contam.
+ *
+ * Textos: chaves 'apps.*' registradas aqui (tmx.i18n.add). Nome do app vem do
+ * catalogo; descricao em ingles vem de descricaoEn (i18n.en.descricao do
+ * catalogo), com pt-BR como reserva.
  */
 (function () {
   'use strict';
   window.tmxTabs = window.tmxTabs || {};
 
-  var estado = {
-    catalogo: null,
-    selecionados: {},
-    instalados: null,
-    mostrarInstalados: false,
-    termoBusca: ''
+  /* ---------------- textos ---------------- */
+
+  var TEXTOS_PT = {
+    'apps.eyebrow': 'Aplicativos',
+    'apps.titulo': 'Gerenciador de apps',
+    'apps.sub': 'Instale e desinstale em lote pelo winget. {n} apps em {c} categorias.',
+    'apps.subCarregando': 'Instale e desinstale em lote pelo winget.',
+    'apps.resumo': '{s} selecionados · {i} instalados',
+    'apps.buscar': 'Pesquisar apps',
+    'apps.buscarAria': 'Pesquisar aplicativo por nome, descrição ou ID do winget',
+    'apps.instalar': 'Instalar selecionados',
+    'apps.desinstalar': 'Desinstalar',
+    'apps.exportar': 'Exportar lista',
+    'apps.importar': 'Importar lista',
+    'apps.avisoAntes': 'Quer remover os apps que vêm com o Windows? Isso fica em ',
+    'apps.avisoLink': 'Otimizações › Remover bloatware',
+    'apps.avisoDepois': ', com escolha do que manter.',
+    'apps.atualizarTudo': 'Atualizar tudo',
+    'apps.soInstalados': 'Só instalados',
+    'apps.limparSelecao': 'Limpar seleção',
+    'apps.repararWinget': 'Reparar winget',
+    'apps.instalarChoco': 'Instalar Chocolatey',
+    'apps.cat.navegadores': 'Navegadores',
+    'apps.cat.comunicacao': 'Comunicação',
+    'apps.cat.jogos': 'Jogos',
+    'apps.cat.desenvolvimento': 'Desenvolvimento',
+    'apps.cat.multimidia': 'Multimídia',
+    'apps.cat.utilitarios': 'Utilitários',
+    'apps.nApps': '{n} apps',
+    'apps.resultados': 'Resultados da busca',
+    'apps.nenhum': 'Nenhum app encontrado.',
+    'apps.instalado': 'Instalado',
+    'apps.siteOficial': 'Abrir o site oficial de {nome}',
+    'apps.selecionar': 'Selecionar {nome}',
+    'apps.rodape': 'Instalar e desinstalar não exigem ponto de restauração: desinstalar é a reversão natural.',
+    'apps.carregando': 'Carregando o catálogo…',
+    'apps.falhaCatalogo': 'Falha ao carregar o catálogo: {erro}',
+    'apps.falhaGerenciadores': 'Falha ao consultar winget/choco: {erro}',
+    'apps.falhaInstalados': 'Falha ao consultar os aplicativos instalados: {erro}',
+    'apps.selecioneUm': 'Selecione ao menos um aplicativo',
+    'apps.selecioneExportar': 'Selecione ao menos um aplicativo para exportar',
+    'apps.exportado': 'Lista com {n} apps salva em {caminho}',
+    'apps.importado': '{n} apps marcados',
+    'apps.importadoDesconhecidos': '{n} apps marcados; {d} IDs fora do catálogo foram ignorados',
+    'apps.falhaExportar': 'Falha ao exportar: {erro}',
+    'apps.falhaImportar': 'Falha ao importar: {erro}',
+    'apps.falhaLink': 'Não foi possível abrir o link: {erro}',
+    'apps.instalando': 'Instalando',
+    'apps.desinstalando': 'Desinstalando',
+    'apps.atualizando': 'Atualizando tudo',
+    'apps.acaoFalhou': '{acao} falhou: {erro}',
+    'apps.res.pacote': 'Pacote',
+    'apps.res.gerenciador': 'Gerenciador',
+    'apps.res.resultado': 'Resultado',
+    'apps.res.detalhe': 'Detalhe',
+    'apps.res.vazio': 'Nada para mostrar.',
+    'apps.fechar': 'Fechar',
+    'apps.cancelar': 'Cancelar',
+    'apps.reparar.titulo': 'Reparar o winget',
+    'apps.reparar.texto': '<p>Isso instala ou repara o winget usando o módulo <strong>Microsoft.WinGet.Client</strong> da PowerShell Gallery ' +
+      '(<code>Install-Module</code> + <code>Repair-WinGetPackageManager</code>). Pode levar alguns minutos.</p>',
+    'apps.reparar.botao': 'Reparar',
+    'apps.reparar.andamento': 'Reparando o winget...',
+    'apps.reparar.falha': 'Falha ao reparar o winget: {erro}',
+    'apps.choco.titulo': 'Instalar o Chocolatey',
+    'apps.choco.texto': '<p>Isso baixa o instalador oficial de <code>https://community.chocolatey.org/install.ps1</code> e roda ele em um ' +
+      'processo separado do PowerShell. O SHA-256 do arquivo baixado fica registrado no log.</p>',
+    'apps.choco.botao': 'Instalar',
+    'apps.choco.andamento': 'Instalando o Chocolatey...',
+    'apps.choco.ok': 'Chocolatey instalado',
+    'apps.choco.falha': 'Falha ao instalar o Chocolatey: {erro}'
   };
 
-  /* ---------------- estilo (app.css nao e desta aba: injeta o proprio) ---------------- */
+  var TEXTOS_EN = {
+    'apps.eyebrow': 'Applications',
+    'apps.titulo': 'App manager',
+    'apps.sub': 'Install and uninstall in bulk with winget. {n} apps in {c} categories.',
+    'apps.subCarregando': 'Install and uninstall in bulk with winget.',
+    'apps.resumo': '{s} selected · {i} installed',
+    'apps.buscar': 'Search apps',
+    'apps.buscarAria': 'Search apps by name, description or winget ID',
+    'apps.instalar': 'Install selected',
+    'apps.desinstalar': 'Uninstall',
+    'apps.exportar': 'Export list',
+    'apps.importar': 'Import list',
+    'apps.avisoAntes': 'Want to remove the apps that ship with Windows? That lives in ',
+    'apps.avisoLink': 'Optimizations › Remove bloatware',
+    'apps.avisoDepois': ', where you choose what to keep.',
+    'apps.atualizarTudo': 'Update all',
+    'apps.soInstalados': 'Installed only',
+    'apps.limparSelecao': 'Clear selection',
+    'apps.repararWinget': 'Repair winget',
+    'apps.instalarChoco': 'Install Chocolatey',
+    'apps.cat.navegadores': 'Browsers',
+    'apps.cat.comunicacao': 'Communication',
+    'apps.cat.jogos': 'Games',
+    'apps.cat.desenvolvimento': 'Development',
+    'apps.cat.multimidia': 'Multimedia',
+    'apps.cat.utilitarios': 'Utilities',
+    'apps.nApps': '{n} apps',
+    'apps.resultados': 'Search results',
+    'apps.nenhum': 'No apps found.',
+    'apps.instalado': 'Installed',
+    'apps.siteOficial': 'Open the official {nome} website',
+    'apps.selecionar': 'Select {nome}',
+    'apps.rodape': 'Installing and uninstalling need no restore point: uninstalling is the natural way back.',
+    'apps.carregando': 'Loading the catalog…',
+    'apps.falhaCatalogo': 'Failed to load the catalog: {erro}',
+    'apps.falhaGerenciadores': 'Failed to check winget/choco: {erro}',
+    'apps.falhaInstalados': 'Failed to list installed apps: {erro}',
+    'apps.selecioneUm': 'Select at least one app',
+    'apps.selecioneExportar': 'Select at least one app to export',
+    'apps.exportado': 'List with {n} apps saved to {caminho}',
+    'apps.importado': '{n} apps selected',
+    'apps.importadoDesconhecidos': '{n} apps selected; {d} IDs not in the catalog were ignored',
+    'apps.falhaExportar': 'Export failed: {erro}',
+    'apps.falhaImportar': 'Import failed: {erro}',
+    'apps.falhaLink': 'Could not open the link: {erro}',
+    'apps.instalando': 'Installing',
+    'apps.desinstalando': 'Uninstalling',
+    'apps.atualizando': 'Updating everything',
+    'apps.acaoFalhou': '{acao} failed: {erro}',
+    'apps.res.pacote': 'Package',
+    'apps.res.gerenciador': 'Manager',
+    'apps.res.resultado': 'Result',
+    'apps.res.detalhe': 'Detail',
+    'apps.res.vazio': 'Nothing to show.',
+    'apps.fechar': 'Close',
+    'apps.cancelar': 'Cancel',
+    'apps.reparar.titulo': 'Repair winget',
+    'apps.reparar.texto': '<p>This installs or repairs winget using the <strong>Microsoft.WinGet.Client</strong> module from the PowerShell Gallery ' +
+      '(<code>Install-Module</code> + <code>Repair-WinGetPackageManager</code>). It may take a few minutes.</p>',
+    'apps.reparar.botao': 'Repair',
+    'apps.reparar.andamento': 'Repairing winget...',
+    'apps.reparar.falha': 'Failed to repair winget: {erro}',
+    'apps.choco.titulo': 'Install Chocolatey',
+    'apps.choco.texto': '<p>This downloads the official installer from <code>https://community.chocolatey.org/install.ps1</code> and runs it in a ' +
+      'separate PowerShell process. The SHA-256 of the downloaded file is written to the log.</p>',
+    'apps.choco.botao': 'Install',
+    'apps.choco.andamento': 'Installing Chocolatey...',
+    'apps.choco.ok': 'Chocolatey installed',
+    'apps.choco.falha': 'Failed to install Chocolatey: {erro}'
+  };
 
-  function injetarEstilo() {
-    if (document.getElementById('estilo-instalar')) { return; }
-    var style = document.createElement('style');
-    style.id = 'estilo-instalar';
-    style.textContent = [
-      '#tab-aplicativos .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }',
-      '#tab-aplicativos .toolbar input[type=search] { flex:1 1 220px; min-width:160px; padding:6px 10px; border:1px solid var(--linha); border-radius:6px; background:var(--panel-2); color:var(--fg); font:inherit; }',
-      '#tab-aplicativos .painel-gerenciadores { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center; padding:10px 14px; margin-bottom:14px; border:1px solid var(--linha); border-radius:var(--raio); background:var(--panel-2); }',
-      '#tab-aplicativos .painel-gerenciadores .gm { display:inline-flex; align-items:center; gap:6px; }',
-      '#tab-aplicativos .painel-gerenciadores .gm .ok { color:var(--ok); font-weight:700; }',
-      '#tab-aplicativos .painel-gerenciadores .gm .falta { color:var(--danger); font-weight:700; }',
-      '#tab-aplicativos details.categoria { border:1px solid var(--linha); border-radius:var(--raio); margin-bottom:8px; background:var(--panel); }',
-      '#tab-aplicativos details.categoria > summary { cursor:pointer; padding:10px 14px; font-weight:650; }',
-      '#tab-aplicativos .lista-apps { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:2px 10px; padding:4px 14px 12px; }',
-      '#tab-aplicativos .app-row { display:flex; align-items:center; gap:4px; padding:5px 4px; border-radius:6px; }',
-      '#tab-aplicativos .app-row:hover { background:var(--panel-2); }',
-      '#tab-aplicativos .app-row.app-oculto { display:none; }',
-      '#tab-aplicativos .app-row label { display:flex; align-items:center; gap:6px; flex:1 1 auto; cursor:pointer; overflow:hidden; min-width:0; }',
-      '#tab-aplicativos .app-row .nome-app { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }',
-      '#tab-aplicativos .app-row .link-app { color:var(--muted); text-decoration:none; padding:2px 4px; flex:0 0 auto; }',
-      '#tab-aplicativos .app-row .link-app:hover { color:var(--accent); }',
-      '#tab-aplicativos .selo-foss { color:var(--ok); flex:0 0 auto; }',
-      '#tab-aplicativos .selo-instalado { color:var(--accent); flex:0 0 auto; }',
-      '#tab-aplicativos .rodape-nota { margin-top:10px; color:var(--muted); font-size:12px; }',
-      '#tab-aplicativos table.resultado-instalacao { width:100%; border-collapse:collapse; font-size:13px; }',
-      '#tab-aplicativos table.resultado-instalacao th, #tab-aplicativos table.resultado-instalacao td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--linha); }',
-      '#tab-aplicativos table.resultado-instalacao tr.res-ok td:nth-child(3) { color:var(--ok); }',
-      '#tab-aplicativos table.resultado-instalacao tr.res-pulado td:nth-child(3) { color:var(--warn); }',
-      '#tab-aplicativos table.resultado-instalacao tr.res-falha td:nth-child(3) { color:var(--danger); }',
-      '#tab-aplicativos .app-icone { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; min-width:32px; border-radius:50%; background:var(--elevated); color:var(--fg); font-weight:600; font-size:11px; letter-spacing:0.02em; flex:0 0 auto; overflow:hidden; }',
-      '#tab-aplicativos .app-icone.tem-imagem { background:transparent; border-radius:6px; }',
-      '#tab-aplicativos .app-icone img { width:32px; height:32px; object-fit:contain; border-radius:6px; display:block; }'
-    ].join('\n');
-    document.head.appendChild(style);
+  if (window.tmx && tmx.i18n) {
+    tmx.i18n.add('pt-BR', TEXTOS_PT);
+    tmx.i18n.add('en', TEXTOS_EN);
   }
 
-  /* ---------------- helpers de texto ---------------- */
+  function t(chave, vars) {
+    if (window.tmx && tmx.i18n && typeof tmx.i18n.t === 'function') { return tmx.i18n.t(chave, vars); }
+    var s = TEXTOS_PT[chave] || chave;
+    return vars ? s.replace(/\{(\w+)\}/g, function (m, k) { return vars[k] === undefined ? m : String(vars[k]); }) : s;
+  }
+
+  function idioma() { return (window.tmx && tmx.i18n && tmx.i18n.lang) || 'pt-BR'; }
+
+  /* Ordem fixa das abas de categoria (a mesma de Get-TmxAppCategoryOrder). */
+  var ORDEM_CATEGORIAS = ['navegadores', 'comunicacao', 'jogos', 'desenvolvimento', 'multimidia', 'utilitarios'];
+
+  /* Modo de teste: a lista de "instalados" e simulada (nada de winget). Os
+     testes de GUI podem trocar por window.tmxSimularInstalados antes de abrir
+     a aba. */
+  var SIMULAR_INSTALADOS_PADRAO = ['firefox', 'vivaldi'];
+
+  var estado = {
+    catalogo: null,
+    apps: {},           // id -> app
+    selecionados: {},
+    instalados: null,   // id -> true
+    soInstalados: false,
+    termoBusca: '',
+    categoria: 'navegadores'
+  };
+
+  /* ---------------- helpers ---------------- */
 
   function escapeHtml(s) {
     return String(s === null || s === undefined ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
+
+  function el(id) { return document.getElementById(id); }
+
+  function testMode() { return document.body && document.body.dataset.testmode === '1'; }
+
+  function descricaoDe(app) {
+    if (idioma() === 'en' && app.descricaoEn) { return app.descricaoEn; }
+    return app.descricao || '';
+  }
+
+  /* A folha install.css e desta tela; o index.html e de outro dono. Se a tag
+     ainda nao estiver la, entra por aqui (uma vez so). */
+  function garantirEstilo() {
+    if (document.querySelector('link[href="install.css"]')) { return; }
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'install.css';
+    document.head.appendChild(link);
+  }
+
+  var SVG_BUSCA = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>';
+  var SVG_ALERTA = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg>';
+  var SVG_LINK = '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>';
 
   /* ---------------- ponte: correlaciona job.done pelo jobId ---------------- */
 
@@ -84,19 +246,13 @@
     });
   }
 
-  /* A ponte aceita UM job por vez em todo o aplicativo, nao so nesta aba: um
-     lote de apps.icons rodando em segundo plano (disparado pelo
-     IntersectionObserver, sem o usuario pedir) pode estar ocupando o unico
-     slot bem na hora em que o usuario clica em Instalar/Desinstalar/etc.
-     Sem espera, esse clique falharia na hora com "ja existe um trabalho em
-     andamento" por causa de um lote de icone que nem apareceu na tela.
-     Usa tmx.bridge.callComEspera (src/web/app.js) em vez de reimplementar a
-     mesma espera aqui: alem de nao duplicar a logica, isso incrementa
-     tmx.bridge.esperandoUsuario emquanto espera - e o mesmo contador que o
-     lote de icones (mais abaixo) consulta pra dar prioridade a uma acao de
-     usuario tentando pegar o slot. */
-  function chamarAcaoAssincronaComEspera(nome, payload) {
-    return tmx.bridge.callComEspera(nome, payload).then(function (resp) {
+  /* A ponte aceita UM job por vez em todo o aplicativo: um lote de
+     apps.icons em segundo plano pode estar no unico slot bem na hora do
+     clique em Instalar. callComEspera (app.js) espera o slot e incrementa
+     tmx.bridge.esperandoUsuario, que o lote de icones consulta pra ceder a
+     vez a uma acao do usuario. */
+  function chamarAcaoAssincronaComEspera(nome, payload, esperaMs) {
+    return tmx.bridge.callComEspera(nome, payload, esperaMs).then(function (resp) {
       var jobId = resp && resp.jobId;
       if (!jobId) { throw new Error('resposta sem jobId'); }
       return aguardarJobDone(jobId);
@@ -106,22 +262,54 @@
   /* ---------------- esqueleto ---------------- */
 
   function montarEsqueleto() {
-    var raiz = document.getElementById('tab-aplicativos');
+    var raiz = el('tab-aplicativos');
     raiz.innerHTML =
-      '<h2>Instalar</h2>' +
-      '<div class="painel-gerenciadores" id="app-gerenciadores" aria-live="polite"></div>' +
-      '<div class="toolbar">' +
-        '<input type="search" id="app-busca" placeholder="Buscar por nome ou descrição" aria-label="Buscar aplicativo por nome ou descrição">' +
-        '<button type="button" class="btn btn-primary" id="app-btn-instalar" aria-label="Instalar aplicativos selecionados" disabled>Instalar selecionados (<span id="app-selecionados">0</span>)</button>' +
-        '<button type="button" class="btn btn-danger" id="app-btn-desinstalar" aria-label="Desinstalar aplicativos selecionados" disabled>Desinstalar</button>' +
-        '<button type="button" class="btn" id="app-btn-atualizar" aria-label="Atualizar todos os aplicativos instalados">Atualizar tudo</button>' +
-        '<button type="button" class="btn" id="app-btn-instalados" aria-label="Mostrar somente aplicativos já instalados" aria-pressed="false">Mostrar instalados</button>' +
-        '<button type="button" class="btn btn-mini" id="app-btn-limpar" aria-label="Limpar seleção de aplicativos">Limpar seleção</button>' +
-        '<button type="button" class="btn btn-mini" id="app-btn-expandir" aria-label="Expandir todas as categorias">Expandir tudo</button>' +
-        '<button type="button" class="btn btn-mini" id="app-btn-recolher" aria-label="Recolher todas as categorias">Recolher tudo</button>' +
+      '<header class="ap-topo">' +
+        '<div class="ap-topo-texto">' +
+          '<p class="ap-eyebrow" data-i18n="apps.eyebrow"></p>' +
+          '<h1 class="ap-titulo" data-i18n="apps.titulo"></h1>' +
+          '<p class="ap-sub" id="app-sub"></p>' +
+        '</div>' +
+        '<div class="ap-resumo" id="app-resumo" aria-live="polite"><span class="ap-ponto" aria-hidden="true"></span>' +
+          '<span id="app-resumo-texto"></span><span id="app-selecionados" hidden>0</span></div>' +
+      '</header>' +
+      '<div class="ap-barra">' +
+        '<label class="ap-busca">' + SVG_BUSCA +
+          '<input type="search" id="app-busca" data-i18n-placeholder="apps.buscar" autocomplete="off" spellcheck="false"></label>' +
+        '<button type="button" class="btn btn-primary" id="app-btn-instalar" data-i18n="apps.instalar" disabled></button>' +
+        '<button type="button" class="btn ap-btn-perigo" id="app-btn-desinstalar" data-i18n="apps.desinstalar" disabled></button>' +
+        '<button type="button" class="btn" id="app-btn-exportar" data-i18n="apps.exportar"></button>' +
+        '<button type="button" class="btn" id="app-btn-importar" data-i18n="apps.importar"></button>' +
       '</div>' +
-      '<div id="app-categorias"></div>' +
-      '<p class="rodape-nota">Instalações não exigem ponto de restauração: desinstalar é a reversão natural.</p>';
+      '<p class="ap-aviso" role="note">' + SVG_ALERTA +
+        '<span><span data-i18n="apps.avisoAntes"></span><a href="#" id="app-link-bloatware" data-i18n="apps.avisoLink"></a>' +
+        '<span data-i18n="apps.avisoDepois"></span></span></p>' +
+      '<div class="ap-extras">' +
+        '<div class="painel-gerenciadores" id="app-gerenciadores" aria-live="polite"></div>' +
+        '<div class="ap-extras-acoes">' +
+          '<button type="button" class="btn btn-mini" id="app-btn-atualizar" data-i18n="apps.atualizarTudo"></button>' +
+          '<button type="button" class="btn btn-mini" id="app-btn-instalados" aria-pressed="false" data-i18n="apps.soInstalados"></button>' +
+          '<button type="button" class="btn btn-mini" id="app-btn-limpar" data-i18n="apps.limparSelecao"></button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="ap-cats" id="app-cats" role="tablist"></div>' +
+      '<div class="ap-secao-cab"><h2 id="app-cat-titulo"></h2><span class="ap-secao-contagem" id="app-cat-contagem"></span></div>' +
+      '<div class="ap-grade" id="app-grade"><p class="vazio ap-nenhum" data-i18n="apps.carregando"></p></div>' +
+      '<p class="ap-rodape" data-i18n="apps.rodape"></p>';
+    traduzirEstatico();
+  }
+
+  function traduzirEstatico() {
+    var raiz = el('tab-aplicativos');
+    if (!raiz) { return; }
+    if (window.tmx && tmx.i18n && typeof tmx.i18n.apply === 'function') {
+      tmx.i18n.apply(raiz);
+    } else {
+      raiz.querySelectorAll('[data-i18n]').forEach(function (n) { n.textContent = t(n.getAttribute('data-i18n')); });
+      raiz.querySelectorAll('[data-i18n-placeholder]').forEach(function (n) { n.placeholder = t(n.getAttribute('data-i18n-placeholder')); });
+    }
+    var busca = el('app-busca');
+    if (busca) { busca.setAttribute('aria-label', t('apps.buscarAria')); }
   }
 
   /* ---------------- painel de gerenciadores ---------------- */
@@ -138,9 +326,12 @@
     return span;
   }
 
+  var ultimoGerenciadores = null;
+
   function renderGerenciadores(r) {
     r = r || { winget: {}, choco: {} };
-    var cont = document.getElementById('app-gerenciadores');
+    ultimoGerenciadores = r;
+    var cont = el('app-gerenciadores');
     if (!cont) { return; }
     cont.innerHTML = '';
     cont.appendChild(criarItemGerenciador('winget', r.winget));
@@ -151,8 +342,7 @@
       btnReparar.type = 'button';
       btnReparar.className = 'btn btn-mini';
       btnReparar.id = 'app-btn-reparar-winget';
-      btnReparar.textContent = 'Reparar winget';
-      btnReparar.setAttribute('aria-label', 'Reparar a instalação do winget');
+      btnReparar.textContent = t('apps.repararWinget');
       btnReparar.addEventListener('click', confirmarRepararWinget);
       cont.appendChild(btnReparar);
     }
@@ -162,8 +352,7 @@
       btnChoco.type = 'button';
       btnChoco.className = 'btn btn-mini';
       btnChoco.id = 'app-btn-instalar-choco';
-      btnChoco.textContent = 'Instalar Chocolatey';
-      btnChoco.setAttribute('aria-label', 'Instalar o Chocolatey');
+      btnChoco.textContent = t('apps.instalarChoco');
       btnChoco.addEventListener('click', confirmarInstalarChoco);
       cont.appendChild(btnChoco);
     }
@@ -171,30 +360,27 @@
 
   function atualizarGerenciadores() {
     return tmx.bridge.call('apps.managers').then(renderGerenciadores).catch(function (e) {
-      tmx.toast('Falha ao consultar winget/choco: ' + e.message, 'erro');
-      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
-      // usuário, mas tabs.show precisa SABER que a carga falhou para
-      // deixar a aba como não iniciada e tentar de novo na próxima
-      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      tmx.toast(t('apps.falhaGerenciadores', { erro: e.message }), 'erro');
+      // Repropaga: tabs.show precisa SABER que a carga falhou para tentar de
+      // novo na proxima abertura da aba.
       throw e;
     });
   }
 
   function confirmarRepararWinget() {
     tmx.modal.open({
-      titulo: 'Reparar o winget',
-      html: '<p>Isso instala ou repara o winget usando o módulo <strong>Microsoft.WinGet.Client</strong> da PowerShell Gallery ' +
-            '(<code>Install-Module</code> + <code>Repair-WinGetPackageManager</code>). Pode levar alguns minutos.</p>',
+      titulo: t('apps.reparar.titulo'),
+      html: t('apps.reparar.texto'),
       botoes: [
-        { rotulo: 'Cancelar', classe: 'btn' },
+        { rotulo: t('apps.cancelar'), classe: 'btn' },
         {
-          rotulo: 'Reparar', classe: 'btn btn-primary', onClick: function () {
-            tmx.toast('Reparando o winget...', 'aviso');
+          rotulo: t('apps.reparar.botao'), classe: 'btn btn-primary', onClick: function () {
+            tmx.toast(t('apps.reparar.andamento'), 'aviso');
             chamarAcaoAssincronaComEspera('apps.repairWinget', { consentido: true }).then(function (r) {
-              tmx.toast(r && r.ok ? ('winget: ' + r.detalhe) : ('Falha ao reparar o winget: ' + (r && r.detalhe)), r && r.ok ? 'ok' : 'erro');
+              tmx.toast(r && r.ok ? ('winget: ' + r.detalhe) : t('apps.reparar.falha', { erro: r && r.detalhe }), r && r.ok ? 'ok' : 'erro');
               return atualizarGerenciadores();
             }).catch(function (e) {
-              tmx.toast('Falha ao reparar o winget: ' + e.message, 'erro');
+              tmx.toast(t('apps.reparar.falha', { erro: e.message }), 'erro');
             });
           }
         }
@@ -204,19 +390,18 @@
 
   function confirmarInstalarChoco() {
     tmx.modal.open({
-      titulo: 'Instalar o Chocolatey',
-      html: '<p>Isso baixa o instalador oficial de <code>https://community.chocolatey.org/install.ps1</code> e roda ele em um ' +
-            'processo separado do PowerShell. O SHA-256 do arquivo baixado fica registrado no log.</p>',
+      titulo: t('apps.choco.titulo'),
+      html: t('apps.choco.texto'),
       botoes: [
-        { rotulo: 'Cancelar', classe: 'btn' },
+        { rotulo: t('apps.cancelar'), classe: 'btn' },
         {
-          rotulo: 'Instalar', classe: 'btn btn-primary', onClick: function () {
-            tmx.toast('Instalando o Chocolatey...', 'aviso');
+          rotulo: t('apps.choco.botao'), classe: 'btn btn-primary', onClick: function () {
+            tmx.toast(t('apps.choco.andamento'), 'aviso');
             chamarAcaoAssincronaComEspera('apps.installChoco', { consentido: true }).then(function (r) {
-              tmx.toast(r && r.ok ? 'Chocolatey instalado' : ('Falha ao instalar o Chocolatey: ' + (r && r.detalhe)), r && r.ok ? 'ok' : 'erro');
+              tmx.toast(r && r.ok ? t('apps.choco.ok') : t('apps.choco.falha', { erro: r && r.detalhe }), r && r.ok ? 'ok' : 'erro');
               return atualizarGerenciadores();
             }).catch(function (e) {
-              tmx.toast('Falha ao instalar o Chocolatey: ' + e.message, 'erro');
+              tmx.toast(t('apps.choco.falha', { erro: e.message }), 'erro');
             });
           }
         }
@@ -290,9 +475,15 @@
     // atributo src sem checar a forma esperada.
     if (dados.src.indexOf('data:image/png;base64,') !== 0) { return; }
     var img = document.createElement('img');
-    img.width = 32;
-    img.height = 32;
+    img.width = 44;
+    img.height = 44;
     img.alt = '';
+    // Nunca aparece icone quebrado: se a imagem nao decodificar, volta para
+    // as iniciais do app.
+    img.onerror = function () {
+      span.classList.remove('tem-imagem');
+      span.textContent = span.dataset.iniciais || '';
+    };
     img.src = dados.src;
     span.innerHTML = '';
     span.appendChild(img);
@@ -452,191 +643,315 @@
     span.className = 'app-icone';
     span.setAttribute('aria-hidden', 'true');
     span.dataset.id = app.id;
+    span.dataset.iniciais = calcularIniciais(app.nome);
     iconesEstado.elementos[app.id] = span;
 
     var cacheado = iconesEstado.cache[app.id];
     if (cacheado) {
       aplicarIconeNoElemento(span, cacheado);
     } else {
-      span.textContent = calcularIniciais(app.nome);
+      span.textContent = span.dataset.iniciais;
       var obs = obterObserverIcones();
       if (obs) {
         obs.observe(span);
       } else {
-        // Sem IntersectionObserver (ambiente muito antigo): pede direto, sem
-        // esperar visibilidade - nunca deixa a linha sem tentativa de icone.
+        // Sem IntersectionObserver: pede direto, sem esperar visibilidade.
         enfileirarIcone(app.id);
       }
     }
     return span;
   }
 
-  /* ---------------- catalogo ---------------- */
+  /* ---------------- cards ---------------- */
 
-  function criarLinhaApp(app) {
-    var linha = document.createElement('div');
-    linha.className = 'app-row app';
-    linha.dataset.id = app.id;
-    linha.dataset.nome = (app.nome || '').toLowerCase();
-    linha.dataset.descricao = (app.descricao || '').toLowerCase();
+  function corDasIniciais(id) {
+    var h = 0;
+    for (var i = 0; i < id.length; i++) { h = (h * 31 + id.charCodeAt(i)) | 0; }
+    return 'cor-' + (Math.abs(h) % 5); // cor-0 = accent-text (classe padrao)
+  }
 
-    var label = document.createElement('label');
+  function criarCardApp(app) {
+    // <label> no card inteiro: clicar em qualquer ponto marca a caixa. O link
+    // do site faz preventDefault, o que tambem cancela a ativacao do label.
+    var card = document.createElement('label');
+    card.className = 'app-card app';
+    card.dataset.id = app.id;
+    card.dataset.cat = app.categoria;
+    card.setAttribute('for', 'app-' + app.id);
 
     var cb = document.createElement('input');
     cb.type = 'checkbox';
     cb.id = 'app-' + app.id;
+    cb.checked = !!estado.selecionados[app.id];
+    cb.setAttribute('aria-label', t('apps.selecionar', { nome: app.nome }));
     cb.addEventListener('change', function () {
       if (cb.checked) { estado.selecionados[app.id] = true; } else { delete estado.selecionados[app.id]; }
+      card.classList.toggle('app-marcado', cb.checked);
       atualizarContagemSelecionados();
     });
-    label.appendChild(cb);
-    label.appendChild(criarIconeApp(app));
+    card.classList.toggle('app-marcado', cb.checked);
+    card.appendChild(cb);
 
-    var nomeSpan = document.createElement('span');
-    nomeSpan.className = 'nome-app';
-    nomeSpan.textContent = app.nome;
-    label.appendChild(nomeSpan);
+    var icone = criarIconeApp(app);
+    icone.classList.add(corDasIniciais(app.id));
+    card.appendChild(icone);
 
-    if (app.foss) {
-      var seloFoss = document.createElement('span');
-      seloFoss.className = 'selo selo-foss';
-      seloFoss.textContent = 'FOSS';
-      seloFoss.title = 'Código aberto';
-      label.appendChild(seloFoss);
-    }
+    var corpo = document.createElement('div');
+    corpo.className = 'app-corpo';
 
-    var seloInstalado = document.createElement('span');
-    seloInstalado.className = 'selo selo-instalado';
-    seloInstalado.textContent = 'instalado';
-    seloInstalado.dataset.role = 'selo-instalado';
-    // Estilo inline, nao o atributo hidden: app.css define '.selo { display:
-    // inline-block }' com a MESMA especificidade de '[hidden]' do UA
-    // stylesheet, e o autor sempre vence esse empate - o selo ficaria visivel
-    // mesmo com hidden=true. style.display inline tem especificidade maior e
-    // realmente esconde.
-    seloInstalado.style.display = 'none';
-    label.appendChild(seloInstalado);
+    var linha1 = document.createElement('div');
+    linha1.className = 'app-linha1';
 
-    linha.appendChild(label);
+    var nome = document.createElement('span');
+    nome.className = 'app-nome';
+    nome.textContent = app.nome;
+    linha1.appendChild(nome);
+
+    var selo = document.createElement('span');
+    selo.className = 'app-selo-instalado';
+    selo.dataset.role = 'selo-instalado';
+    selo.textContent = t('apps.instalado');
+    // style.display e nao o atributo hidden: .app-selo-instalado define
+    // display e ganharia do [hidden] do navegador.
+    selo.style.display = (estado.instalados && estado.instalados[app.id]) ? '' : 'none';
+    linha1.appendChild(selo);
 
     if (app.link) {
       var a = document.createElement('a');
       a.href = '#';
-      a.className = 'link-app';
-      a.textContent = '↗';
-      a.title = 'Abrir o site de ' + app.nome;
-      a.setAttribute('aria-label', 'Abrir o site de ' + app.nome);
+      a.className = 'app-link';
+      a.innerHTML = SVG_LINK;
+      a.title = t('apps.siteOficial', { nome: app.nome });
+      a.setAttribute('aria-label', a.title);
       a.addEventListener('click', function (e) {
         e.preventDefault();
+        e.stopPropagation();
         tmx.bridge.call('shell.openUrl', { url: app.link }).catch(function (err) {
-          tmx.toast('Não foi possível abrir o link: ' + err.message, 'erro');
+          tmx.toast(t('apps.falhaLink', { erro: err.message }), 'erro');
         });
       });
-      linha.appendChild(a);
+      linha1.appendChild(a);
+    }
+    corpo.appendChild(linha1);
+
+    var desc = document.createElement('p');
+    desc.className = 'app-desc';
+    desc.textContent = descricaoDe(app);
+    corpo.appendChild(desc);
+
+    if (app.winget) {
+      var id = document.createElement('code');
+      id.className = 'app-winget';
+      id.textContent = app.winget;
+      corpo.appendChild(id);
     }
 
-    return linha;
+    card.appendChild(corpo);
+    return card;
   }
 
-  function renderCategorias() {
-    var cont = document.getElementById('app-categorias');
-    if (!cont) { return; }
+  function renderCatalogo() {
+    var grade = el('app-grade');
+    if (!grade) { return; }
 
-    // Re-render (recarga do catalogo): os elementos antigos vao sumir do
-    // DOM - desconecta o observer deles antes (senao ele continua
-    // "observando" nos vazios) e limpa o mapa de elementos, que sera
-    // repovoado pelas novas linhas abaixo. cache/solicitados/fila
-    // continuam (sao por id de app, nao por elemento DOM).
+    // Re-render: desconecta o observer dos elementos antigos e limpa o mapa
+    // (cache/solicitados/fila continuam: sao por id de app).
     if (iconesEstado.observer) { iconesEstado.observer.disconnect(); }
     iconesEstado.elementos = {};
 
-    cont.innerHTML = '';
-
+    grade.innerHTML = '';
+    estado.apps = {};
     var categorias = (estado.catalogo && estado.catalogo.categorias) || [];
     categorias.forEach(function (cat) {
-      var det = document.createElement('details');
-      det.className = 'categoria';
-      det.open = true;
-
-      var sum = document.createElement('summary');
-      sum.textContent = cat.nome + ' (' + (cat.apps || []).length + ')';
-      det.appendChild(sum);
-
-      var lista = document.createElement('div');
-      lista.className = 'lista-apps';
-      (cat.apps || []).forEach(function (app) { lista.appendChild(criarLinhaApp(app)); });
-      det.appendChild(lista);
-
-      cont.appendChild(det);
+      (cat.apps || []).forEach(function (app) {
+        if (!app.categoria) { app.categoria = cat.id; }
+        estado.apps[app.id] = app;
+        grade.appendChild(criarCardApp(app));
+      });
     });
 
+    var vazio = document.createElement('p');
+    vazio.className = 'vazio ap-nenhum';
+    vazio.id = 'app-nenhum';
+    vazio.textContent = t('apps.nenhum');
+    vazio.hidden = true;
+    grade.appendChild(vazio);
+
+    if (!categorias.some(function (c) { return c.id === estado.categoria; }) && categorias.length) {
+      estado.categoria = categorias[0].id;
+    }
+    renderCategorias();
+    atualizarSub();
     aplicarFiltro();
+    atualizarContagemSelecionados();
+  }
+
+  function renderCategorias() {
+    var cont = el('app-cats');
+    if (!cont) { return; }
+    cont.innerHTML = '';
+    var categorias = (estado.catalogo && estado.catalogo.categorias) || [];
+    categorias.slice().sort(function (a, b) {
+      return ORDEM_CATEGORIAS.indexOf(a.id) - ORDEM_CATEGORIAS.indexOf(b.id);
+    }).forEach(function (cat) {
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'ap-cat';
+      b.setAttribute('role', 'tab');
+      b.dataset.cat = cat.id;
+      b.setAttribute('aria-selected', cat.id === estado.categoria ? 'true' : 'false');
+      b.textContent = rotuloCategoria(cat);
+      b.addEventListener('click', function () {
+        estado.categoria = cat.id;
+        // Trocar de categoria sai da busca: a busca olha o catalogo inteiro.
+        if (estado.termoBusca) {
+          estado.termoBusca = '';
+          var busca = el('app-busca');
+          if (busca) { busca.value = ''; }
+        }
+        cont.querySelectorAll('.ap-cat').forEach(function (x) {
+          x.setAttribute('aria-selected', x === b ? 'true' : 'false');
+        });
+        aplicarFiltro();
+      });
+      cont.appendChild(b);
+    });
+  }
+
+  function rotuloCategoria(cat) {
+    var chave = 'apps.cat.' + cat.id;
+    var r = t(chave);
+    return r === chave ? (cat.nome || cat.id) : r;
+  }
+
+  function atualizarSub() {
+    var sub = el('app-sub');
+    if (!sub) { return; }
+    var cats = (estado.catalogo && estado.catalogo.categorias) || [];
+    if (!cats.length) { sub.textContent = t('apps.subCarregando'); return; }
+    sub.textContent = t('apps.sub', { n: Object.keys(estado.apps).length, c: cats.length });
   }
 
   function carregarCatalogo() {
     return tmx.bridge.call('apps.catalog').then(function (r) {
       estado.catalogo = r;
-      renderCategorias();
+      renderCatalogo();
     }).catch(function (e) {
-      var cont = document.getElementById('app-categorias');
-      if (cont) { cont.innerHTML = '<p class="vazio">Falha ao carregar o catálogo: ' + escapeHtml(e.message) + '</p>'; }
-      // Repropaga: a mensagem inline acima (e o toast) já avisaram o
-      // usuário, mas tabs.show precisa SABER que a carga falhou para
-      // deixar a aba como não iniciada e tentar de novo na próxima
-      // abertura. Engolir o erro aqui deixava a aba vazia para sempre.
+      var grade = el('app-grade');
+      if (grade) { grade.innerHTML = '<p class="vazio ap-nenhum">' + escapeHtml(t('apps.falhaCatalogo', { erro: e.message })) + '</p>'; }
       throw e;
     });
   }
 
   /* ---------------- filtro e selecao ---------------- */
 
+  function combinaBusca(app, termo) {
+    if (!termo) { return true; }
+    var alvo = (app.nome + ' ' + (app.descricao || '') + ' ' + (app.descricaoEn || '') + ' ' + (app.winget || '')).toLowerCase();
+    return alvo.indexOf(termo) >= 0;
+  }
+
   function aplicarFiltro() {
     var termo = estado.termoBusca || '';
-    var linhas = document.querySelectorAll('#tab-aplicativos .app-row');
-    linhas.forEach(function (linha) {
-      var combinaBusca = !termo || linha.dataset.nome.indexOf(termo) >= 0 || linha.dataset.descricao.indexOf(termo) >= 0;
-      var combinaInstalados = !estado.mostrarInstalados || linha.classList.contains('app-instalado');
-      var visivel = combinaBusca && combinaInstalados;
-      linha.classList.toggle('app-oculto', !visivel);
-      // A classe 'app' (sem o '-row') so fica nas linhas visiveis: e o que os
-      // testes de GUI contam para saber quantos apps a busca deixou na tela.
-      linha.classList.toggle('app', visivel);
+    var visiveis = 0;
+    document.querySelectorAll('#tab-aplicativos .app-card').forEach(function (card) {
+      var app = estado.apps[card.dataset.id];
+      if (!app) { return; }
+      var naCategoria = termo ? true : (app.categoria === estado.categoria);
+      var ok = naCategoria && combinaBusca(app, termo) &&
+        (!estado.soInstalados || !!(estado.instalados && estado.instalados[app.id]));
+      card.classList.toggle('app-oculto', !ok);
+      card.classList.toggle('app', ok);
+      if (ok) { visiveis++; }
     });
+
+    var titulo = el('app-cat-titulo');
+    var contagem = el('app-cat-contagem');
+    if (titulo) {
+      if (termo) {
+        titulo.textContent = t('apps.resultados');
+      } else {
+        var cat = ((estado.catalogo && estado.catalogo.categorias) || []).filter(function (c) { return c.id === estado.categoria; })[0];
+        titulo.textContent = cat ? rotuloCategoria(cat) : '';
+      }
+    }
+    if (contagem) { contagem.textContent = t('apps.nApps', { n: visiveis }); }
+    var nenhum = el('app-nenhum');
+    if (nenhum) { nenhum.hidden = visiveis > 0; }
+    var cats = el('app-cats');
+    if (cats) { cats.classList.toggle('ap-buscando', !!termo); }
+  }
+
+  function contarInstalados() {
+    if (!estado.instalados) { return 0; }
+    return Object.keys(estado.instalados).filter(function (id) { return !!estado.apps[id]; }).length;
   }
 
   function atualizarContagemSelecionados() {
     var n = Object.keys(estado.selecionados).length;
-    var span = document.getElementById('app-selecionados');
+    var span = el('app-selecionados');
     if (span) { span.textContent = String(n); }
-    var btnInstalar = document.getElementById('app-btn-instalar');
-    var btnDesinstalar = document.getElementById('app-btn-desinstalar');
+    var resumo = el('app-resumo-texto');
+    if (resumo) { resumo.textContent = t('apps.resumo', { s: n, i: contarInstalados() }); }
+    var btnInstalar = el('app-btn-instalar');
+    var btnDesinstalar = el('app-btn-desinstalar');
     if (btnInstalar) { btnInstalar.disabled = (n === 0); }
     if (btnDesinstalar) { btnDesinstalar.disabled = (n === 0); }
   }
 
-  /* ---------------- instalados ---------------- */
+  function marcarSelecao(ids) {
+    ids.forEach(function (id) {
+      if (!estado.apps[id]) { return; }
+      estado.selecionados[id] = true;
+      var cb = el('app-' + id);
+      if (cb) {
+        cb.checked = true;
+        var card = cb.closest('.app-card');
+        if (card) { card.classList.add('app-marcado'); }
+      }
+    });
+    atualizarContagemSelecionados();
+  }
+
+  function limparSelecao() {
+    estado.selecionados = {};
+    document.querySelectorAll('#tab-aplicativos .app-card input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
+    document.querySelectorAll('#tab-aplicativos .app-card.app-marcado').forEach(function (c) { c.classList.remove('app-marcado'); });
+    atualizarContagemSelecionados();
+  }
+
+  /* ---------------- instalados (selo "Instalado") ---------------- */
 
   function carregarInstalados() {
-    return chamarAcaoAssincronaComEspera('apps.installed').then(function (r) {
+    var payload = null;
+    if (testMode()) {
+      payload = { simular: Array.isArray(window.tmxSimularInstalados) ? window.tmxSimularInstalados : SIMULAR_INSTALADOS_PADRAO };
+    }
+    // winget list pode demorar e o slot pode estar com um lote de icones:
+    // espera ate 90 s pelo slot.
+    return chamarAcaoAssincronaComEspera('apps.installed', payload, 90000).then(function (r) {
       var mapa = {};
-      var itens = (r && r.itens) || [];
-      itens.forEach(function (it) {
-        if (it.instalado && it.catalogId) { mapa[it.catalogId] = true; }
+      ((r && r.itens) || []).forEach(function (it) {
+        if (it && it.instalado && it.catalogId) { mapa[it.catalogId] = true; }
       });
       estado.instalados = mapa;
-
-      document.querySelectorAll('#tab-aplicativos .app-row').forEach(function (linha) {
-        var instalado = !!mapa[linha.dataset.id];
-        linha.classList.toggle('app-instalado', instalado);
-        var selo = linha.querySelector('[data-role="selo-instalado"]');
-        if (selo) { selo.style.display = instalado ? '' : 'none'; }
-      });
-
-      aplicarFiltro();
+      pintarInstalados();
       return mapa;
     }).catch(function (e) {
-      tmx.toast('Falha ao consultar aplicativos instalados: ' + e.message, 'erro');
+      tmx.toast(t('apps.falhaInstalados', { erro: e.message }), 'erro');
     });
+  }
+
+  function pintarInstalados() {
+    var mapa = estado.instalados || {};
+    document.querySelectorAll('#tab-aplicativos .app-card').forEach(function (card) {
+      var instalado = !!mapa[card.dataset.id];
+      card.classList.toggle('app-instalado', instalado);
+      var selo = card.querySelector('[data-role="selo-instalado"]');
+      if (selo) { selo.style.display = instalado ? '' : 'none'; }
+    });
+    aplicarFiltro();
+    atualizarContagemSelecionados();
   }
 
   /* ---------------- resultados de instalar/desinstalar/atualizar ---------------- */
@@ -645,7 +960,7 @@
     itens = itens || [];
     var linhas = itens.map(function (it) {
       var classe = 'res-' + (it.resultado || 'falha');
-      return '<tr class="' + classe + '">' +
+      return '<tr class="' + escapeHtml(classe) + '">' +
         '<td>' + escapeHtml(it.pacote) + '</td>' +
         '<td>' + escapeHtml(it.gerenciador || '—') + '</td>' +
         '<td>' + escapeHtml(it.resultado || '') + '</td>' +
@@ -654,10 +969,12 @@
     }).join('');
 
     var html = itens.length
-      ? '<table class="resultado-instalacao"><thead><tr><th>Pacote</th><th>Gerenciador</th><th>Resultado</th><th>Detalhe</th></tr></thead><tbody>' + linhas + '</tbody></table>'
-      : '<p class="vazio">Nada para mostrar.</p>';
+      ? '<table class="resultado-instalacao"><thead><tr><th>' + escapeHtml(t('apps.res.pacote')) + '</th><th>' +
+        escapeHtml(t('apps.res.gerenciador')) + '</th><th>' + escapeHtml(t('apps.res.resultado')) + '</th><th>' +
+        escapeHtml(t('apps.res.detalhe')) + '</th></tr></thead><tbody>' + linhas + '</tbody></table>'
+      : '<p class="vazio">' + escapeHtml(t('apps.res.vazio')) + '</p>';
 
-    tmx.modal.open({ titulo: titulo, html: html, botoes: [{ rotulo: 'Fechar' }] });
+    tmx.modal.open({ titulo: titulo, html: html, botoes: [{ rotulo: t('apps.fechar') }] });
   }
 
   function rodarAcaoPacotes(acao, ids, rotulo) {
@@ -667,72 +984,166 @@
       mostrarResultados(rotulo, resultado);
       return carregarInstalados();
     }).catch(function (e) {
-      tmx.toast(rotulo + ' falhou: ' + e.message, 'erro');
+      tmx.toast(t('apps.acaoFalhou', { acao: rotulo, erro: e.message }), 'erro');
     });
   }
 
-  /* ---------------- toolbar ---------------- */
+  /* ---------------- exportar / importar ---------------- */
 
-  function ligarEventosToolbar() {
-    document.getElementById('app-busca').addEventListener('input', function (e) {
+  /* No modo de teste os dialogos nativos nao abrem: a suite de GUI informa o
+     caminho/conteudo simulado por window.tmxSimularArquivo = { salvar,
+     abrirCaminho, abrirConteudo }. Fora do modo de teste o back-end ignora. */
+  function simulacaoArquivo() { return (testMode() && window.tmxSimularArquivo) || {}; }
+
+  function exportarLista() {
+    var ids = Object.keys(estado.selecionados);
+    if (!ids.length) { tmx.toast(t('apps.selecioneExportar'), 'aviso'); return; }
+    tmx.bridge.call('apps.export', { ids: ids }).then(function (r) {
+      var doc = { formato: 'tweakmaxing-apps', versao: 1, geradoEm: r && r.geradoEm, apps: (r && r.apps) || [] };
+      var payload = { conteudo: JSON.stringify(doc, null, 2), nomeSugerido: 'tweakmaxing-apps.json' };
+      var sim = simulacaoArquivo();
+      if (sim.salvar) { payload.simular = sim.salvar; }
+      return tmx.bridge.call('shell.saveFile', payload).then(function (s) {
+        if (!s || s.cancelado) { return; }
+        tmx.toast(t('apps.exportado', { n: doc.apps.length, caminho: s.caminho }), 'ok');
+      });
+    }).catch(function (e) {
+      tmx.toast(t('apps.falhaExportar', { erro: e.message }), 'erro');
+    });
+  }
+
+  function importarLista() {
+    var payload = { filtro: 'JSON (*.json)|*.json|*.*|*.*' };
+    var sim = simulacaoArquivo();
+    if (sim.abrirCaminho) { payload.simularCaminho = sim.abrirCaminho; payload.simularConteudo = sim.abrirConteudo || ''; }
+    tmx.bridge.call('shell.openFile', payload).then(function (f) {
+      if (!f || f.cancelado) { return null; }
+      return tmx.bridge.call('apps.import', { conteudo: f.conteudo || '' }).then(function (r) {
+        var ids = (r && r.ids) || [];
+        var desconhecidos = (r && r.desconhecidos) || [];
+        marcarSelecao(ids);
+        // Mostra a categoria do primeiro app importado, para a marcacao
+        // aparecer na tela.
+        if (ids.length && estado.apps[ids[0]] && !estado.termoBusca) {
+          var alvo = estado.apps[ids[0]].categoria;
+          var botao = document.querySelector('#app-cats .ap-cat[data-cat="' + alvo + '"]');
+          if (botao) { botao.click(); }
+        }
+        tmx.toast(desconhecidos.length
+          ? t('apps.importadoDesconhecidos', { n: ids.length, d: desconhecidos.length })
+          : t('apps.importado', { n: ids.length }), desconhecidos.length ? 'aviso' : 'ok');
+      });
+    }).catch(function (e) {
+      tmx.toast(t('apps.falhaImportar', { erro: e.message }), 'erro');
+    });
+  }
+
+  /* ---------------- link para Otimizacoes > Remover bloatware ---------------- */
+
+  function irParaBloatware(e) {
+    if (e) { e.preventDefault(); }
+    if (!window.tmx || !tmx.tabs) { return; }
+    tmx.tabs.show('otimizacoes');
+    // A tela de Otimizacoes e de outro modulo: avisa por evento e, de
+    // reserva, tenta rolar ate o card do APM-006 quando ele existir.
+    document.dispatchEvent(new CustomEvent('tmx:focarAjuste', { detail: { id: 'APM-006', tab: 'otimizacoes' } }));
+    var tentativas = 0;
+    (function rolar() {
+      var alvo = document.querySelector('#tab-otimizacoes [data-id="APM-006"]');
+      if (alvo && typeof alvo.scrollIntoView === 'function') { alvo.scrollIntoView({ block: 'center' }); return; }
+      if (++tentativas < 10) { setTimeout(rolar, 300); }
+    })();
+  }
+
+  /* ---------------- idioma ---------------- */
+
+  function retraduzir() {
+    if (!el('app-grade')) { return; }
+    traduzirEstatico();
+    atualizarSub();
+    if (ultimoGerenciadores) { renderGerenciadores(ultimoGerenciadores); }
+    document.querySelectorAll('#app-cats .ap-cat').forEach(function (b) {
+      var cat = ((estado.catalogo && estado.catalogo.categorias) || []).filter(function (c) { return c.id === b.dataset.cat; })[0];
+      if (cat) { b.textContent = rotuloCategoria(cat); }
+    });
+    document.querySelectorAll('#tab-aplicativos .app-card').forEach(function (card) {
+      var app = estado.apps[card.dataset.id];
+      if (!app) { return; }
+      var desc = card.querySelector('.app-desc');
+      if (desc) { desc.textContent = descricaoDe(app); }
+      var selo = card.querySelector('[data-role="selo-instalado"]');
+      if (selo) { selo.textContent = t('apps.instalado'); }
+      var link = card.querySelector('.app-link');
+      if (link) { link.title = t('apps.siteOficial', { nome: app.nome }); link.setAttribute('aria-label', link.title); }
+      var cb = card.querySelector('input[type=checkbox]');
+      if (cb) { cb.setAttribute('aria-label', t('apps.selecionar', { nome: app.nome })); }
+    });
+    var nenhum = el('app-nenhum');
+    if (nenhum) { nenhum.textContent = t('apps.nenhum'); }
+    aplicarFiltro();
+    atualizarContagemSelecionados();
+  }
+
+  document.addEventListener('tmx:lang', retraduzir);
+
+  /* ---------------- barra de acoes ---------------- */
+
+  function ligarEventos() {
+    el('app-busca').addEventListener('input', function (e) {
       estado.termoBusca = e.target.value.trim().toLowerCase();
       aplicarFiltro();
     });
 
-    document.getElementById('app-btn-limpar').addEventListener('click', function () {
-      estado.selecionados = {};
-      document.querySelectorAll('#tab-aplicativos input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
-      atualizarContagemSelecionados();
-    });
+    el('app-btn-limpar').addEventListener('click', limparSelecao);
 
-    document.getElementById('app-btn-expandir').addEventListener('click', function () {
-      document.querySelectorAll('#tab-aplicativos details.categoria').forEach(function (d) { d.open = true; });
-    });
-
-    document.getElementById('app-btn-recolher').addEventListener('click', function () {
-      document.querySelectorAll('#tab-aplicativos details.categoria').forEach(function (d) { d.open = false; });
-    });
-
-    document.getElementById('app-btn-instalados').addEventListener('click', function (e) {
-      estado.mostrarInstalados = !estado.mostrarInstalados;
-      e.currentTarget.setAttribute('aria-pressed', estado.mostrarInstalados ? 'true' : 'false');
-      e.currentTarget.classList.toggle('btn-primary', estado.mostrarInstalados);
-      if (estado.mostrarInstalados && !estado.instalados) {
+    el('app-btn-instalados').addEventListener('click', function (e) {
+      estado.soInstalados = !estado.soInstalados;
+      e.currentTarget.setAttribute('aria-pressed', estado.soInstalados ? 'true' : 'false');
+      if (estado.soInstalados && !estado.instalados) {
         carregarInstalados();
       } else {
         aplicarFiltro();
       }
     });
 
-    document.getElementById('app-btn-instalar').addEventListener('click', function () {
+    el('app-btn-instalar').addEventListener('click', function () {
       var ids = Object.keys(estado.selecionados);
-      if (!ids.length) { tmx.toast('Selecione ao menos um aplicativo', 'aviso'); return; }
-      rodarAcaoPacotes('apps.install', ids, 'Instalando');
+      if (!ids.length) { tmx.toast(t('apps.selecioneUm'), 'aviso'); return; }
+      rodarAcaoPacotes('apps.install', ids, t('apps.instalando'));
     });
 
-    document.getElementById('app-btn-desinstalar').addEventListener('click', function () {
+    el('app-btn-desinstalar').addEventListener('click', function () {
       var ids = Object.keys(estado.selecionados);
-      if (!ids.length) { tmx.toast('Selecione ao menos um aplicativo', 'aviso'); return; }
-      rodarAcaoPacotes('apps.uninstall', ids, 'Desinstalando');
+      if (!ids.length) { tmx.toast(t('apps.selecioneUm'), 'aviso'); return; }
+      rodarAcaoPacotes('apps.uninstall', ids, t('apps.desinstalando'));
     });
 
-    document.getElementById('app-btn-atualizar').addEventListener('click', function () {
-      rodarAcaoPacotes('apps.upgradeAll', null, 'Atualizando tudo');
+    el('app-btn-atualizar').addEventListener('click', function () {
+      rodarAcaoPacotes('apps.upgradeAll', null, t('apps.atualizando'));
     });
+
+    el('app-btn-exportar').addEventListener('click', exportarLista);
+    el('app-btn-importar').addEventListener('click', importarLista);
+    el('app-link-bloatware').addEventListener('click', irParaBloatware);
   }
 
   /* ---------------- arranque da aba ---------------- */
 
   window.tmxTabs.aplicativos = {
     init: function () {
-      injetarEstilo();
+      garantirEstilo();
       montarEsqueleto();
-      ligarEventosToolbar();
+      ligarEventos();
       ligarEsperaDeSlotLivreIcones();
-      // aguardarTodas (e não Promise.all): espera as duas terminarem antes
-      // de rejeitar, para que um retry de tabs.show não comece com a outra
-      // carga ainda no ar.
-      return tmx.aguardarTodas([atualizarGerenciadores(), carregarCatalogo()]);
+      atualizarContagemSelecionados();
+      atualizarSub();
+      // aguardarTodas (e nao Promise.all): espera as duas terminarem antes
+      // de rejeitar, para um retry de tabs.show nao comecar com a outra carga
+      // ainda no ar. Os instalados vem depois e nao seguram a abertura da
+      // aba (winget list pode levar varios segundos).
+      return tmx.aguardarTodas([atualizarGerenciadores(), carregarCatalogo()]).then(function () {
+        carregarInstalados();
+      });
     }
   };
 })();

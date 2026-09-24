@@ -1,1 +1,519 @@
-/* painel.css - tela painel (v2, T5) */
+/* painel.css - tela Painel (v2, T5). Referência: docs/design/01-painel.png.
+   Só tokens de app.css (:root): nenhuma cor literal nasce aqui. */
+
+/* :not([hidden]) - um seletor de id com display venceria o
+   .tab[hidden] { display: none } de app.css e a tela nunca sumiria. */
+#tab-painel:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1180px;
+}
+
+/* ---------- cabeçalho ---------- */
+
+.pn-topo {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.pn-topo-texto { min-width: 0; }
+
+.pn-eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.pn-titulo {
+  margin: 0 0 6px;
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+.pn-nome { color: var(--accent-text); }
+
+.pn-subtitulo {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.pn-topo-acoes {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pn-pilula {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1px solid var(--accent-tint);
+  border-radius: 999px;
+  background: var(--accent-tint);
+  color: var(--accent-text);
+  font-size: 13px;
+}
+
+.pn-ponto-bola {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  flex: 0 0 auto;
+}
+
+.pn-pilula-vazia {
+  border-color: var(--border);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+}
+
+.pn-pilula-vazia .pn-ponto-bola { background: var(--text-muted); }
+
+.pn-btn-contorno {
+  background: transparent;
+  border-color: var(--border-strong);
+  font-weight: 600;
+}
+
+/* ---------- cartões ---------- */
+
+.pn-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+}
+
+.pn-icone-caixa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  border-radius: var(--r-sm);
+  background: var(--bg-elevated);
+  color: var(--accent-text);
+}
+
+/* ---------- linha 1: herói + status ---------- */
+
+.pn-linha1 {
+  display: grid;
+  grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr);
+  gap: 20px;
+}
+
+.pn-hero {
+  display: flex;
+  gap: 20px;
+  padding: 28px;
+}
+
+.pn-hero-icone {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 56px;
+  height: 56px;
+  flex: 0 0 auto;
+  border-radius: var(--r-md);
+  background: var(--accent-tint);
+  color: var(--accent);
+}
+
+.pn-hero-corpo {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.pn-hero-titulo {
+  margin: 0 0 8px;
+  font-family: var(--font-title);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.pn-hero-texto {
+  margin: 0 0 20px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.pn-hero-rodape {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: auto;
+}
+
+.pn-modos {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pn-modo {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  color: var(--text-body);
+  font: 500 13px var(--font-body);
+  cursor: pointer;
+}
+
+.pn-modo:hover { border-color: var(--accent); color: var(--text-primary); }
+
+.pn-modo-ativo {
+  border-color: var(--accent);
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+
+.pn-abrir {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 20px;
+}
+
+/* status: anel + lista */
+
+.pn-status {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 28px;
+}
+
+.pn-anel {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 auto;
+}
+
+.pn-anel-svg {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.pn-anel-fundo,
+.pn-anel-valor {
+  fill: none;
+  stroke-width: 9;
+}
+
+.pn-anel-fundo { stroke: var(--bg-elevated); }
+
+.pn-anel-valor {
+  stroke: var(--accent);
+  stroke-linecap: round;
+  transition: stroke-dasharray 0.4s ease;
+}
+
+.pn-anel-texto {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pn-anel-texto strong {
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.pn-anel-texto span {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.pn-status-corpo { flex: 1 1 auto; min-width: 0; }
+
+.pn-status-titulo {
+  margin: 0 0 12px;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pn-status-lista { margin: 0; }
+
+.pn-status-lista div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 14px;
+}
+
+.pn-status-lista dt { color: var(--text-secondary); }
+
+.pn-status-lista dd {
+  margin: 0;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.pn-status-lista dd.pn-destaque { color: var(--accent-text); }
+
+/* ---------- hardware ---------- */
+
+.pn-hw {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.pn-hw-card {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.pn-hw-topo {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.pn-chip {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--bg-elevated);
+  color: var(--text-body);
+  font: 500 12px var(--font-mono);
+  white-space: nowrap;
+}
+
+.pn-chip[hidden] { display: none; }
+
+.pn-hw-rotulo {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.pn-hw-valor {
+  margin-top: 4px;
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- sistema operacional ---------- */
+
+.pn-os {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr));
+  align-items: center;
+  gap: 16px;
+  padding: 18px 24px;
+}
+
+.pn-os-cab {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.pn-os-cab-texto { display: flex; flex-direction: column; min-width: 0; }
+
+.pn-os-titulo {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.pn-os-legenda {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.pn-os-campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.pn-os-campo span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.pn-os-campo strong {
+  font-size: 14px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+/* ---------- recomendações ---------- */
+
+.pn-secao-titulo {
+  margin: 4px 0 -4px;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.pn-recs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.pn-recs > .vazio { grid-column: 1 / -1; }
+
+.pn-rec {
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+}
+
+.pn-rec-tipo {
+  margin: 0 0 10px;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+}
+
+.pn-rec-bios .pn-rec-tipo { color: var(--risk-medium); }
+
+.pn-rec-titulo {
+  margin: 0 0 8px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--text-primary);
+}
+
+.pn-rec-texto {
+  margin: 0 0 12px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.pn-rec-guia {
+  align-self: flex-start;
+  min-height: 32px;
+  margin-top: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--accent-text);
+  font: 600 13px var(--font-body);
+  cursor: pointer;
+}
+
+.pn-rec-guia:hover { text-decoration: underline; }
+
+/* guia dentro do modal */
+.pn-guia { margin: 0; padding-left: 20px; }
+.pn-guia li { margin-bottom: 8px; line-height: 1.5; }
+
+.pn-guia kbd,
+#modal-body kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  font: 500 12px var(--font-mono);
+}
+
+/* ---------- janela estreita ---------- */
+
+@media (max-width: 1180px) {
+  .pn-linha1 { grid-template-columns: minmax(0, 1fr); }
+  .pn-hw { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pn-os { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pn-recs { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (max-width: 760px) {
+  .pn-hw,
+  .pn-os { grid-template-columns: minmax(0, 1fr); }
+  .pn-hero { flex-direction: column; }
+}
+
+/* ---------- cabeçalho compartilhado das telas da T5 ----------
+   Limpeza, Restauração e Configurações usam o mesmo cabeçalho do Painel
+   (eyebrow teal + título Sora + subtítulo). Mora aqui porque painel.css
+   carrega sempre; os prefixos tmx-* não colidem com nenhuma outra tela. */
+
+.tmx-tela:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 1180px;
+}
+
+.tmx-cab { min-width: 0; }
+
+.tmx-eyebrow {
+  margin: 0 0 6px;
+  color: var(--accent-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
+}
+
+.tmx-titulo {
+  margin: 0 0 6px;
+  font-family: var(--font-title);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--text-primary);
+}
+
+.tmx-subtitulo {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.tmx-card {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+}

@@ -140,6 +140,15 @@ Describe 'Back-ends de sistema' -Tag 'System' {
             Get-TmxGpuVramBytes -Modelo 'GPU Teste' | Should -Be ([int64]12GB)
         }
 
+        It 'VRAM casa o DriverDesc mesmo com espacos duplicados (driver AMD)' {
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxRegistryChildNamesSafe -MockWith { @('0000') }
+            Mock -ModuleName TweakMaxing -CommandName Get-TmxItemPropertySafe -MockWith {
+                if ($Name -eq 'DriverDesc') { return 'AMD  Radeon RX 7800 XT' }
+                [int64]16GB
+            }
+            Get-TmxGpuVramBytes -Modelo 'AMD Radeon RX 7800 XT' | Should -Be ([int64]16GB)
+        }
+
         It 'RAM: soma os pentes e traduz o tipo SMBIOS' {
             Mock -ModuleName TweakMaxing -CommandName Get-TmxCimSafe -ParameterFilter { $ClassName -eq 'Win32_PhysicalMemory' } -MockWith {
                 [pscustomobject]@{ Capacity = 16GB; SMBIOSMemoryType = 34; Speed = 6000; ConfiguredClockSpeed = 4800 }
@@ -334,6 +343,25 @@ Describe 'Back-ends de sistema' -Tag 'System' {
         }
     }
 
+    Context 'Caminhos do app (app.paths)' {
+
+        It 'todos os caminhos ficam dentro da home (de teste)' {
+            $r = Get-TmxAppPaths
+            foreach ($k in 'home', 'logs', 'cache', 'ui', 'runs') {
+                "$($r[$k])" | Should -BeLike "$($env:TWEAKMAXING_HOME)*" -Because $k
+            }
+            $r.runs | Should -Be (Get-TmxRunsRoot)
+        }
+
+        It 'app.paths responde pela ponte sem criar job' {
+            Register-TmxSystemActions
+            $r = Invoke-TmxSystemBridge -Action 'app.paths'
+            $r.ok | Should -BeTrue
+            $r.result.logs | Should -Not -BeNullOrEmpty
+            $sync.activeJob | Should -BeNullOrEmpty
+        }
+    }
+
     Context 'Status de otimizacao' {
 
         It 'disponiveis: modo != extras; sem modo, tier != FOLCLORE' {
@@ -357,7 +385,7 @@ Describe 'Back-ends de sistema' -Tag 'System' {
         It 'registra todas as acoes do spec' {
             foreach ($a in 'settings.get', 'settings.set', 'settings.windowsName', 'system.info', 'system.optimizationStatus',
                 'cleanup.scan', 'cleanup.run', 'restore.list', 'restore.create', 'restore.delete', 'restore.restore',
-                'app.checkUpdate', 'app.clearCache', 'app.openLogs', 'app.oldBackups', 'app.deleteOldBackups',
+                'app.checkUpdate', 'app.clearCache', 'app.openLogs', 'app.paths', 'app.oldBackups', 'app.deleteOldBackups',
                 'apps.export', 'apps.import', 'shell.saveFile', 'shell.openFile') {
                 $sync.bridgeActions.ContainsKey($a) | Should -BeTrue -Because $a
             }

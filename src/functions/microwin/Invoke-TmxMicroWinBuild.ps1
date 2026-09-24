@@ -155,13 +155,27 @@ function Invoke-TmxMicroWinBuild {
     .PARAMETER PacotesRemover
         Pedacos de nome de pacote do Windows a remover (caixa avancada).
     .PARAMETER Usuario / Senha
-        Conta local de administrador criada pelo autounattend.xml.
+        Conta local de administrador criada pelo autounattend.xml. So
+        obrigatorios com -ContaLocal $true (o padrao).
     .PARAMETER Destino
         PASTA onde o .iso final e gravado.
+    .PARAMETER ContaLocal
+        $true (padrao): grava o autounattend.xml com a conta local.
+    .PARAMETER RemoverOneDrive / RemoverEdge / RemoverDefender
+        Removem o componente da IMAGEM (appx, pastas e pacotes offline).
+    .PARAMETER DesativarTelemetria
+        Politicas de telemetria nos hives SOFTWARE/SYSTEM offline (reg load).
+    .PARAMETER IncluirDrivers
+        Export-WindowsDriver -Online numa pasta de trabalho e
+        Add-WindowsDriver -Recurse na imagem.
     .PARAMETER Progress
         Scriptblock opcional chamado como & $Progress <pct> <status>.
     .OUTPUTS
-        @{ ok; mensagem; arquivo; tamanhoGB; pastaTrabalho; passos = @({nome,ok,detalhe}) }
+        @{ ok; cancelado; mensagem; arquivo; tamanhoGB; pastaTrabalho; passos = @({nome,ok,detalhe}) }
+    .NOTES
+        Cancelamento (microwin.cancel): cooperativo, conferido entre um passo e
+        outro ($sync.microwinCancelar). Cancelado, o build descarta a imagem
+        montada (-Discard), solta a ISO e APAGA a pasta de trabalho.
     #>
     [CmdletBinding()]
     param(
@@ -169,9 +183,15 @@ function Invoke-TmxMicroWinBuild {
         [int]      $EdicaoIndex = 1,
         [string[]] $AppxRemover = @(),
         [string[]] $PacotesRemover = @(),
-        [Parameter(Mandatory)] [string]   $Usuario,
+        [string]   $Usuario = '',
         [string]   $Senha = '',
         [Parameter(Mandatory)] [string]   $Destino,
+        [bool]     $ContaLocal = $true,
+        [bool]     $RemoverOneDrive = $false,
+        [bool]     $RemoverEdge = $false,
+        [bool]     $DesativarTelemetria = $false,
+        [bool]     $IncluirDrivers = $false,
+        [bool]     $RemoverDefender = $false,
         [scriptblock] $Progress
     )
 
@@ -179,9 +199,10 @@ function Invoke-TmxMicroWinBuild {
     $testMode  = [bool]($null -ne $sync -and $sync.testMode)
 
     function ConvertTo-TmxMicroWinResult {
-        param([bool] $Ok, [string] $Mensagem, [string] $Arquivo, $TamanhoGB, [string] $PastaTrabalho)
+        param([bool] $Ok, [string] $Mensagem, [string] $Arquivo, $TamanhoGB, [string] $PastaTrabalho, [bool] $Cancelado = $false)
         @{
             ok            = [bool]$Ok
+            cancelado     = [bool]$Cancelado
             mensagem      = "$Mensagem"
             arquivo       = $Arquivo
             tamanhoGB     = $(if ($null -eq $TamanhoGB) { 0.0 } else { [double]$TamanhoGB })
@@ -192,6 +213,10 @@ function Invoke-TmxMicroWinBuild {
 
     # --- pre-checagens ------------------------------------------------------
 
+    if ($ContaLocal -and -not "$Usuario") {
+        return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem 'informe o usuario da conta local')
+    }
+
     $oscdimg = Get-TmxOscdimgPath
     if (-not $oscdimg) {
         return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem 'oscdimg.exe nao encontrado: instale o Windows ADK (Deployment Tools)')
@@ -199,8 +224,9 @@ function Invoke-TmxMicroWinBuild {
 
     $raizTrabalho = Get-TmxMicroWinWorkRoot
     $livreGB = Get-TmxFreeSpaceGB -Drive $raizTrabalho
-    if ($livreGB -ge 0 -and $livreGB -lt 20) {
-        return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem ("espaco livre insuficiente: {0} GB (o MicroWin precisa de pelo menos 20 GB)" -f $livreGB))
+    $necessarioGB = Get-TmxMicroWinSpaceNeededGB -IsoPath $IsoPath
+    if ($livreGB -ge 0 -and $livreGB -lt $necessarioGB) {
+        return (ConvertTo-TmxMicroWinResult -Ok $false -Mensagem ("espaco livre insuficiente: {0} GB (o MicroWin precisa de {1} GB: tamanho da ISO x 3 + 5 GB)" -f $livreGB, $necessarioGB))
     }
 
     if (-not $testMode -and -not (Test-TmxElevation)) {
@@ -230,19 +256,19 @@ function Invoke-TmxMicroWinBuild {
     # O resultado e montado DEPOIS do try/catch/finally, e nao com um 'return'
     # la dentro: o finally ainda acrescenta passos (desmontar-emergencia) e um
     # 'return (ConvertTo-...)' congelaria a lista antes deles.
-    $estado = @{ ok = $false; mensagem = ''; arquivo = $null; tamanho = 0.0 }
+    $estado = @{ ok = $false; cancelado = $false; mensagem = ''; arquivo = $null; tamanho = 0.0 }
     $arquivoXml = Join-Path "$($pastas.contents)" 'autounattend.xml'
 
     try {
         # --- 1. montar a ISO de origem -------------------------------------
-        Send-TmxMicroWinProgress -Pct 5 -Status 'Montando a ISO de origem...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 5 -Status 'Montando a ISO de origem...' -Progress $Progress
         $montagem = Mount-TmxIso -IsoPath $IsoPath
         if (-not $montagem.ok) { throw "montar-iso: $($montagem.mensagem)" }
         $isoMontada = $true
         $passos.Add((New-TmxMicroWinStep -Nome 'montar-iso' -Ok $true -Detalhe "$($montagem.mensagem)"))
 
         # --- 2. copiar a arvore --------------------------------------------
-        Send-TmxMicroWinProgress -Pct 15 -Status 'Copiando os arquivos da ISO (pode levar varios minutos)...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 15 -Status 'Copiando os arquivos da ISO (pode levar varios minutos)...' -Progress $Progress
         $copia = $null
         try {
             $copia = Copy-TmxIsoTree -Source "$($montagem.raiz)" -Destination "$($pastas.contents)"
@@ -258,7 +284,7 @@ function Invoke-TmxMicroWinBuild {
         $passos.Add((New-TmxMicroWinStep -Nome 'copiar-arquivos' -Ok $true -Detalhe "robocopy codigo $($copia.codigo)"))
 
         # --- 3. desmontar a ISO (nada mais e lido dela) --------------------
-        Send-TmxMicroWinProgress -Pct 35 -Status 'Desmontando a ISO de origem...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 35 -Status 'Desmontando a ISO de origem...' -Progress $Progress
         Dismount-TmxIso -IsoPath $IsoPath | Out-Null
         $isoMontada = $false
         $passos.Add((New-TmxMicroWinStep -Nome 'desmontar-iso' -Ok $true -Detalhe 'ISO de origem liberada'))
@@ -270,7 +296,7 @@ function Invoke-TmxMicroWinBuild {
         $caminhoWim = "$($imagem.caminho)"
         $indice     = [int]$EdicaoIndex
         if ("$($imagem.formato)" -eq 'esd') {
-            Send-TmxMicroWinProgress -Pct 40 -Status 'Convertendo install.esd em install.wim...' -Progress $Progress
+            Invoke-TmxMicroWinCheckpoint -Pct 40 -Status 'Convertendo install.esd em install.wim...' -Progress $Progress
             $destinoWim = Join-Path (Split-Path -Parent $caminhoWim) 'install.wim'
             try {
                 Export-TmxWindowsImageWrapper -SourceImagePath $caminhoWim -SourceIndex $indice `
@@ -285,8 +311,22 @@ function Invoke-TmxMicroWinBuild {
             $passos.Add((New-TmxMicroWinStep -Nome 'converter-esd' -Ok $true -Detalhe 'install.esd exportado como install.wim'))
         }
 
+        # --- 4b. drivers deste PC (antes de montar: leitura do sistema vivo) -
+        $pastaDrivers = Join-Path "$($pastas.raiz)" 'drivers'
+        if ($IncluirDrivers) {
+            Invoke-TmxMicroWinCheckpoint -Pct 42 -Status 'Exportando os drivers deste PC...' -Progress $Progress
+            $nDrivers = 0
+            try {
+                New-Item -ItemType Directory -Path $pastaDrivers -Force | Out-Null
+                $nDrivers = @(Export-TmxWindowsDriverWrapper -Destination $pastaDrivers).Count
+            } catch {
+                throw "exportar-drivers: $($_.Exception.Message)"
+            }
+            $passos.Add((New-TmxMicroWinStep -Nome 'exportar-drivers' -Ok $true -Detalhe ("{0} driver(s) exportado(s)" -f $nDrivers)))
+        }
+
         # --- 5. montar a imagem --------------------------------------------
-        Send-TmxMicroWinProgress -Pct 45 -Status 'Montando a imagem do Windows...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 45 -Status 'Montando a imagem do Windows...' -Progress $Progress
         try {
             Mount-TmxWindowsImageWrapper -ImagePath $caminhoWim -Index $indice -Path "$($pastas.mount)" -ScratchDirectory "$($pastas.scratch)" | Out-Null
         } catch {
@@ -296,7 +336,7 @@ function Invoke-TmxMicroWinBuild {
         $passos.Add((New-TmxMicroWinStep -Nome 'montar-imagem' -Ok $true -Detalhe "indice $indice"))
 
         # --- 6. appx --------------------------------------------------------
-        Send-TmxMicroWinProgress -Pct 60 -Status 'Removendo os aplicativos escolhidos...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 60 -Status 'Removendo os aplicativos escolhidos...' -Progress $Progress
         $rAppx = $null
         try {
             $rAppx = Remove-TmxIsoAppx -Path "$($pastas.mount)" -Nomes $AppxRemover
@@ -307,7 +347,7 @@ function Invoke-TmxMicroWinBuild {
             "{0} removido(s), {1} ausente(s) nesta edicao" -f @($rAppx.removidos).Count, @($rAppx.ignorados).Count)))
 
         # --- 7. pacotes -----------------------------------------------------
-        Send-TmxMicroWinProgress -Pct 70 -Status 'Removendo os pacotes escolhidos...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 66 -Status 'Removendo os pacotes escolhidos...' -Progress $Progress
         $rPac = $null
         try {
             $rPac = Remove-TmxIsoPackages -Path "$($pastas.mount)" -Nomes $PacotesRemover
@@ -317,18 +357,53 @@ function Invoke-TmxMicroWinBuild {
         $passos.Add((New-TmxMicroWinStep -Nome 'remover-pacotes' -Ok $true -Detalhe (
             "{0} removido(s), {1} ausente(s) nesta edicao" -f @($rPac.removidos).Count, @($rPac.ignorados).Count)))
 
-        # --- 8. autounattend.xml na raiz da ISO -----------------------------
-        Send-TmxMicroWinProgress -Pct 75 -Status 'Gravando o autounattend.xml...' -Progress $Progress
-        try {
-            $xml = New-TmxUnattend -Usuario $Usuario -Senha $Senha -Idioma 'pt-BR'
-            Set-Content -LiteralPath $arquivoXml -Value $xml -Encoding UTF8 -Force
-        } catch {
-            throw "autounattend: $($_.Exception.Message)"
+        # --- 7b. OneDrive, Edge, Defender, telemetria e drivers -------------
+        # Cada opcao e um passo proprio: a falha diz qual delas quebrou, e a
+        # imagem e descartada como em qualquer outro passo.
+        if ($RemoverOneDrive) {
+            Invoke-TmxMicroWinCheckpoint -Pct 70 -Status 'Removendo o OneDrive da imagem...' -Progress $Progress
+            try { $r = Remove-TmxMicroWinOneDrive -MountPath "$($pastas.mount)" } catch { throw "remover-onedrive: $($_.Exception.Message)" }
+            $passos.Add((New-TmxMicroWinStep -Nome 'remover-onedrive' -Ok $true -Detalhe "$($r.detalhe)"))
         }
-        $passos.Add((New-TmxMicroWinStep -Nome 'autounattend' -Ok $true -Detalhe 'conta local e idioma pt-BR'))
+        if ($RemoverEdge) {
+            Invoke-TmxMicroWinCheckpoint -Pct 72 -Status 'Removendo o Microsoft Edge da imagem...' -Progress $Progress
+            try { $r = Remove-TmxMicroWinEdge -MountPath "$($pastas.mount)" } catch { throw "remover-edge: $($_.Exception.Message)" }
+            $passos.Add((New-TmxMicroWinStep -Nome 'remover-edge' -Ok $true -Detalhe "$($r.detalhe)"))
+        }
+        if ($RemoverDefender) {
+            Invoke-TmxMicroWinCheckpoint -Pct 74 -Status 'Removendo o Windows Defender da imagem...' -Progress $Progress
+            try { $r = Remove-TmxMicroWinDefender -MountPath "$($pastas.mount)" } catch { throw "remover-defender: $($_.Exception.Message)" }
+            $passos.Add((New-TmxMicroWinStep -Nome 'remover-defender' -Ok $true -Detalhe "$($r.detalhe)"))
+        }
+        if ($DesativarTelemetria) {
+            Invoke-TmxMicroWinCheckpoint -Pct 76 -Status 'Desativando a telemetria (registro offline)...' -Progress $Progress
+            try { $r = Set-TmxMicroWinTelemetryOff -MountPath "$($pastas.mount)" } catch { throw "telemetria: $($_.Exception.Message)" }
+            $passos.Add((New-TmxMicroWinStep -Nome 'telemetria' -Ok $true -Detalhe "$($r.detalhe)"))
+        }
+        if ($IncluirDrivers) {
+            Invoke-TmxMicroWinCheckpoint -Pct 78 -Status 'Adicionando os drivers na imagem...' -Progress $Progress
+            try {
+                Add-TmxWindowsDriverWrapper -Path "$($pastas.mount)" -Driver $pastaDrivers | Out-Null
+            } catch {
+                throw "adicionar-drivers: $($_.Exception.Message)"
+            }
+            $passos.Add((New-TmxMicroWinStep -Nome 'adicionar-drivers' -Ok $true -Detalhe 'drivers exportados adicionados (Add-WindowsDriver -Recurse)'))
+        }
+
+        # --- 8. autounattend.xml na raiz da ISO -----------------------------
+        if ($ContaLocal) {
+            Invoke-TmxMicroWinCheckpoint -Pct 80 -Status 'Gravando o autounattend.xml...' -Progress $Progress
+            try {
+                $xml = New-TmxUnattend -Usuario $Usuario -Senha $Senha -Idioma 'pt-BR'
+                Set-Content -LiteralPath $arquivoXml -Value $xml -Encoding UTF8 -Force
+            } catch {
+                throw "autounattend: $($_.Exception.Message)"
+            }
+            $passos.Add((New-TmxMicroWinStep -Nome 'autounattend' -Ok $true -Detalhe 'conta local e idioma pt-BR'))
+        }
 
         # --- 9. desmontar gravando ------------------------------------------
-        Send-TmxMicroWinProgress -Pct 85 -Status 'Gravando as mudancas na imagem (demora)...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 85 -Status 'Gravando as mudancas na imagem (demora)...' -Progress $Progress
         try {
             Dismount-TmxWindowsImageWrapper -Path "$($pastas.mount)" -Save | Out-Null
         } catch {
@@ -338,7 +413,7 @@ function Invoke-TmxMicroWinBuild {
         $passos.Add((New-TmxMicroWinStep -Nome 'gravar-imagem' -Ok $true -Detalhe 'imagem desmontada com as mudancas'))
 
         # --- 10. oscdimg -----------------------------------------------------
-        Send-TmxMicroWinProgress -Pct 95 -Status 'Gerando o arquivo .iso...' -Progress $Progress
+        Invoke-TmxMicroWinCheckpoint -Pct 95 -Status 'Gerando o arquivo .iso...' -Progress $Progress
         $iso = New-TmxIso -Origem "$($pastas.contents)" -Destino $arquivoFinal
         if (-not $iso.ok) { throw "gerar-iso: $($iso.mensagem)" }
         $passos.Add((New-TmxMicroWinStep -Nome 'gerar-iso' -Ok $true -Detalhe "oscdimg codigo $($iso.codigo)"))
@@ -361,12 +436,17 @@ function Invoke-TmxMicroWinBuild {
         # '^([a-z-]+):' generico transformaria "acesso negado: ..." num passo
         # chamado 'acesso'.
         $nomePasso = 'falha'
-        if ($mensagem -match '^(montar-iso|copiar-arquivos|desmontar-iso|converter-esd|montar-imagem|remover-appx|remover-pacotes|autounattend|gravar-imagem|gerar-iso|verificar):\s*(.*)$') {
+        if ($mensagem -match '^(montar-iso|copiar-arquivos|desmontar-iso|converter-esd|exportar-drivers|montar-imagem|remover-appx|remover-pacotes|remover-onedrive|remover-edge|remover-defender|telemetria|adicionar-drivers|autounattend|gravar-imagem|gerar-iso|verificar|cancelado):\s*(.*)$') {
             $nomePasso = $Matches[1]
             $mensagem  = $Matches[2]
         }
         $passos.Add((New-TmxMicroWinStep -Nome $nomePasso -Ok $false -Detalhe $mensagem))
-        Write-TmxLog -Level ERROR -Message 'MicroWin: build falhou' -Data @{ passo = $nomePasso; erro = $mensagem; pasta = "$($pastas.raiz)" }
+        if ($nomePasso -eq 'cancelado') {
+            $estado.cancelado = $true
+            Write-TmxLog -Level WARN -Message 'MicroWin: build cancelado pelo usuario' -Data @{ pasta = "$($pastas.raiz)" }
+        } else {
+            Write-TmxLog -Level ERROR -Message 'MicroWin: build falhou' -Data @{ passo = $nomePasso; erro = $mensagem; pasta = "$($pastas.raiz)" }
+        }
 
         $estado.ok       = $false
         $estado.mensagem = $mensagem
@@ -428,6 +508,7 @@ function Invoke-TmxMicroWinBuild {
             }
             Remove-Item -LiteralPath "$($pastas.mount)" -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath "$($pastas.scratch)" -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath (Join-Path "$($pastas.raiz)" 'drivers') -Recurse -Force -ErrorAction SilentlyContinue
         } catch {
             $limpou = $false
             Write-TmxLog -Level WARN -Message 'MicroWin: pasta de trabalho nao pode ser apagada' -Data @{ erro = "$($_.Exception.Message)" }
@@ -437,8 +518,33 @@ function Invoke-TmxMicroWinBuild {
             else { "apague a mao: $($pastas.raiz)" })))
     }
 
-    Send-TmxMicroWinProgress -Pct 100 -Status $(if ($estado.ok) { 'Concluido' } else { 'Interrompido' }) -Progress $Progress
+    # Cancelado (microwin.cancel): a imagem ja foi descartada no finally; a
+    # pasta de trabalho inteira some (quem cancelou nao quer diagnostico) e uma
+    # ISO pela metade no destino tambem.
+    if ($estado.cancelado) {
+        Send-TmxMicroWinProgress -Pct 98 -Status 'Apagando a pasta de trabalho...' -Progress $Progress
+        $limpou = $true
+        if (-not $imagemMontada) {
+            try {
+                if (Test-Path -LiteralPath "$($pastas.raiz)") {
+                    Remove-Item -LiteralPath "$($pastas.raiz)" -Recurse -Force -ErrorAction Stop
+                }
+            } catch {
+                $limpou = $false
+                Write-TmxLog -Level WARN -Message 'MicroWin: pasta de trabalho do build cancelado nao pode ser apagada' -Data @{ erro = "$($_.Exception.Message)" }
+            }
+        } else {
+            # Imagem presa no DISM: apagar a pasta de montagem por cima dela
+            # corromperia o registro de montagens. Fica para o Cleanup-Mountpoints.
+            $limpou = $false
+        }
+        if (Test-Path -LiteralPath $arquivoFinal) { Remove-Item -LiteralPath $arquivoFinal -Force -ErrorAction SilentlyContinue }
+        $passos.Add((New-TmxMicroWinStep -Nome 'limpar-trabalho' -Ok $limpou -Detalhe $(
+            if ($limpou) { 'pasta de trabalho apagada' } else { "apague a mao: $($pastas.raiz)" })))
+    }
+
+    Send-TmxMicroWinProgress -Pct 100 -Status $(if ($estado.ok) { 'Concluido' } elseif ($estado.cancelado) { 'Cancelado' } else { 'Interrompido' }) -Progress $Progress
 
     ConvertTo-TmxMicroWinResult -Ok $estado.ok -Mensagem "$($estado.mensagem)" `
-        -Arquivo $estado.arquivo -TamanhoGB $estado.tamanho -PastaTrabalho "$($pastas.raiz)"
+        -Arquivo $estado.arquivo -TamanhoGB $estado.tamanho -PastaTrabalho "$($pastas.raiz)" -Cancelado ([bool]$estado.cancelado)
 }

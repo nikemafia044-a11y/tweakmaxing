@@ -1,151 +1,219 @@
-/* microwin.css - aba "MicroWin".
-   Só tokens de app.css: nenhuma cor literal nasce aqui, para o tema claro
-   (prefers-color-scheme) continuar valendo sem uma segunda folha. */
+/* microwin.css - tela "MicroWin" (docs/design/04-microwin.png).
+   So tokens do :root de app.css: nenhuma cor literal nasce aqui. */
 
-.mw-banner {
-  margin: 0 0 16px;
-  padding: 10px 14px;
-  border: 1px solid var(--linha);
-  border-left: 3px solid var(--warn);
-  border-radius: var(--raio);
-  background: var(--panel);
-  color: var(--fg);
-  font-size: 13px;
-  line-height: 1.5;
+#tab-microwin { max-width: 1180px; }
+
+/* ---------- cabecalho ---------- */
+
+.mw-topo { margin-bottom: 22px; }
+
+.mw-eyebrow {
+  margin: 0 0 6px;
+  color: var(--risk-medium);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.6px;
+  text-transform: uppercase;
 }
 
-#mw-grid {
+.mw-titulo {
+  margin: 0 0 6px;
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 700;
+  line-height: 1.15;
+  color: var(--text-primary);
+}
+
+.mw-sub {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ---------- aviso "nao mexe no Windows em uso" ---------- */
+
+.mw-info {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin: 0 0 24px;
+  padding: 18px 22px;
+  border: 1px solid var(--accent-tint);
+  border-radius: var(--r-md);
+  background: var(--accent-tint);
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.mw-info svg { flex: 0 0 auto; margin-top: 2px; color: var(--accent-text); }
+.mw-info strong { display: block; margin-bottom: 4px; color: var(--text-primary); }
+.mw-info p { margin: 0; }
+
+/* ---------- grades e cards ---------- */
+
+.mw-grade2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  align-items: stretch;
+  margin-bottom: 24px;
+}
+
+.mw-grade3 {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 16px;
-  align-items: start;
+  gap: 20px;
+  align-items: stretch;
 }
 
-@media (max-width: 1100px) {
-  #mw-grid { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 1000px) {
+  .mw-grade2, .mw-grade3 { grid-template-columns: minmax(0, 1fr); }
 }
 
-.mw-col {
+.mw-card {
   min-width: 0;
-  padding: 14px 16px 16px;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  background: var(--panel);
+  padding: 22px 24px 24px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
 }
 
-.mw-col h3 {
-  margin: 14px 0 6px;
-  font-size: 14px;
-  font-weight: 650;
+.mw-card h2 {
+  margin: 0 0 18px;
+  font-family: var(--font-title);
+  font-size: 18px;
+  font-weight: 600;
 }
 
-.mw-col h3:first-child { margin-top: 0; }
+/* ---------- como funciona ---------- */
 
-.mw-nota {
-  margin: 0 0 10px;
-  color: var(--muted);
+.mw-como {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.mw-como li { display: flex; gap: 14px; align-items: flex-start; }
+
+.mw-como-num {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--accent-text);
   font-size: 12px;
-  line-height: 1.5;
+  font-weight: 700;
 }
 
-/* Aviso de que a senha viaja em texto puro dentro da ISO. Marcado em amarelo
-   (--warn) e não escondido num cinza de nota: é a única pista visível de que a
-   ISO gerada é um arquivo sensível. */
-.mw-aviso-senha {
-  margin: 8px 0 0;
-  padding: 8px 10px;
-  border: 1px solid var(--linha);
-  border-left: 3px solid var(--warn);
-  border-radius: var(--raio);
-  background: var(--panel-2);
-  color: var(--fg);
-  font-size: 12px;
-  line-height: 1.5;
-}
+.mw-como strong { display: block; color: var(--text-primary); font-size: 14px; font-weight: 600; }
+.mw-como span { display: block; margin-top: 2px; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
 
-.mw-aviso-senha code {
-  font-family: Consolas, "Cascadia Mono", monospace;
-  font-size: 11px;
-}
-
-/* Caminho da pasta de trabalho: longo e sem espaços, precisa poder quebrar em
-   qualquer ponto ou vaza para fora da coluna. */
-#mw-trabalho { word-break: break-all; }
-#mw-trabalho:empty { margin: 0; }
+/* ---------- configurar ---------- */
 
 .mw-rotulo {
   display: block;
-  margin: 10px 0 4px;
-  font-size: 12px;
-  color: var(--muted);
+  margin: 14px 0 6px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
+
+.mw-config h2 + .mw-rotulo { margin-top: 0; }
 
 .mw-linha {
   display: flex;
-  flex-wrap: wrap;
   gap: 8px;
-  align-items: center;
-  margin-bottom: 8px;
+  align-items: stretch;
 }
 
-.mw-linha .campo { flex: 1 1 160px; min-width: 0; }
+.mw-linha .campo { flex: 1 1 auto; min-width: 0; }
+
+.mw-linha-mini { margin: 8px 0; flex-wrap: wrap; }
+.mw-linha-mini .btn-mini { min-height: 32px; padding: 0 12px; }
+
+.mw-mono { font-family: var(--font-mono); font-size: 12px; }
+
+.mw-config .campo { min-height: 44px; }
+.mw-config select.campo { cursor: pointer; }
+
+.mw-nota {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mw-nota:empty { display: none; }
 
 .mw-erro {
   margin: 4px 0 0;
-  min-height: 16px;
   color: var(--danger);
   font-size: 12px;
 }
 
-.mw-erro:empty { min-height: 0; }
+.mw-erro:empty { display: none; }
 
-/* ---------- pré-requisitos ---------- */
+.mw-opcoes { display: flex; flex-direction: column; gap: 2px; }
 
-.mw-pre-item {
+.mw-op {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
-  padding: 4px 0;
-  font-size: 13px;
-}
-
-.mw-pre-marca {
-  flex: 0 0 auto;
-  font-weight: 700;
-}
-
-.mw-pre-ok  .mw-pre-marca { color: var(--ok); }
-.mw-pre-nao .mw-pre-marca { color: var(--danger); }
-
-.mw-pre-texto { min-width: 0; }
-
-.mw-pre-detalhe {
-  display: block;
-  color: var(--muted);
-  font-size: 12px;
-  word-break: break-all;
-}
-
-.mw-adk {
-  margin-top: 8px;
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
-  font-size: 12px;
-  text-decoration: underline;
+  align-items: center;
+  gap: 12px;
+  min-height: 34px;
+  color: var(--text-body);
+  font-size: 14px;
   cursor: pointer;
 }
 
-/* ---------- lista de aplicativos ---------- */
+.mw-op input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.mw-op-perigo { color: var(--risk-high); }
+.mw-op-perigo input[type="checkbox"] { accent-color: var(--danger); }
+
+.mw-bloco {
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+  font-size: 13px;
+}
+
+.mw-bloco[hidden] { display: none; }
+
+.mw-bloco > summary {
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 4px 0;
+}
+
+.mw-bloco-conta[hidden] { display: none; }
+
+.mw-duas {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
 
 #mw-apps {
-  max-height: 320px;
+  max-height: 260px;
   overflow-y: auto;
-  padding: 6px 8px;
-  border: 1px solid var(--linha);
-  border-radius: var(--raio);
-  background: var(--panel-2);
+  padding: 4px 2px;
 }
 
 .mw-app {
@@ -163,43 +231,171 @@
   accent-color: var(--accent);
 }
 
-.mw-app-nome { font-weight: 600; }
+.mw-app-nome { font-weight: 600; color: var(--text-primary); }
 
 .mw-app-pacote {
   display: block;
-  color: var(--muted);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
   font-size: 11px;
   word-break: break-all;
 }
 
-#mw-pacotes-bloco {
-  margin-top: 12px;
-  font-size: 13px;
-}
-
-#mw-pacotes-bloco summary {
-  cursor: pointer;
-  color: var(--muted);
-  padding: 4px 0;
-}
-
 #mw-pacotes { width: 100%; box-sizing: border-box; resize: vertical; }
 
-/* ---------- ação ---------- */
+/* Aviso de que a senha viaja em texto puro dentro da ISO: e a unica pista
+   visivel de que a ISO gerada e um arquivo sensivel. */
+.mw-aviso-senha {
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--risk-medium);
+  border-radius: var(--r-sm);
+  background: var(--risk-medium-bg);
+  color: var(--text-body);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.mw-aviso-senha code { font-family: var(--font-mono); font-size: 11px; }
 
 .mw-gerar {
-  margin-top: 14px;
   width: 100%;
+  min-height: 48px;
+  margin-top: 18px;
+  font-size: 15px;
+}
+
+/* ---------- progresso ---------- */
+
+.mw-prog { margin-bottom: 24px; }
+.mw-prog[hidden] { display: none; }
+
+.mw-prog-cab {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.mw-prog-cab h2 { margin: 0; }
+
+.mw-btn-cancelar {
+  background: var(--risk-high-bg);
+  border-color: var(--danger);
+  color: var(--risk-high);
+  font-weight: 600;
+}
+
+.mw-btn-cancelar[hidden] { display: none; }
+
+.mw-barra {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+#mw-barra-fill {
+  width: 0;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
 }
 
 .mw-progresso {
-  margin: 8px 0 0;
-  min-height: 16px;
-  color: var(--muted);
-  font-size: 12px;
+  margin: 10px 0 0;
+  min-height: 18px;
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
-.mw-progresso:empty { min-height: 0; margin: 0; }
+.mw-etapas {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 13px;
+}
+
+.mw-etapas[hidden] { display: none; }
+
+.mw-log {
+  max-height: 220px;
+  margin: 8px 0 4px;
+  overflow: auto;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.mw-log:empty::before { content: '—'; color: var(--text-muted); }
+
+/* ---------- cards de baixo ---------- */
+
+.mw-mini-titulo {
+  margin: 0 0 14px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1.4px;
+  text-transform: uppercase;
+}
+
+.mw-ganha  { color: var(--accent-text); }
+.mw-riscos { color: var(--risk-high); }
+.mw-antes  { color: var(--risk-medium); }
+
+.mw-lista {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-body);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.mw-lista li + li { margin-top: 8px; }
+
+.mw-prereq { margin-top: 16px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+.mw-pre-item {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  padding: 3px 0;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.mw-pre-marca { flex: 0 0 auto; font-weight: 700; }
+.mw-pre-ok  .mw-pre-marca { color: var(--risk-low); }
+.mw-pre-nao .mw-pre-marca { color: var(--danger); }
+.mw-pre-texto { min-width: 0; }
+
+.mw-pre-detalhe {
+  display: block;
+  color: var(--text-muted);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.mw-adk {
+  margin-top: 8px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-text);
+  font: inherit;
+  font-size: 12px;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.mw-mini .btn-mini { margin-top: 10px; min-height: 32px; padding: 0 12px; }
 
 /* ---------- modais ---------- */
 
@@ -210,17 +406,28 @@
   line-height: 1.6;
 }
 
-.mw-passos {
-  margin: 8px 0 0;
-  padding-left: 18px;
-  font-size: 12px;
-  color: var(--muted);
+.mw-alerta-defender {
+  padding: 8px 10px;
+  border: 1px solid var(--danger);
+  border-radius: var(--r-sm);
+  background: var(--risk-high-bg);
+  color: var(--risk-high);
+  font-size: 13px;
 }
 
+.mw-passos {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mw-passo-ok span { color: var(--risk-low); }
 .mw-passo-falhou { color: var(--danger); }
 
 .mw-caminho {
-  font-family: Consolas, "Cascadia Mono", monospace;
+  font-family: var(--font-mono);
   font-size: 12px;
   word-break: break-all;
 }

@@ -1,12 +1,14 @@
 <#
 .SYNOPSIS
-    Teste de fumaca da aba Instalar: abre a janela real e conversa por CDP.
+    Teste de fumaca da tela Aplicativos (v2): abre a janela real e conversa por CDP.
 .DESCRIPTION
-    Nao e Pester. Sobe a GUI com -TestMode -DebugPort 9334 (porta reservada
-    para esta aba - a 9333 e da Task 8/shell e pode estar em uso por outro
-    agente), clica na aba Instalar, confere o catalogo renderizado (>= 200
-    apps), o filtro de busca, a selecao de apps e o painel de gerenciadores.
-    Deixa um print em tests/gui/out/instalar.png.
+    Nao e Pester. Sobe a GUI com -TestMode -DebugPort 9334, abre a aba
+    Aplicativos e confere: catalogo inteiro renderizado (>= 200 cards), as
+    seis categorias, o filtro por categoria e por busca, logo de 44 px sem
+    icone quebrado, selecao e resumo, selo "Instalado" (lista simulada no
+    modo de teste: firefox e vivaldi), exportar e importar lista (dialogos
+    simulados), troca de idioma e o link para Otimizacoes > Remover
+    bloatware. Deixa um print em tests/gui/out/aplicativos.png.
 
     Sai com 1 se qualquer verificacao falhar. Sempre fecha a GUI.
 .EXAMPLE
@@ -36,10 +38,46 @@ function Assert-Tmx {
     }
 }
 
-# _GuiHelpers.ps1 agora isola tudo por porta (PID em out\gui-<porta>.pid,
-# varredura de processo orfao filtrada pela porta na linha de comando) -
-# Start-TmxGui/Clear-TmxGuiLeftovers ja cuidam de nao derrubar um teste de
-# GUI concorrente noutra porta, entao nao ha mais o que esperar aqui.
+function Get-TmxCount {
+    param([Parameter(Mandatory)] [string] $Seletor)
+    $txt = "$(Invoke-AB 'get' 'count' $Seletor)".Trim()
+    $n = -1
+    [void][int]::TryParse($txt, [ref]$n)
+    $n
+}
+
+function Get-TmxEval {
+    param([Parameter(Mandatory)] [string] $Js)
+    "$(Invoke-AB 'eval' $Js)".Trim().Trim('"')
+}
+
+function Wait-TmxCondicao {
+    param(
+        [int] $Segundos = 15,
+        [Parameter(Mandatory)] [scriptblock] $Teste
+    )
+    $limite = (Get-Date).AddSeconds($Segundos)
+    while ((Get-Date) -lt $limite) {
+        if (& $Teste) { return $true }
+        Start-Sleep -Milliseconds 300
+    }
+    [bool](& $Teste)
+}
+
+$raizRepo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$catApps = @((Get-Content -LiteralPath (Join-Path $raizRepo 'src\config\applications.json') -Raw -Encoding UTF8 | ConvertFrom-Json).aplicativos)
+$nNavegadores = @($catApps | Where-Object { "$($_.categoriaV2)" -eq 'navegadores' }).Count
+$nJogos       = @($catApps | Where-Object { "$($_.categoriaV2)" -eq 'jogos' }).Count
+$nFirefox     = @($catApps | Where-Object {
+    $en = ''
+    if ($_.i18n -and $_.i18n.en) { $en = "$($_.i18n.en.descricao)" }
+    "$($_.nome) $($_.descricao) $en $($_.winget)" -match 'firefox'
+}).Count
+$firefoxEn = "$((@($catApps | Where-Object { $_.id -eq 'firefox' }) | Select-Object -First 1).i18n.en.descricao)"
+
+$pastaTemp = Join-Path ([System.IO.Path]::GetTempPath()) ('tmx-gui-apps-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $pastaTemp -Force | Out-Null
+$arquivoExport = Join-Path $pastaTemp 'lista.json'
 
 $gui = $null
 try {
@@ -53,109 +91,135 @@ try {
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
     Close-TmxGuiWelcome
+    Get-TmxEval "tmx.i18n.set('pt-BR'); 'ok'" | Out-Null
 
-    Invoke-AB 'click' 'nav [data-tab=instalar]' | Out-Null
-    Invoke-AB 'wait' '#app-categorias details.categoria' | Out-Null
+    Invoke-AB 'click' 'nav [data-tab=aplicativos]' | Out-Null
+    Invoke-AB 'wait' '#app-grade .app-card' | Out-Null
 
-    # O catalogo tem 236 apps; renderiza tudo de uma vez (sem paginacao).
-    $limite = (Get-Date).AddSeconds(20)
-    $total = '0'
-    while ((Get-Date) -lt $limite) {
-        $total = "$(Invoke-AB 'get' 'count' '.app')".Trim()
-        $n = 0
-        if ([int]::TryParse($total, [ref]$n) -and $n -ge 200) { break }
-        Start-Sleep -Milliseconds 300
-    }
-    $totalNum = 0
-    [int]::TryParse($total, [ref]$totalNum) | Out-Null
-    Assert-Tmx -Nome 'catalogo renderiza pelo menos 200 apps (.app)' -Condicao ($totalNum -ge 200) -Detalhe "obtido: '$total'"
+    # --- catalogo e categorias -------------------------------------------
+    Wait-TmxCondicao -Segundos 20 { (Get-TmxCount '#app-grade .app-card') -ge 200 } | Out-Null
+    $total = Get-TmxCount '#app-grade .app-card'
+    Assert-Tmx -Nome 'catalogo inteiro renderizado (>= 200 cards)' -Condicao ($total -ge 200) -Detalhe "obtido: $total"
 
-    # Logos: pelo menos um .app-icone (iniciais ou imagem) por linha renderizada.
-    $totalIcones = "$(Invoke-AB 'get' 'count' '.app-icone')".Trim()
-    $totalIconesNum = 0
-    [int]::TryParse($totalIcones, [ref]$totalIconesNum) | Out-Null
-    Assert-Tmx -Nome 'pelo menos um .app-icone presente' -Condicao ($totalIconesNum -ge 1) -Detalhe "obtido: '$totalIcones'"
+    $nCats = Get-TmxCount '#app-cats .ap-cat'
+    Assert-Tmx -Nome 'seis abas de categoria' -Condicao ($nCats -eq 6) -Detalhe "obtido: $nCats"
+
+    $titulo = "$(Invoke-AB 'get' 'text' '#app-cat-titulo')".Trim()
+    Assert-Tmx -Nome 'categoria inicial e Navegadores' -Condicao ($titulo -eq 'Navegadores') -Detalhe "obtido: '$titulo'"
+
+    $vis = Get-TmxCount '#app-grade .app'
+    Assert-Tmx -Nome "Navegadores mostra so os $nNavegadores apps da categoria" -Condicao ($vis -eq $nNavegadores) -Detalhe "obtido: $vis"
+
+    $sub = "$(Invoke-AB 'get' 'text' '#app-sub')".Trim()
+    Assert-Tmx -Nome 'subtitulo traz o total de apps e de categorias' -Condicao ($sub -match "$($catApps.Count) apps em 6 categorias") -Detalhe "obtido: '$sub'"
+
+    Invoke-AB 'click' '#app-cats .ap-cat[data-cat=jogos]' | Out-Null
+    Start-Sleep -Milliseconds 300
+    $vis = Get-TmxCount '#app-grade .app'
+    Assert-Tmx -Nome "aba Jogos mostra os $nJogos apps da categoria" -Condicao ($vis -eq $nJogos) -Detalhe "obtido: $vis"
+    Invoke-AB 'click' '#app-cats .ap-cat[data-cat=navegadores]' | Out-Null
+    Start-Sleep -Milliseconds 300
+
+    # --- card: logo 44 px, id do winget, link ------------------------------
+    $tam = Get-TmxEval "(function(){var i=document.querySelector('#app-grade .app .app-icone');var r=i.getBoundingClientRect();return Math.round(r.width)+'x'+Math.round(r.height);})()"
+    Assert-Tmx -Nome 'logo do card tem 44x44 px' -Condicao ($tam -eq '44x44') -Detalhe "obtido: '$tam'"
+
+    $winget = "$(Invoke-AB 'get' 'text' '[data-id=firefox] .app-winget')".Trim()
+    Assert-Tmx -Nome 'card mostra o ID do winget' -Condicao ($winget -eq 'Mozilla.Firefox') -Detalhe "obtido: '$winget'"
+
+    $links = Get-TmxCount '#app-grade .app .app-link'
+    Assert-Tmx -Nome 'cards visiveis tem o link oficial' -Condicao ($links -ge 1) -Detalhe "obtido: $links"
 
     Invoke-AB 'errors' '--clear' | Out-Null
-    Invoke-AB 'scrollintoview' '#app-firefox' | Out-Null
-    Invoke-AB 'scroll' 'down' '1200' | Out-Null
-    Start-Sleep -Milliseconds 500
-    Invoke-AB 'scroll' 'down' '1200' | Out-Null
-    Start-Sleep -Milliseconds 1000
+    Invoke-AB 'click' '#app-cats .ap-cat[data-cat=utilitarios]' | Out-Null
+    Invoke-AB 'scroll' 'down' '1500' | Out-Null
+    Start-Sleep -Milliseconds 800
+    Invoke-AB 'scroll' 'down' '1500' | Out-Null
+    Start-Sleep -Milliseconds 1500
     $erros = "$(Invoke-AB 'errors')".Trim()
     Assert-Tmx -Nome 'nenhum erro de JS depois de rolar a lista (icones lazy)' -Condicao ([string]::IsNullOrWhiteSpace($erros) -or $erros -match '(?i)no errors|nenhum erro') -Detalhe "obtido: '$erros'"
 
-    # Icone real (nao so iniciais) num app de fato instalado nesta maquina, se
-    # houver um: casa DisplayName do registro de Desinstalar (igual ou "nome +
-    # espaco", mesma regra do back-end) contra o catalogo. So roda se achar
-    # candidato - "se viavel", como o pedido de revisao descreve.
-    $raizRepo = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-    $catalogoApps = @((Get-Content -LiteralPath (Join-Path $raizRepo 'src\config\applications.json') -Raw -Encoding UTF8 | ConvertFrom-Json).aplicativos)
-    $nomesInstalados = @(
-        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*',
-        'HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*',
-        'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*'
-    ) | ForEach-Object {
-        Get-ItemProperty -Path $_ -ErrorAction SilentlyContinue |
-            Where-Object { $_.DisplayName -and $_.DisplayIcon } |
-            Select-Object -ExpandProperty DisplayName
-    }
-    $candidato = $null
-    foreach ($app in $catalogoApps) {
-        $nomeApp = "$($app.nome)"
-        if (-not $nomeApp) { continue }
-        $bate = @($nomesInstalados | Where-Object { $_ -ieq $nomeApp -or $_.StartsWith("$nomeApp ", [System.StringComparison]::OrdinalIgnoreCase) })
-        if ($bate.Count -gt 0) { $candidato = $app.id; break }
-    }
+    $quebrados = Get-TmxEval "(function(){var n=0;document.querySelectorAll('#app-grade .app-icone img').forEach(function(i){if(i.complete&&i.naturalWidth===0){n++;}});return String(n);})()"
+    Assert-Tmx -Nome 'nenhum icone quebrado (img sem imagem)' -Condicao ($quebrados -eq '0') -Detalhe "obtido: '$quebrados'"
 
-    if ($candidato) {
-        Write-Host "Candidato a icone real (app instalado nesta maquina): $candidato"
-        Invoke-AB 'scrollintoview' "#app-$candidato" | Out-Null
+    Invoke-AB 'click' '#app-cats .ap-cat[data-cat=navegadores]' | Out-Null
+    Start-Sleep -Milliseconds 300
 
-        $limiteIcone = (Get-Date).AddSeconds(20)
-        $temImagem = '0'
-        while ((Get-Date) -lt $limiteIcone) {
-            $temImagem = "$(Invoke-AB 'get' 'count' "[data-id=$candidato] .app-icone img")".Trim()
-            if ($temImagem -eq '1') { break }
-            Start-Sleep -Milliseconds 500
-        }
-        Assert-Tmx -Nome "icone real (<img>) aparece para '$candidato' (instalado nesta maquina) dentro de 20s" `
-            -Condicao ($temImagem -eq '1') -Detalhe "obtido: '$temImagem'"
-    } else {
-        Write-Host 'Nenhum app do catalogo bate com um instalado nesta maquina - pulando o teste de icone real.' -ForegroundColor DarkYellow
-    }
+    # onerror do icone volta para as iniciais (usa o caminho real do modulo:
+    # um icone "cacheado" com PNG invalido entra pelo mesmo aplicarIcone).
+    $fallback = Get-TmxEval "(function(){var s=document.querySelector('[data-id=firefox] .app-icone');var img=document.createElement('img');img.onerror=function(){s.classList.remove('tem-imagem');s.textContent=s.dataset.iniciais;};s.innerHTML='';s.appendChild(img);img.src='data:image/png;base64,QUJD';return new Promise(function(r){setTimeout(function(){r(s.textContent);},600);});})()"
+    Assert-Tmx -Nome 'imagem que falha volta para as iniciais' -Condicao ($fallback -eq 'FI') -Detalhe "obtido: '$fallback'"
 
+    # --- busca -------------------------------------------------------------
     Invoke-AB 'fill' '#app-busca' 'firefox' | Out-Null
     Start-Sleep -Milliseconds 400
-    $filtrado = "$(Invoke-AB 'get' 'count' '.app')".Trim()
-    $filtradoNum = 999
-    [int]::TryParse($filtrado, [ref]$filtradoNum) | Out-Null
-    # Esperado = apps do catalogo cujo nome ou descricao contem "firefox" (a busca
-    # olha os dois). Um numero fixo quebrava a cada descricao nova que cita o Firefox.
-    $catApps = @((Get-Content -LiteralPath (Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'src\config\applications.json') -Raw -Encoding UTF8 | ConvertFrom-Json).aplicativos)
-    $esperado = @($catApps | Where-Object { "$($_.nome) $($_.descricao)" -match 'firefox' }).Count
-    Assert-Tmx -Nome 'busca "firefox" mostra exatamente os apps que citam firefox no nome ou descricao' -Condicao ($filtradoNum -eq $esperado -and $esperado -ge 2 -and $esperado -lt $totalNum) -Detalhe "obtido: '$filtrado', esperado: $esperado"
+    $filtrado = Get-TmxCount '#app-grade .app'
+    Assert-Tmx -Nome "busca 'firefox' olha o catalogo inteiro ($nFirefox apps)" -Condicao ($filtrado -eq $nFirefox -and $nFirefox -ge 2) -Detalhe "obtido: $filtrado"
+    $tituloBusca = "$(Invoke-AB 'get' 'text' '#app-cat-titulo')".Trim()
+    Assert-Tmx -Nome 'titulo vira Resultados da busca' -Condicao ($tituloBusca -eq 'Resultados da busca') -Detalhe "obtido: '$tituloBusca'"
 
-    Invoke-AB 'scrollintoview' '#app-firefox' | Out-Null
+    # --- selecao -----------------------------------------------------------
     Invoke-AB 'check' '#app-firefox' | Out-Null
-    Invoke-AB 'scrollintoview' '#app-firefoxesr' | Out-Null
     Invoke-AB 'check' '#app-firefoxesr' | Out-Null
     Start-Sleep -Milliseconds 200
-    $selecionados = Invoke-AB 'get' 'text' '#app-selecionados'
-    Assert-Tmx -Nome '#app-selecionados mostra 2 apos marcar 2 caixas' -Condicao ("$selecionados".Trim() -eq '2') -Detalhe "obtido: '$selecionados'"
+    $sel = "$(Invoke-AB 'get' 'text' '#app-selecionados')".Trim()
+    Assert-Tmx -Nome '#app-selecionados mostra 2 apos marcar 2 caixas' -Condicao ($sel -eq '2') -Detalhe "obtido: '$sel'"
+    $marcados = Get-TmxCount '#app-grade .app-card.app-marcado'
+    Assert-Tmx -Nome 'cards marcados ganham destaque' -Condicao ($marcados -eq 2) -Detalhe "obtido: $marcados"
 
-    # Limpa a busca antes de conferir o painel de gerenciadores (nao depende
-    # do filtro, mas deixa a tela num estado previsivel para o print).
+    # --- selo Instalado (lista simulada: firefox, vivaldi) -----------------
+    $temSelo = Wait-TmxCondicao -Segundos 30 {
+        (Get-TmxEval "getComputedStyle(document.querySelector('[data-id=firefox] .app-selo-instalado')).display") -ne 'none'
+    }
+    Assert-Tmx -Nome 'selo Instalado aparece no Firefox (instalados simulados)' -Condicao $temSelo
+    $semSelo = Get-TmxEval "getComputedStyle(document.querySelector('[data-id=firefoxesr] .app-selo-instalado')).display"
+    Assert-Tmx -Nome 'selo Instalado nao aparece num app nao instalado' -Condicao ($semSelo -eq 'none') -Detalhe "obtido: '$semSelo'"
+    $resumo = "$(Invoke-AB 'get' 'text' '#app-resumo-texto')".Trim()
+    Assert-Tmx -Nome 'resumo mostra 2 selecionados e 2 instalados' -Condicao ($resumo -match '2 selecionados' -and $resumo -match '2 instalados') -Detalhe "obtido: '$resumo'"
+
+    # --- exportar ------------------------------------------------------------
+    $jsCaminho = ($arquivoExport -replace '\\', '\\')
+    Get-TmxEval "window.tmxSimularArquivo={salvar:'$jsCaminho'};'ok'" | Out-Null
+    Invoke-AB 'click' '#app-btn-exportar' | Out-Null
+    $exportou = Wait-TmxCondicao -Segundos 10 { Test-Path -LiteralPath $arquivoExport }
+    $idsExport = @()
+    if ($exportou) { $idsExport = @((Get-Content -LiteralPath $arquivoExport -Raw -Encoding UTF8 | ConvertFrom-Json).apps) }
+    Assert-Tmx -Nome 'exportar grava a lista com os 2 apps marcados' -Condicao ($exportou -and $idsExport.Count -eq 2 -and ($idsExport -contains 'firefox') -and ($idsExport -contains 'firefoxesr')) -Detalhe "obtido: $($idsExport -join ',')"
+
+    # --- importar ------------------------------------------------------------
+    Invoke-AB 'click' '#app-btn-limpar' | Out-Null
     Invoke-AB 'fill' '#app-busca' '' | Out-Null
+    Start-Sleep -Milliseconds 200
+    Get-TmxEval "window.tmxSimularArquivo={abrirCaminho:'lista.json',abrirConteudo:JSON.stringify({apps:['vivaldi','naoexiste']})};'ok'" | Out-Null
+    Invoke-AB 'click' '#app-btn-importar' | Out-Null
+    $importou = Wait-TmxCondicao -Segundos 10 { "$(Invoke-AB 'get' 'text' '#app-selecionados')".Trim() -eq '1' }
+    $vivaldi = Get-TmxEval "String(document.getElementById('app-vivaldi').checked)"
+    Assert-Tmx -Nome 'importar marca so os ids do catalogo (vivaldi)' -Condicao ($importou -and $vivaldi -eq 'true') -Detalhe "vivaldi: '$vivaldi'"
 
-    $wingetOk = "$(Invoke-AB 'get' 'count' '#app-gerenciadores .gm:first-child .ok')".Trim()
-    Assert-Tmx -Nome 'painel de gerenciadores mostra winget disponivel (esta maquina tem winget)' `
-        -Condicao ($wingetOk -eq '1') -Detalhe "obtido: '$wingetOk'"
+    # --- gerenciadores ---------------------------------------------------------
+    $wingetOk = Get-TmxCount '#app-gerenciadores .gm:first-child .ok'
+    Assert-Tmx -Nome 'painel de gerenciadores mostra winget disponivel' -Condicao ($wingetOk -eq 1) -Detalhe "obtido: $wingetOk"
 
-    $print = Join-Path (Initialize-TmxGuiOut) 'instalar.png'
+    Invoke-AB 'scrollintoview' '#tab-aplicativos .ap-topo' | Out-Null
+    $print = Join-Path (Initialize-TmxGuiOut) 'aplicativos.png'
     Invoke-AB 'screenshot' $print | Out-Null
     Assert-Tmx -Nome 'screenshot gravado' -Condicao (Test-Path -LiteralPath $print) -Detalhe $print
     Write-Host "Print: $print"
+
+    # --- idioma --------------------------------------------------------------
+    Get-TmxEval "tmx.i18n.set('en'); 'ok'" | Out-Null
+    Start-Sleep -Milliseconds 300
+    $tituloEn = "$(Invoke-AB 'get' 'text' '#tab-aplicativos .ap-titulo')".Trim()
+    Assert-Tmx -Nome 'em ingles o titulo vira App manager' -Condicao ($tituloEn -eq 'App manager') -Detalhe "obtido: '$tituloEn'"
+    $descEn = Get-TmxEval "document.querySelector('[data-id=firefox] .app-desc').textContent"
+    Assert-Tmx -Nome 'em ingles a descricao vem do i18n.en do catalogo' -Condicao ($firefoxEn -and $descEn -eq $firefoxEn) -Detalhe "obtido: '$descEn'"
+    Get-TmxEval "tmx.i18n.set('pt-BR'); 'ok'" | Out-Null
+
+    # --- link do bloatware -------------------------------------------------------
+    Invoke-AB 'click' '#app-link-bloatware' | Out-Null
+    Start-Sleep -Milliseconds 500
+    $otimAberta = Get-TmxEval "String(!document.getElementById('tab-otimizacoes').hidden)"
+    Assert-Tmx -Nome 'link Remover bloatware abre Otimizacoes' -Condicao ($otimAberta -eq 'true') -Detalhe "obtido: '$otimAberta'"
 
 } catch {
     $script:Falhas++
@@ -164,6 +228,7 @@ try {
     Write-Host 'Fechando a GUI...' -ForegroundColor Cyan
     $limpo = Stop-TmxGui -Port $Port
     Assert-Tmx -Nome 'porta CDP liberada no fim' -Condicao ([bool]$limpo)
+    Remove-Item -LiteralPath $pastaTemp -Recurse -Force -ErrorAction SilentlyContinue
 }
 
 Write-Host ''

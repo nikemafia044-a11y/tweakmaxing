@@ -1,1 +1,153 @@
-/* configuracoes.css - tela configuracoes (v2, T5) */
+/* configuracoes.css - tela Configurações (v2, T5). Sem imagem de
+   referência: segue o estilo do Painel. Só tokens de app.css; cabeçalho e
+   .tmx-card vêm de painel.css, o interruptor (.switch) de configure.css. */
+
+#tab-configuracoes { max-width: 920px; }
+
+.cf-secao { padding: 22px 26px; }
+
+.cf-h {
+  margin: 0 0 14px;
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.cf-rotulo {
+  display: block;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.cf-ajuda {
+  display: block;
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ---------- perfil ---------- */
+
+.cf-nome-linha {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.cf-nome {
+  flex: 1 1 240px;
+  min-width: 0;
+  min-height: var(--clique-min);
+}
+
+/* ---------- linhas (rótulo à esquerda, controle à direita) ---------- */
+
+.cf-linha {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+}
+
+.cf-h + .cf-linha { border-top: 0; padding-top: 0; }
+
+.cf-linha-texto {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.cf-linha-controle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.cf-caminho {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-muted);
+  font: 500 12px var(--font-mono);
+  overflow-wrap: anywhere;
+}
+
+.cf-caminho:empty { display: none; }
+
+/* ---------- idioma (segmentado) ---------- */
+
+.cf-segmentado {
+  display: inline-flex;
+  padding: 3px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+}
+
+.cf-seg {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-secondary);
+  font: 500 13px var(--font-body);
+  cursor: pointer;
+}
+
+.cf-seg:hover { color: var(--text-primary); }
+
+.cf-seg[aria-pressed="true"] {
+  background: var(--accent-tint);
+  color: var(--accent-text);
+}
+
+/* ---------- sistema ---------- */
+
+.cf-versao {
+  display: block;
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font: 500 13px var(--font-mono);
+}
+
+.cf-update-resultado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+  padding: 10px 14px;
+  border-radius: var(--r-sm);
+  background: var(--bg-subtle);
+  color: var(--text-body);
+  font-size: 13px;
+}
+
+.cf-update-resultado[hidden] { display: none; }
+
+.cf-update-ok   { background: var(--risk-low-bg);    color: var(--risk-low); }
+.cf-update-nova { background: var(--accent-tint);    color: var(--accent-text); }
+.cf-update-erro { background: var(--risk-high-bg);   color: var(--risk-high); }
+
+.cf-release { min-height: 30px; }
+
+/* ---------- modal de backups ---------- */
+
+.cf-lista-backups {
+  max-height: 220px;
+  overflow-y: auto;
+  margin: 8px 0;
+  padding-left: 20px;
+}
+
+.cf-lista-backups code { font: 500 12px var(--font-mono); }
+
+@media (max-width: 760px) {
+  .cf-linha { flex-direction: column; align-items: stretch; }
+}

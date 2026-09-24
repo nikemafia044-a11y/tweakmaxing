@@ -1,1 +1,209 @@
-/* limpeza.css - tela limpeza (v2, T5) */
+/* limpeza.css - tela Limpeza (v2, T5). Sem imagem de referência: segue o
+   estilo do Painel (cartões --bg-surface, raio --r-lg, acento teal).
+   Só tokens de app.css. Cabeçalho (.tmx-*) vem de painel.css. */
+
+/* ---------- resumo ---------- */
+
+.lp-resumo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+  padding: 24px 28px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: var(--bg-surface);
+}
+
+.lp-resumo-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.lp-resumo-rotulo {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.lp-total {
+  font-family: var(--font-title);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--accent-text);
+}
+
+.lp-resumo-sub {
+  color: var(--text-body);
+  font-size: 13px;
+}
+
+.lp-resumo-sub.lp-erro { color: var(--danger); }
+
+.lp-ultima {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.lp-resumo-acoes {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ---------- resultado ---------- */
+
+.lp-resultado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 20px;
+  border: 1px solid var(--risk-low-bg);
+  border-left: 3px solid var(--risk-low);
+  border-radius: var(--r-md);
+  background: var(--risk-low-bg);
+}
+
+.lp-resultado[hidden] { display: none; }
+
+.lp-resultado-titulo { color: var(--risk-low); font-size: 14px; }
+.lp-resultado-liberado { color: var(--text-primary); font-size: 14px; font-weight: 600; }
+.lp-resultado-pulados { color: var(--text-secondary); font-size: 13px; }
+
+.lp-resultado-lista,
+.lp-confirmar-lista {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lp-resultado-lista li,
+.lp-confirmar-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 4px 0;
+  font-size: 13px;
+  color: var(--text-body);
+}
+
+.lp-confirmar-lista li { border-bottom: 1px solid var(--border); }
+
+/* ---------- itens ---------- */
+
+.lp-itens {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lp-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  min-height: var(--clique-min);
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg-surface);
+  cursor: pointer;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.lp-item:hover { border-color: var(--border-strong); }
+
+.lp-item-marcado {
+  border-color: var(--accent);
+  background: var(--bg-subtle);
+}
+
+.lp-item-perigoso.lp-item-marcado { border-color: var(--danger); }
+.lp-item-naoRecomendado.lp-item-marcado { border-color: var(--risk-medium); }
+
+.lp-chk {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  flex: 0 0 auto;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.lp-item-texto {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.lp-item-nome {
+  color: var(--text-primary);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.lp-item-desc {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lp-item-medida {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.lp-tamanho {
+  font-family: var(--font-title);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.lp-arquivos {
+  color: var(--text-muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.lp-selo {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  vertical-align: 1px;
+  text-transform: uppercase;
+}
+
+.lp-selo-perigoso { color: var(--risk-high); background: var(--risk-high-bg); }
+.lp-selo-naoRecomendado { color: var(--risk-medium); background: var(--risk-medium-bg); }
+
+/* ---------- avisos do modal ---------- */
+
+.lp-aviso {
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: var(--risk-medium-bg);
+  color: var(--risk-medium);
+  font-size: 13px;
+}
+
+.lp-aviso-perigoso {
+  background: var(--risk-high-bg);
+  color: var(--risk-high);
+}
+
+@media (max-width: 1000px) {
+  .lp-itens { grid-template-columns: minmax(0, 1fr); }
+}

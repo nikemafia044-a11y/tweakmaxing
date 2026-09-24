@@ -30,6 +30,12 @@ $script:TmxTweakTestJson = @'
       "tier": "MEDIDO",
       "risco": "baixo",
       "presets": ["desktop", "notebook", "minimo"],
+      "modo": "leve",
+      "categoriasV2": ["geral", "desempenho"],
+      "oQueFaz": "Grava o valor Valor=1 na chave de testes do TweakMaxing.",
+      "beneficio": "Exercita o caminho de aplicacao e reversao sem tocar no sistema real.",
+      "atencao": "Nenhuma.",
+      "i18n": { "en": { "nome": "Test - registry value", "oQueFaz": "Writes Valor=1 to the TweakMaxing test key.", "beneficio": "Exercises the apply and undo path without touching the real system.", "atencao": "None." } },
       "controle": "checkbox",
       "opcoes": [],
       "grupo": null,
@@ -56,6 +62,12 @@ $script:TmxTweakTestJson = @'
       "tier": "MEDIDO",
       "risco": "baixo",
       "presets": [],
+      "modo": "moderado",
+      "categoriasV2": ["jogos"],
+      "oQueFaz": "Liga (1) ou desliga (0) o valor Toggle na chave de testes.",
+      "beneficio": "Exercita o liga/desliga de ponta a ponta.",
+      "atencao": "Nenhuma.",
+      "i18n": { "en": { "nome": "Test - on/off switch", "oQueFaz": "Turns the Toggle value on (1) or off (0) in the test key.", "beneficio": "Exercises on/off end to end.", "atencao": "None." } },
       "controle": "toggle",
       "opcoes": [],
       "grupo": null,
@@ -85,6 +97,8 @@ $script:TmxTweakTestJson = @'
       "tier": "FOLCLORE",
       "risco": "medio",
       "presets": [],
+      "modo": "extras",
+      "categoriasV2": ["desempenho"],
       "controle": "checkbox",
       "opcoes": [],
       "grupo": null,
@@ -115,6 +129,8 @@ $script:TmxTweakTestJson = @'
       "tier": "TECNICO",
       "risco": "alto",
       "presets": [],
+      "modo": "extras",
+      "categoriasV2": ["geral"],
       "controle": "checkbox",
       "opcoes": [],
       "grupo": null,
@@ -134,6 +150,42 @@ $script:TmxTweakTestJson = @'
       "posAplicar": null,
       "acoes": [
         { "tipo": "registry", "path": "HKCU:\\Software\\TweakMaxing_Tests\\Gui", "name": "Irreversivel", "value": 1, "valueType": "DWord" }
+      ]
+    },
+    {
+      "id": "TST-005",
+      "origem": { "winutil": null, "link": "https://example.invalid/tweakmaxing/tst-005" },
+      "nome": "Teste - risco alto do Ultimate",
+      "descricao": "Tweak sintetico do modo Ultimate: risco alto, reversivel, exige a frase de consentimento.",
+      "categoria": "Teste",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "modo": "ultimate",
+      "categoriasV2": ["desempenho", "jogos"],
+      "oQueFaz": "Grava UltimateAlto=1 na chave de testes do TweakMaxing.",
+      "beneficio": "Exercita a confirmacao separada do modo Ultimate.",
+      "atencao": "Risco alto de teste: pede a frase de consentimento antes de aplicar.",
+      "i18n": { "en": { "nome": "Test - Ultimate high risk", "oQueFaz": "Writes UltimateAlto=1 to the TweakMaxing test key.", "beneficio": "Exercises the separate Ultimate confirmation.", "atencao": "Test high risk: asks for the consent phrase before applying." } },
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": true,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": "Risco alto de teste",
+        "tradeoff": "Serve so para exercitar a confirmacao do Ultimate: nada no sistema real e alterado.",
+        "frase": "ACEITO O RISCO"
+      },
+      "condicoes": { "requer": [], "bloqueiaSe": [] },
+      "porque": "Escreve UltimateAlto=1 na chave de testes para exercitar o modo Ultimate e a porta de consentimento.",
+      "evidencia": "Alvo de teste: o valor fica na chave de testes, sem efeito no sistema.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        { "tipo": "registry", "path": "HKCU:\\Software\\TweakMaxing_Tests\\Gui", "name": "UltimateAlto", "value": 1, "valueType": "DWord" }
       ]
     }
   ]
@@ -266,6 +318,28 @@ function Get-TmxTweakState {
     $sync.tweaks
 }
 
+function Get-TmxTweakUiPresetNames {
+    <#
+    .SYNOPSIS
+        Presets aceitos pela aba Otimizacoes: os antigos (desktop, notebook,
+        minimo) e os modos cumulativos da v2 (leve, moderado, avancado,
+        ultimate). 'extras' nunca e um preset.
+    #>
+    [CmdletBinding()]
+    param()
+    , @('desktop', 'notebook', 'minimo', 'leve', 'moderado', 'avancado', 'ultimate')
+}
+
+function Get-TmxTweakUiModeNames {
+    <#
+    .SYNOPSIS
+        Os quatro modos cumulativos da v2, na ordem (leve C moderado C avancado C ultimate).
+    #>
+    [CmdletBinding()]
+    param()
+    , @('leve', 'moderado', 'avancado', 'ultimate')
+}
+
 function Update-TmxTweakPlan {
     <#
     .SYNOPSIS
@@ -280,7 +354,7 @@ function Update-TmxTweakPlan {
     $st = Get-TmxTweakState
 
     if (-not $Preset) { $Preset = "$($st.preset)" }
-    if ($Preset -cnotin @('desktop', 'notebook', 'minimo')) { $Preset = 'desktop' }
+    if ($Preset -cnotin (Get-TmxTweakUiPresetNames)) { $Preset = 'desktop' }
 
     if ($null -eq $st.catalog) { $st.catalog = Get-TmxTweakCatalogForUi }
     if ($null -eq $st.profile) { $st.profile = Get-TmxProfile }
@@ -333,6 +407,33 @@ function ConvertTo-TmxUiTweak {
         }
     }
 
+    # Campos da v2 (modo, filtros e textos didaticos). Um tweak sem 'modo' e
+    # tratado como 'extras' (nunca entra num modo, ver Engine/Plan.ps1).
+    $modo = ''
+    if ($t.PSObject.Properties['modo'] -and $null -ne $t.modo) { $modo = "$($t.modo)" }
+    if (-not $modo) { $modo = 'extras' }
+
+    $categoriasV2 = New-Object 'System.Collections.Generic.List[string]'
+    if ($t.PSObject.Properties['categoriasV2'] -and $null -ne $t.categoriasV2) {
+        foreach ($cv2 in @($t.categoriasV2)) { if ("$cv2") { $categoriasV2.Add("$cv2") } }
+    }
+
+    $textoV2 = @{}
+    foreach ($campo in 'oQueFaz', 'beneficio', 'atencao') {
+        $valor = ''
+        if ($t.PSObject.Properties[$campo] -and $null -ne $t.$campo) { $valor = "$($t.$campo)" }
+        $textoV2[$campo] = $valor
+    }
+
+    # i18n.en: so os campos de texto que a tela desenha, sempre como string.
+    $en = @{}
+    if ($t.PSObject.Properties['i18n'] -and $null -ne $t.i18n -and $t.i18n.PSObject.Properties['en'] -and $null -ne $t.i18n.en) {
+        foreach ($campo in 'nome', 'descricao', 'oQueFaz', 'beneficio', 'atencao') {
+            $prop = $t.i18n.en.PSObject.Properties[$campo]
+            if ($null -ne $prop -and "$($prop.Value)") { $en[$campo] = "$($prop.Value)" }
+        }
+    }
+
     $temUndo = $false
     foreach ($rec in @($Registros)) {
         if ("$($rec.tweakId)" -ieq "$($t.id)" -and "$($rec.status)" -in @('aplicado', 'falha')) {
@@ -373,6 +474,12 @@ function ConvertTo-TmxUiTweak {
         instrucoes               = "$($t.instrucoes)"
         origem                   = @{ link = "$($t.origem.link)" }
         temUndo                  = $temUndo
+        modo                     = $modo
+        categoriasV2             = $categoriasV2.ToArray()
+        oQueFaz                  = $textoV2['oQueFaz']
+        beneficio                = $textoV2['beneficio']
+        atencao                  = $textoV2['atencao']
+        i18n                     = @{ en = $en }
     }
 }
 
@@ -553,6 +660,115 @@ function New-TmxTweakEffectivePlan {
         itens    = $itens.ToArray()
         resumo   = $null
     }
+}
+
+function ConvertTo-TmxTweakParams {
+    <#
+    .SYNOPSIS
+        Valida e normaliza os parametros que a tela manda para um ajuste de
+        acao 'funcao' que pergunta algo antes de rodar.
+    .DESCRIPTION
+        So dois ajustes aceitam parametros vindos da interface:
+          APM-006 (remover bloatware)     -> { manter: string[] }
+          APM-007 (apps de jogos da MS)   -> { usaGamePass: bool }
+        Qualquer outro id e recusado: a janela nao reescreve acoes arbitrarias.
+    .OUTPUTS
+        [pscustomobject] com os parametros normalizados.
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] [string] $Id,
+        $Parametros
+    )
+
+    switch -Exact ($Id.ToUpperInvariant()) {
+        'APM-006' {
+            $manter = New-Object 'System.Collections.Generic.List[string]'
+            $bruto = $null
+            if ($null -ne $Parametros) { $bruto = Get-TmxActionProp -Action $Parametros -Nome 'manter' -Padrao @() }
+            foreach ($m in @($bruto)) {
+                $s = "$m".Trim()
+                if (-not $s) { continue }
+                if ($s -notmatch '^[A-Za-z0-9._-]{1,200}$') { throw "APM-006: item invalido em 'manter': '$s'" }
+                $manter.Add($s)
+            }
+            return [pscustomobject]@{ manter = $manter.ToArray() }
+        }
+        'APM-007' {
+            $usa = $false
+            if ($null -ne $Parametros) { $usa = [bool](Get-TmxActionProp -Action $Parametros -Nome 'usaGamePass' -Padrao $false) }
+            return [pscustomobject]@{ usaGamePass = $usa }
+        }
+        default { throw "$Id nao aceita parametros" }
+    }
+}
+
+function Set-TmxTweakItemParams {
+    <#
+    .SYNOPSIS
+        Troca os 'parametros' das acoes 'funcao' de um item do plano, numa
+        COPIA do tweak (o objeto do catalogo em cache nao e alterado).
+    #>
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory)] $Item,
+        [Parameter(Mandatory)] $Parametros
+    )
+
+    $acoes = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($a in @($Item.tweak.acoes)) {
+        if ($null -eq $a) { continue }
+        if ("$($a.tipo)" -eq 'funcao') {
+            $c = $a.PSObject.Copy()
+            $c | Add-Member -NotePropertyName parametros -NotePropertyValue $Parametros -Force
+            $acoes.Add($c)
+        } else {
+            $acoes.Add($a)
+        }
+    }
+    $Item.tweak = New-TmxTweakVariant -Tweak $Item.tweak -Acoes $acoes.ToArray()
+    $Item
+}
+
+function Get-TmxTweakBloatwareList {
+    <#
+    .SYNOPSIS
+        Lista para a pergunta do APM-006: os appx do catalogo appx.json, com
+        'instalado' quando for possivel ler (fora do modo de teste).
+    .NOTES
+        No modo de teste o sistema nao e consultado: 'instalado' vem $null e a
+        tela mostra o catalogo inteiro.
+    #>
+    [CmdletBinding()]
+    param()
+
+    $instalados = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+    $consultou = $false
+    if (-not ($null -ne $sync -and $sync.testMode)) {
+        try {
+            foreach ($x in @(Get-TmxV2BloatwareInstalado -Parametros ([pscustomobject]@{ manter = @() }))) {
+                if ($x) { [void]$instalados.Add("$($x.id)") }
+            }
+            $consultou = $true
+        } catch {
+            Write-TmxLog -Level WARN -Message "Nao foi possivel listar os appx instalados: $($_.Exception.Message)"
+        }
+    }
+
+    $lista = New-Object 'System.Collections.Generic.List[object]'
+    foreach ($app in @(Get-TmxV2AppxCatalog)) {
+        if ($null -eq $app) { continue }
+        $inst = $null
+        if ($consultou) { $inst = $instalados.Contains("$($app.id)") }
+        $lista.Add(@{
+            id        = "$($app.id)"
+            nome      = "$($app.nome)"
+            descricao = "$($app.descricao)"
+            pacote    = "$($app.pacote)"
+            instalado = $inst
+        })
+    }
+    , $lista.ToArray()
 }
 
 function Assert-TmxTweakTestModeIds {
@@ -833,6 +1049,22 @@ function Register-TmxTweakActions {
         Get-TmxTweakCatalogPayload
     }
 
+    # mode.select {mode}: preset cumulativo da v2 (spec 6). Mesmo efeito de
+    # preset.apply, mas so aceita os quatro modos - um nome errado e recusado
+    # em vez de cair silenciosamente no preset desktop.
+    Register-TmxBridgeAction -Name 'mode.select' -Async -Handler {
+        param($payload)
+        $modo = ''
+        if ($payload -and $payload.mode) { $modo = "$($payload.mode)" }
+        if ($modo -cnotin (Get-TmxTweakUiModeNames)) {
+            throw "modo invalido: '$modo' (use leve, moderado, avancado ou ultimate)"
+        }
+
+        Send-TmxJobProgress -Pct 20 -Status "Selecionando o modo $modo..."
+        Update-TmxTweakPlan -Preset $modo | Out-Null
+        Get-TmxTweakCatalogPayload
+    }
+
     # --- selecao, consentimento e opcao (sincronas: so mexem no plano) -------
 
     Register-TmxBridgeAction -Name 'plan.setSelection' -Handler {
@@ -887,6 +1119,29 @@ function Register-TmxTweakActions {
 
         $item.tweak | Add-Member -NotePropertyName opcaoSelecionada -NotePropertyValue $valor -Force
         @{ ok = $true; mensagem = "$id`: opcao '$($op.rotulo)' escolhida"; valor = $valor }
+    }
+
+    # plan.setParams {id, parametros}: as perguntas de APM-006 (o que manter) e
+    # APM-007 (usa Game Pass?) antes da previa. Sincrona: so mexe no plano.
+    Register-TmxBridgeAction -Name 'plan.setParams' -Handler {
+        param($payload)
+        $st = Get-TmxTweakState
+        if ($null -eq $st.plan) { throw 'catalogo ainda nao foi carregado' }
+
+        $id = "$($payload.id)"
+        if (-not $id) { throw 'id obrigatorio' }
+        $item = Get-TmxTweakPlanItem -Id $id
+        if ($null -eq $item) { return @{ ok = $false; mensagem = "ID '$id' nao existe no plano" } }
+
+        $params = ConvertTo-TmxTweakParams -Id "$($item.id)" -Parametros $payload.parametros
+        Set-TmxTweakItemParams -Item $item -Parametros $params | Out-Null
+        @{ ok = $true; mensagem = "$($item.id): parametros registrados"; parametros = $params }
+    }
+
+    Register-TmxBridgeAction -Name 'tweaks.bloatwareList' -Async -Handler {
+        param($payload)
+        Send-TmxJobProgress -Pct 30 -Status 'Lendo os aplicativos instalados...'
+        @{ apps = (Get-TmxTweakBloatwareList) }
     }
 
     # --- previa --------------------------------------------------------------

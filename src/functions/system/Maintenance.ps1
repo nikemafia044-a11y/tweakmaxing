@@ -139,3 +139,29 @@ function Remove-TmxOldBackupRuns {
 
     @{ removidos = $removidos.ToArray() }
 }
+
+# ---------------------------------------------------------------------------
+# app.paths (Configuracoes: "os caminhos aparecem na tela")
+# ---------------------------------------------------------------------------
+
+function Get-TmxAppPaths {
+    <#
+    .SYNOPSIS
+        Caminhos que a tela de Configuracoes mostra: home, logs, cache de
+        icones, pasta de UIs e execucoes (backups). So le - nada e criado
+        alem do que Get-TmxAppIconCacheDir ja cria.
+    .OUTPUTS
+        { home, logs, cache, ui, runs }
+    #>
+    [CmdletBinding()]
+    param()
+
+    $homeDir = Get-TmxHomePath
+    @{
+        home  = $homeDir
+        logs  = (Get-TmxLogsFolderPath)
+        cache = (Get-TmxAppIconCacheDir)
+        ui    = (Join-Path $homeDir 'ui')
+        runs  = (Get-TmxRunsRoot)
+    }
+}
