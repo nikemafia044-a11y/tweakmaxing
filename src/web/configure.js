@@ -108,7 +108,7 @@
 
   function selosRecurso(r) {
     var html = '';
-    if (r.requerReboot) { html += '<span class="selo selo-reboot">Reboot</span>'; }
+    if (r.requerReboot) { html += '<span class="selo selo-reboot">Reinício</span>'; }
     if (r.reversivel === 'parcial') { html += '<span class="selo selo-parcial">Reversão parcial</span>'; }
     if (r.estado === 'desconhecido') { html += '<span class="selo selo-folclore">Estado desconhecido</span>'; }
     return html;
