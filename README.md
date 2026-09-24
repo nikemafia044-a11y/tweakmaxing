@@ -34,13 +34,13 @@ Com parâmetros (ex.: modo headless):
 Baixa uma versão fixa, confere o SHA256 publicado em `SHA256SUMS.txt` e só então executa:
 
 ```powershell
-Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.1.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
-Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.1.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.2.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.2.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
 (Get-FileHash .\TweakMaxing.ps1).Hash -eq (Get-Content .\SHA256SUMS.txt).Split(' ')[0]   # tem que imprimir True
 powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1
 ```
 
-**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v0.1.0`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
+**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v0.2.0`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
 
 ### Desfazer
 
@@ -98,8 +98,8 @@ O artefato é a concatenação, nesta ordem, de: cabeçalho de licença → `scr
 
 Detalhes que importam:
 
-- **Nada passa por `ConvertTo-Json`**: no PS 5.1 ele escaparia todo acento como `\uXXXX` e reindentaria o documento. O texto de cada arquivo entra verbatim dentro de `@'…'@` e é parseado em tempo de execução. Se algum ativo tiver uma linha começando com `'@` (que fecharia a here-string), a compilação falha apontando arquivo e linha.
-- **UTF-8 com BOM**, ao contrário dos `.ps1` do repositório (que são ASCII puro e sem BOM): o conteúdo embutido é em português e sem BOM o PS 5.1 leria tudo como ANSI.
+- **Catálogos sem `ConvertTo-Json`**: o texto de cada JSON entra dentro de `@'…'@` com a estrutura original, só com os caracteres acentuados trocados pelo escape `\uXXXX` do próprio JSON, e é parseado em tempo de execução. Se algum ativo tiver uma linha começando com `'@` (que fecharia a here-string), a compilação falha apontando arquivo e linha.
+- **ASCII puro e sem BOM**, como os `.ps1` do repositório: a interface e o modelo do MicroWin entram em base64 dos bytes. Assim nenhuma codepage muda o que o parser lê, e o `irm | iex` funciona (um BOM chegaria como U+FEFF e o parser recusaria). A compilação falha se sobrar algum caractere fora do ASCII.
 - Em tempo de execução o artefato extrai a interface e o modelo do MicroWin para `%LOCALAPPDATA%\TweakMaxing\ui\<versão>\` e as DLLs para `...\lib\<versão>\` (arquivo de mesmo tamanho é considerado igual e não é reescrito).
 - Com `-SkipSdk` e `packages\webview2` ausente o artefato sai **sem** as DLLs: o modo headless continua funcionando, mas a GUI falha com `SDK do WebView2 não encontrado...`.
 - No fim a compilação confere o parser (zero erros), o tamanho (< 8 MB) e imprime o SHA256, que também vai para `SHA256SUMS.txt`. `TweakMaxing.ps1` e `SHA256SUMS.txt` não entram no repositório.
