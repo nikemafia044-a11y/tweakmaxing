@@ -46,13 +46,13 @@ Com parâmetros (ex.: modo headless):
 Baixa uma versão fixa, confere o SHA256 publicado em `SHA256SUMS.txt` e só então executa:
 
 ```powershell
-Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v2.0.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
-Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v2.0.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v2.0.1/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v2.0.1/SHA256SUMS.txt -OutFile SHA256SUMS.txt
 (Get-FileHash .\TweakMaxing.ps1).Hash -eq (Get-Content .\SHA256SUMS.txt).Split(' ')[0]   # tem que imprimir True
 powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1
 ```
 
-**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v2.0.0`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
+**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v2.0.1`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
 
 ### Desfazer
 
