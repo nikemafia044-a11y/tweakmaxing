@@ -25,33 +25,33 @@
     var style = document.createElement('style');
     style.id = 'estilo-instalar';
     style.textContent = [
-      '#tab-instalar .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }',
-      '#tab-instalar .toolbar input[type=search] { flex:1 1 220px; min-width:160px; padding:6px 10px; border:1px solid var(--linha); border-radius:6px; background:var(--panel-2); color:var(--fg); font:inherit; }',
-      '#tab-instalar .painel-gerenciadores { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center; padding:10px 14px; margin-bottom:14px; border:1px solid var(--linha); border-radius:var(--raio); background:var(--panel-2); }',
-      '#tab-instalar .painel-gerenciadores .gm { display:inline-flex; align-items:center; gap:6px; }',
-      '#tab-instalar .painel-gerenciadores .gm .ok { color:var(--ok); font-weight:700; }',
-      '#tab-instalar .painel-gerenciadores .gm .falta { color:var(--danger); font-weight:700; }',
-      '#tab-instalar details.categoria { border:1px solid var(--linha); border-radius:var(--raio); margin-bottom:8px; background:var(--panel); }',
-      '#tab-instalar details.categoria > summary { cursor:pointer; padding:10px 14px; font-weight:650; }',
-      '#tab-instalar .lista-apps { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:2px 10px; padding:4px 14px 12px; }',
-      '#tab-instalar .app-row { display:flex; align-items:center; gap:4px; padding:5px 4px; border-radius:6px; }',
-      '#tab-instalar .app-row:hover { background:var(--panel-2); }',
-      '#tab-instalar .app-row.app-oculto { display:none; }',
-      '#tab-instalar .app-row label { display:flex; align-items:center; gap:6px; flex:1 1 auto; cursor:pointer; overflow:hidden; min-width:0; }',
-      '#tab-instalar .app-row .nome-app { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }',
-      '#tab-instalar .app-row .link-app { color:var(--muted); text-decoration:none; padding:2px 4px; flex:0 0 auto; }',
-      '#tab-instalar .app-row .link-app:hover { color:var(--accent); }',
-      '#tab-instalar .selo-foss { color:var(--ok); flex:0 0 auto; }',
-      '#tab-instalar .selo-instalado { color:var(--accent); flex:0 0 auto; }',
-      '#tab-instalar .rodape-nota { margin-top:10px; color:var(--muted); font-size:12px; }',
-      '#tab-instalar table.resultado-instalacao { width:100%; border-collapse:collapse; font-size:13px; }',
-      '#tab-instalar table.resultado-instalacao th, #tab-instalar table.resultado-instalacao td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--linha); }',
-      '#tab-instalar table.resultado-instalacao tr.res-ok td:nth-child(3) { color:var(--ok); }',
-      '#tab-instalar table.resultado-instalacao tr.res-pulado td:nth-child(3) { color:var(--warn); }',
-      '#tab-instalar table.resultado-instalacao tr.res-falha td:nth-child(3) { color:var(--danger); }',
-      '#tab-instalar .app-icone { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; min-width:32px; border-radius:50%; background:var(--elevated); color:var(--fg); font-weight:600; font-size:11px; letter-spacing:0.02em; flex:0 0 auto; overflow:hidden; }',
-      '#tab-instalar .app-icone.tem-imagem { background:transparent; border-radius:6px; }',
-      '#tab-instalar .app-icone img { width:32px; height:32px; object-fit:contain; border-radius:6px; display:block; }'
+      '#tab-aplicativos .toolbar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:14px; }',
+      '#tab-aplicativos .toolbar input[type=search] { flex:1 1 220px; min-width:160px; padding:6px 10px; border:1px solid var(--linha); border-radius:6px; background:var(--panel-2); color:var(--fg); font:inherit; }',
+      '#tab-aplicativos .painel-gerenciadores { display:flex; flex-wrap:wrap; gap:10px 20px; align-items:center; padding:10px 14px; margin-bottom:14px; border:1px solid var(--linha); border-radius:var(--raio); background:var(--panel-2); }',
+      '#tab-aplicativos .painel-gerenciadores .gm { display:inline-flex; align-items:center; gap:6px; }',
+      '#tab-aplicativos .painel-gerenciadores .gm .ok { color:var(--ok); font-weight:700; }',
+      '#tab-aplicativos .painel-gerenciadores .gm .falta { color:var(--danger); font-weight:700; }',
+      '#tab-aplicativos details.categoria { border:1px solid var(--linha); border-radius:var(--raio); margin-bottom:8px; background:var(--panel); }',
+      '#tab-aplicativos details.categoria > summary { cursor:pointer; padding:10px 14px; font-weight:650; }',
+      '#tab-aplicativos .lista-apps { display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:2px 10px; padding:4px 14px 12px; }',
+      '#tab-aplicativos .app-row { display:flex; align-items:center; gap:4px; padding:5px 4px; border-radius:6px; }',
+      '#tab-aplicativos .app-row:hover { background:var(--panel-2); }',
+      '#tab-aplicativos .app-row.app-oculto { display:none; }',
+      '#tab-aplicativos .app-row label { display:flex; align-items:center; gap:6px; flex:1 1 auto; cursor:pointer; overflow:hidden; min-width:0; }',
+      '#tab-aplicativos .app-row .nome-app { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }',
+      '#tab-aplicativos .app-row .link-app { color:var(--muted); text-decoration:none; padding:2px 4px; flex:0 0 auto; }',
+      '#tab-aplicativos .app-row .link-app:hover { color:var(--accent); }',
+      '#tab-aplicativos .selo-foss { color:var(--ok); flex:0 0 auto; }',
+      '#tab-aplicativos .selo-instalado { color:var(--accent); flex:0 0 auto; }',
+      '#tab-aplicativos .rodape-nota { margin-top:10px; color:var(--muted); font-size:12px; }',
+      '#tab-aplicativos table.resultado-instalacao { width:100%; border-collapse:collapse; font-size:13px; }',
+      '#tab-aplicativos table.resultado-instalacao th, #tab-aplicativos table.resultado-instalacao td { text-align:left; padding:5px 8px; border-bottom:1px solid var(--linha); }',
+      '#tab-aplicativos table.resultado-instalacao tr.res-ok td:nth-child(3) { color:var(--ok); }',
+      '#tab-aplicativos table.resultado-instalacao tr.res-pulado td:nth-child(3) { color:var(--warn); }',
+      '#tab-aplicativos table.resultado-instalacao tr.res-falha td:nth-child(3) { color:var(--danger); }',
+      '#tab-aplicativos .app-icone { display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; min-width:32px; border-radius:50%; background:var(--elevated); color:var(--fg); font-weight:600; font-size:11px; letter-spacing:0.02em; flex:0 0 auto; overflow:hidden; }',
+      '#tab-aplicativos .app-icone.tem-imagem { background:transparent; border-radius:6px; }',
+      '#tab-aplicativos .app-icone img { width:32px; height:32px; object-fit:contain; border-radius:6px; display:block; }'
     ].join('\n');
     document.head.appendChild(style);
   }
@@ -106,7 +106,7 @@
   /* ---------------- esqueleto ---------------- */
 
   function montarEsqueleto() {
-    var raiz = document.getElementById('tab-instalar');
+    var raiz = document.getElementById('tab-aplicativos');
     raiz.innerHTML =
       '<h2>Instalar</h2>' +
       '<div class="painel-gerenciadores" id="app-gerenciadores" aria-live="polite"></div>' +
@@ -592,7 +592,7 @@
 
   function aplicarFiltro() {
     var termo = estado.termoBusca || '';
-    var linhas = document.querySelectorAll('#tab-instalar .app-row');
+    var linhas = document.querySelectorAll('#tab-aplicativos .app-row');
     linhas.forEach(function (linha) {
       var combinaBusca = !termo || linha.dataset.nome.indexOf(termo) >= 0 || linha.dataset.descricao.indexOf(termo) >= 0;
       var combinaInstalados = !estado.mostrarInstalados || linha.classList.contains('app-instalado');
@@ -625,7 +625,7 @@
       });
       estado.instalados = mapa;
 
-      document.querySelectorAll('#tab-instalar .app-row').forEach(function (linha) {
+      document.querySelectorAll('#tab-aplicativos .app-row').forEach(function (linha) {
         var instalado = !!mapa[linha.dataset.id];
         linha.classList.toggle('app-instalado', instalado);
         var selo = linha.querySelector('[data-role="selo-instalado"]');
@@ -681,16 +681,16 @@
 
     document.getElementById('app-btn-limpar').addEventListener('click', function () {
       estado.selecionados = {};
-      document.querySelectorAll('#tab-instalar input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
+      document.querySelectorAll('#tab-aplicativos input[type=checkbox]').forEach(function (cb) { cb.checked = false; });
       atualizarContagemSelecionados();
     });
 
     document.getElementById('app-btn-expandir').addEventListener('click', function () {
-      document.querySelectorAll('#tab-instalar details.categoria').forEach(function (d) { d.open = true; });
+      document.querySelectorAll('#tab-aplicativos details.categoria').forEach(function (d) { d.open = true; });
     });
 
     document.getElementById('app-btn-recolher').addEventListener('click', function () {
-      document.querySelectorAll('#tab-instalar details.categoria').forEach(function (d) { d.open = false; });
+      document.querySelectorAll('#tab-aplicativos details.categoria').forEach(function (d) { d.open = false; });
     });
 
     document.getElementById('app-btn-instalados').addEventListener('click', function (e) {
@@ -723,7 +723,7 @@
 
   /* ---------------- arranque da aba ---------------- */
 
-  window.tmxTabs.instalar = {
+  window.tmxTabs.aplicativos = {
     init: function () {
       injetarEstilo();
       montarEsqueleto();

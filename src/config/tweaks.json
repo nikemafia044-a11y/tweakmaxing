@@ -32,6 +32,21 @@
       },
       "porque": "Grava três políticas em HKLM que desligam o feed de atividades (EnableActivityFeed, PublishUserActivities, UploadUserActivities), cortando a coleta e o upload da linha do tempo.",
       "evidencia": "São políticas de grupo documentadas pela Microsoft e o efeito é verificável na própria interface: a Linha do Tempo deixa de listar atividades. Não há ganho de desempenho envolvido, é uma escolha de privacidade.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Desliga o histórico de atividades que o Windows manda para a conta Microsoft, aquela \"linha do tempo\" de tudo que você abriu.",
+      "beneficio": "Menos dado seu saindo do PC sem necessidade, sem tirar nenhuma função que você usa no dia a dia.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Activity history - disable",
+          "oQueFaz": "Turns off the activity history Windows sends to your Microsoft account, the \"timeline\" of everything you opened.",
+          "beneficio": "Less of your data leaving the PC for no real benefit, with no loss of anything you actually use day to day.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -88,6 +103,21 @@
       },
       "porque": "Executa powercfg /hibernate off e zera HibernateEnabled, o que remove o arquivo hiberfil.sys e tira a opção Hibernar do menu de energia.",
       "evidencia": "O efeito em disco é direto e mensurável: o hiberfil.sys some. É reversível com powercfg /hibernate on. Desativar também desliga a inicialização rápida, que depende do mesmo arquivo.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga a hibernação e apaga o arquivo hiberfil.sys, que fica reservado no disco do tamanho de boa parte da sua RAM.",
+      "beneficio": "Libera vários gigabytes de espaço em disco de graça.",
+      "atencao": "Em notebook, hibernar é o que preserva o trabalho aberto quando a bateria acaba; pense antes de desligar num notebook.",
+      "i18n": {
+        "en": {
+          "nome": "Hibernation - disable",
+          "oQueFaz": "Turns off hibernation and deletes hiberfil.sys, the file reserved on disk at roughly the size of your RAM.",
+          "beneficio": "Frees several gigabytes of disk space for free.",
+          "atencao": "On a notebook, hibernation is what saves your open work when the battery runs out; think twice before disabling it there."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -142,6 +172,21 @@
       },
       "porque": "Desinstala os pacotes Appx que servem o painel de Widgets e reinicia o Explorer para o ícone sumir da barra de tarefas.",
       "evidencia": "A remoção é verificável (o pacote deixa de aparecer em Get-AppxPackage). O desfazer depende da Store, por isso classificamos como reversibilidade parcial e não como total.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Remove o painel de Widgets da barra de tarefas, incluindo os pacotes que o mantêm rodando.",
+      "beneficio": "Um processo a menos abrindo sozinho e uma barra de tarefas mais limpa.",
+      "atencao": "Para trazer de volta é preciso reinstalar o componente pela Microsoft Store.",
+      "i18n": {
+        "en": {
+          "nome": "Widgets - remove",
+          "oQueFaz": "Removes the Widgets panel from the taskbar, including the packages that keep it running.",
+          "beneficio": "One less process starting on its own and a cleaner taskbar.",
+          "atencao": "Bringing it back requires reinstalling the component from the Microsoft Store."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -182,6 +227,21 @@
       },
       "porque": "Escreve EnabledState em um override de FeatureManagement, que é o mecanismo pelo qual o Windows liga e desliga funcionalidades em rollout gradual.",
       "evidencia": "O efeito depende da build: onde a funcionalidade antiga ainda existe, o override funciona; onde ela foi removida do código, não acontece nada. Não prometemos resultado em builds recentes.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Troca o novo Menu Iniciar pelo layout anterior, com a lista de apps do jeito antigo.",
+      "beneficio": "Visual mais familiar para quem não gostou da mudança do menu.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Start menu - previous layout",
+          "oQueFaz": "Switches the new Start menu back to the previous layout, with the app list the old way.",
+          "beneficio": "A more familiar look for anyone who did not like the menu redesign.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -224,6 +284,22 @@
       },
       "porque": "Nega leitura do arquivo store.db (o cache local do catálogo da Store) por ACL, então a busca não tem de onde tirar as sugestões.",
       "evidencia": "O efeito é observável na própria busca e a ACL é consultável com icacls. É um bloqueio de arquivo, não uma política: se a Store recriar o banco, pode ser necessário reaplicar.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade",
+        "aparencia"
+      ],
+      "oQueFaz": "Impede que a busca do Windows misture sugestões da Microsoft Store nos resultados.",
+      "beneficio": "Busca mais rápida e focada só no que está no seu PC.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Microsoft Store search suggestions - disable",
+          "oQueFaz": "Stops Windows Search from mixing Microsoft Store suggestions into your results.",
+          "beneficio": "Faster search that only shows what is actually on your PC.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -267,6 +343,21 @@
       },
       "porque": "Coloca o ConsentStore de localização em Deny, zera a permissão do sensor e desativa o serviço lfsvc, que é quem entrega coordenadas aos aplicativos.",
       "evidencia": "São as mesmas chaves que a página de privacidade do Windows manipula. O risco é medio porque aplicativos legítimos que dependem de localização (clima, Mapas, Encontrar meu dispositivo) deixam de funcionar.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Desliga o sensor de localização do Windows, então nenhum aplicativo recebe suas coordenadas.",
+      "beneficio": "Fecha uma via de coleta de dados de localização que a maioria não usa no desktop.",
+      "atencao": "Apps que dependem de localização (mapas, previsão do tempo automática) param de funcionar direito.",
+      "i18n": {
+        "en": {
+          "nome": "Location tracking - disable",
+          "oQueFaz": "Turns off the Windows location sensor, so no app receives your coordinates.",
+          "beneficio": "Closes a data collection path that most desktop users never actually need.",
+          "atencao": "Apps that rely on location (maps, automatic weather) stop working correctly."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -328,6 +419,21 @@
       },
       "porque": "Mantido no catálogo apenas na seção anti-folclore, com as ações preservadas para quem quiser aplicar conscientemente.",
       "evidencia": "Agrupar svchost muda a contagem de processos no Gerenciador de Tarefas, o que parece impressionante, mas não reduz o trabalho executado nem a memória realmente usada. Não conhecemos medição controlada que mostre ganho.",
+      "modo": "extras",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Coloca um grupo de serviços do Windows selecionados como \"pouco usados\" em modo Manual, para não iniciarem sozinhos.",
+      "beneficio": "Nenhum: é um tweak clássico de fórum sem sustentação técnica.",
+      "atencao": "É um ajuste FOLCLORE: a lista de \"serviços inúteis\" que circula na internet mistura serviços que o próprio Windows usa; por isso fica em Extras, fora do Avançado, e só deve ser ligado manualmente por quem entende o que está desligando.",
+      "i18n": {
+        "en": {
+          "nome": "Services - set to Manual",
+          "oQueFaz": "Sets a group of Windows services picked as \"rarely used\" to Manual startup, so they do not start on their own.",
+          "beneficio": "None: this is a classic forum tweak with no real technical backing.",
+          "atencao": "This is a FOLKLORE item: the \"useless services\" lists that circulate online mix in services Windows actually relies on, so it stays in Extras rather than Advanced, for manual, informed use only."
+        }
+      },
       "folclore": {
         "oQueE": "Elevar o SvcHostSplitThresholdInKB para agrupar serviços em menos processos svchost.exe e colocar serviços do Windows em Manual, prometendo sistema mais leve.",
         "porqueCircula": "A lista de processos fica visivelmente menor no Gerenciador de Tarefas, e uma lista menor passa a impressão de um sistema mais enxuto.",
@@ -398,6 +504,21 @@
       },
       "porque": "Grava políticas em HKLM\\SOFTWARE\\Policies\\BraveSoftware\\Brave, o canal oficial de administração do navegador, que o Brave lê na inicialização.",
       "evidencia": "São políticas publicadas pelo próprio Brave e o resultado aparece em brave://policy. Classificamos como TECNICO porque o efeito é de interface e telemetria do navegador, não algo que medimos em desempenho do sistema.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Desliga os recursos promocionais do navegador Brave (ofertas, notícias patrocinadas, sugestões).",
+      "beneficio": "Menos propaganda dentro do navegador.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Brave - remove promotional features",
+          "oQueFaz": "Turns off Brave browser promotional features (offers, sponsored news, suggestions).",
+          "beneficio": "Less advertising inside the browser.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -517,6 +638,21 @@
       },
       "porque": "Define RedirectionWarningDialogVersion e RdpLaunchConsentAccepted, as chaves que o cliente de Área de Trabalho Remota consulta antes de mostrar o diálogo de consentimento.",
       "evidencia": "O comportamento é observável ao abrir um .rdp. O risco é medio de propósito: esse aviso existe para você notar arquivos RDP de origem desconhecida, que podem redirecionar suas unidades locais para a máquina remota.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Desliga o aviso que aparece ao abrir um arquivo .rdp de Área de Trabalho Remota sem assinatura digital.",
+      "beneficio": "Conecta direto em servidores RDP confiáveis sem o diálogo extra.",
+      "atencao": "Esse aviso existe para avisar sobre arquivos RDP potencialmente maliciosos; só desative se você confia na origem dos arquivos .rdp que usa.",
+      "i18n": {
+        "en": {
+          "nome": "Unsigned RDP file warning - disable",
+          "oQueFaz": "Turns off the warning shown when opening an unsigned Remote Desktop (.rdp) file.",
+          "beneficio": "Connects straight into trusted RDP servers without the extra dialog.",
+          "atencao": "That warning exists to flag potentially malicious RDP files; only disable it if you trust the source of the .rdp files you use."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -566,6 +702,21 @@
       },
       "porque": "Grava políticas em HKLM\\SOFTWARE\\Policies\\Microsoft\\Edge, o mesmo canal que administradores usam em ambiente corporativo, e o Edge as aplica ao iniciar.",
       "evidencia": "Todas as chaves estão no catálogo público de políticas do Edge e o resultado é conferível em edge://policy. É higiene de navegador, não desempenho medido.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Desliga os recursos promocionais do Microsoft Edge (dicas, ofertas, conteúdo patrocinado).",
+      "beneficio": "Menos propaganda dentro do navegador.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Microsoft Edge - remove promotional features",
+          "oQueFaz": "Turns off Microsoft Edge promotional features (tips, offers, sponsored content).",
+          "beneficio": "Less advertising inside the browser.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -724,6 +875,21 @@
       },
       "porque": "Ativa a política DisableWindowsConsumerFeatures, que bloqueia o mecanismo de entrega de conteúdo promovido (jogos, apps sugeridos, blocos dinâmicos patrocinados).",
       "evidencia": "É política documentada pela Microsoft e o efeito é claro: aplicativos param de aparecer sozinhos no menu Iniciar após uma instalação limpa. Entra no preset mínimo por ser de baixo risco e alto incômodo evitado.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Desliga o mecanismo que entrega jogos, apps sugeridos e blocos patrocinados no menu Iniciar.",
+      "beneficio": "Um Windows menos \"vitrine de loja\" e mais focado no que você instalou.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Consumer features - disable",
+          "oQueFaz": "Turns off the mechanism that pushes suggested games, apps, and sponsored tiles into the Start menu.",
+          "beneficio": "A Windows that feels less like a storefront and more focused on what you actually installed.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -770,6 +936,21 @@
       },
       "porque": "Combina políticas de AllowTelemetry e InputPersonalization com a desativação dos serviços que empacotam e enviam diagnósticos (DiagTrack, wermgr), cortando a coleta na origem e o transporte.",
       "evidencia": "As chaves e serviços são documentados pela Microsoft. Vale o alerta honesto: desligar SubmitSamplesConsent reduz o envio de amostras ao Defender, o que também reduz a velocidade com que ele aprende sobre ameaças novas na sua máquina.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Reduz a telemetria ao mínimo permitido pela edição do Windows e desliga os serviços que empacotam e enviam esses diagnósticos.",
+      "beneficio": "Menos coleta de dados e menos processos de diagnóstico rodando em segundo plano.",
+      "atencao": "Alguns recursos de diagnóstico usados pelo suporte da Microsoft ficam sem efeito; isso raramente importa para o usuário comum.",
+      "i18n": {
+        "en": {
+          "nome": "Telemetry - reduce to minimum",
+          "oQueFaz": "Reduces telemetry to the minimum your Windows edition allows and disables the services that package and send those diagnostics.",
+          "beneficio": "Less data collection and fewer diagnostic processes running in the background.",
+          "atencao": "A few diagnostic features Microsoft support might use stop working; this rarely matters for a regular user."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -907,6 +1088,21 @@
       },
       "porque": "Define DODownloadMode como 0, que é o modo somente HTTP direto da Microsoft, sem participação no enxame peer-to-peer de atualizações.",
       "evidencia": "O modo é documentado pela Microsoft e o consumo de upload durante atualizações é observável no próprio painel de Otimização de Entrega. Em rede com vários PCs, o download total pode aumentar porque cada máquina baixa por conta própria.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "rede"
+      ],
+      "oQueFaz": "Faz o Windows Update baixar direto da Microsoft em vez de também compartilhar sua conexão em rede peer-to-peer.",
+      "beneficio": "Sua internet não é mais usada para distribuir atualizações a outros PCs.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Delivery Optimization - disable",
+          "oQueFaz": "Makes Windows Update download straight from Microsoft instead of also sharing your connection over peer-to-peer.",
+          "beneficio": "Your internet connection is no longer used to distribute updates to other PCs.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -949,6 +1145,21 @@
       },
       "porque": "Cria um MicrosoftEdge.exe vazio na pasta do Edge legado, o que faz o instalador aceitar a desinstalação em nível de sistema, e então chama o setup.exe oficial com --uninstall.",
       "evidencia": "O procedimento é o da própria Microsoft, apenas destravado. Não é reversível por backup: o desfazer reinstala pelo winget, e por isso marcamos reversibilidade parcial e risco alto.",
+      "modo": "ultimate",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Remove por completo o Microsoft Edge legado do sistema, usando o desinstalador oficial da própria Microsoft.",
+      "beneficio": "Libera espaço e tira um navegador que talvez você nunca abra.",
+      "atencao": "Alto risco: o Windows usa componentes do Edge (WebView2, alguns atalhos do sistema) internamente; remover pode quebrar recursos que dependem dele. Recomendado só para quem sabe o que está fazendo.",
+      "i18n": {
+        "en": {
+          "nome": "Microsoft Edge - remove",
+          "oQueFaz": "Fully removes the legacy Microsoft Edge browser using Microsoft own official uninstaller.",
+          "beneficio": "Frees up space and removes a browser you may never open.",
+          "atencao": "High risk: Windows uses Edge components (WebView2, some system shortcuts) internally; removing it can break features that depend on it. Recommended only for advanced users."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -989,6 +1200,21 @@
       },
       "porque": "Chama Disable-BitLocker na unidade do sistema, o que inicia a descriptografia completa do volume.",
       "evidencia": "O estado é verificável com Get-BitLockerVolume. Vale dizer com todas as letras: em notebook, desligar o BitLocker é abrir mão da principal proteção contra perda ou furto do aparelho.",
+      "modo": "ultimate",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Desliga o BitLocker e inicia a descriptografia completa da unidade do sistema.",
+      "beneficio": "Sem overhead de criptografia em disco, o que pode ajudar levemente em desempenho de I/O.",
+      "atencao": "Alto risco: enquanto o disco descriptografa, os dados ficam sem essa camada de proteção; se o PC for perdido ou roubado nesse meio-tempo, ou depois, quem tiver acesso físico ao disco lê os arquivos.",
+      "i18n": {
+        "en": {
+          "nome": "BitLocker - disable",
+          "oQueFaz": "Disables BitLocker and starts fully decrypting the system drive.",
+          "beneficio": "No more disk-encryption overhead, which can slightly help I/O performance.",
+          "atencao": "High risk: while the drive decrypts, and after, the data no longer has that protection layer; anyone with physical access to the disk can read the files."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1029,6 +1255,21 @@
       },
       "porque": "Define RealTimeIsUniversal, que instrui o Windows a tratar o relógio RTC como tempo universal em vez de hora local.",
       "evidencia": "É o ajuste padrão recomendado para dual boot com Linux e o efeito é imediatamente observável no relógio. Em máquina só com Windows não traz benefício e pode confundir sincronização se o servidor de tempo estiver desligado.",
+      "modo": "extras",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Faz o Windows tratar o relógio do hardware (RTC) como horário universal (UTC) em vez de horário local.",
+      "beneficio": "Corrige a hora errada quando o mesmo PC tem dual-boot com Linux, que por padrão usa UTC no RTC.",
+      "atencao": "Só faz sentido em dual-boot com Linux; num PC só com Windows não muda nada perceptível, por isso fica em Extras em vez de um modo automático.",
+      "i18n": {
+        "en": {
+          "nome": "Hardware clock - use UTC",
+          "oQueFaz": "Makes Windows treat the hardware clock (RTC) as UTC instead of local time.",
+          "beneficio": "Fixes the wrong clock on a dual-boot setup with Linux, which uses UTC on the RTC by default.",
+          "atencao": "Only matters for dual-boot with Linux; on a Windows-only PC it changes nothing noticeable, so it stays in Extras instead of an automatic mode."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1071,6 +1312,21 @@
       },
       "porque": "Nega temporariamente a permissão de exclusão da pasta do OneDrive, roda o OneDriveSetup.exe /uninstall, remove os resíduos em LocalAppData e ProgramData, devolve a permissão e desativa o OneSyncSvc.",
       "evidencia": "O desinstalador é o oficial da Microsoft. Antes de aplicar, confirme que nada importante está marcado como apenas na nuvem: o TweakMaxing não consegue restaurar arquivos que nunca estiveram no disco.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Desinstala o OneDrive e limpa os resíduos que ele deixa em pastas do usuário e do sistema.",
+      "beneficio": "Libera espaço, tira um processo de sincronização rodando sempre e simplifica o Explorer.",
+      "atencao": "Arquivos que só existiam na nuvem (não baixados localmente) deixam de aparecer; garanta que tudo importante está sincronizado antes de remover.",
+      "i18n": {
+        "en": {
+          "nome": "Microsoft OneDrive - remove",
+          "oQueFaz": "Uninstalls OneDrive and cleans up the leftovers it drops in user and system folders.",
+          "beneficio": "Frees space, removes an always-running sync process, and simplifies File Explorer.",
+          "atencao": "Files that only existed in the cloud (not downloaded locally) stop appearing; make sure everything important is synced before removing it."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1111,6 +1367,21 @@
       },
       "porque": "Desafixa os dois CLSIDs do namespace da árvore do Explorer e define LaunchTo como 1, que corresponde a Este Computador.",
       "evidencia": "São chaves por usuário em HKCU, com efeito visível ao reabrir o Explorer e reversão trivial. Preferência de interface, sem relação com desempenho.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Remove os atalhos de Início e Galeria do painel de navegação do Explorer e faz janelas novas abrirem em Este Computador.",
+      "beneficio": "Explorer mais direto, sem as seções que a Microsoft foi adicionando por cima.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Explorer Home and Gallery - remove",
+          "oQueFaz": "Removes the Home and Gallery shortcuts from File Explorer navigation pane and makes new windows open on This PC.",
+          "beneficio": "A more straightforward Explorer, without the sections Microsoft kept layering on top.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1167,6 +1438,22 @@
       },
       "porque": "Define VisualFXSetting como 3 (personalizado) e desliga uma a uma as animações do Explorer, da barra de tarefas e do DWM, além de gravar a máscara binária UserPreferencesMask que controla os efeitos de janela.",
       "evidencia": "A percepção de resposta melhora porque as animações deixam de existir, não porque o sistema ficou mais rápido: o tempo até a ação concluir é praticamente o mesmo. Em máquina moderna, o efeito é de sensação, e por isso é TECNICO e não MEDIDO.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "desempenho",
+        "aparencia"
+      ],
+      "oQueFaz": "Desliga animações do Explorer, da barra de tarefas e do gerenciador de janelas, deixando só o essencial visual.",
+      "beneficio": "Interface responde mais rápido, principalmente em PCs mais fracos ou com GPU integrada.",
+      "atencao": "A interface fica visualmente mais seca, sem as transições suaves.",
+      "i18n": {
+        "en": {
+          "nome": "Visual effects - prioritize performance",
+          "oQueFaz": "Turns off animations in File Explorer, the taskbar, and the window manager, keeping only the visual essentials.",
+          "beneficio": "The interface feels snappier, especially on weaker PCs or integrated graphics.",
+          "atencao": "The interface looks visually plainer, without the smooth transitions."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": "SettingChange",
@@ -1302,6 +1589,21 @@
       },
       "porque": "Usa DISM /Set-ReservedStorageState para desligar a reserva, devolvendo o espaço ao volume do sistema.",
       "evidencia": "O espaço liberado é real e conferível. O contraponto também é real: sem a reserva, atualizações de recurso podem falhar por falta de espaço. Reative antes de uma atualização grande do Windows.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Desliga o Armazenamento Reservado, o espaço que o Windows separa sozinho para atualizações e arquivos temporários.",
+      "beneficio": "Devolve alguns gigabytes de espaço em disco para uso livre.",
+      "atencao": "Atualizações grandes podem falhar por falta de espaço reservado se o disco estiver quase cheio; mantenha alguma folga.",
+      "i18n": {
+        "en": {
+          "nome": "Reserved Storage - disable",
+          "oQueFaz": "Turns off Reserved Storage, the space Windows automatically sets aside for updates and temp files.",
+          "beneficio": "Returns a few gigabytes of disk space for free use.",
+          "atencao": "Large updates can fail from lack of reserved space if the disk is nearly full; keep some room to spare."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1342,6 +1644,21 @@
       },
       "porque": "Mantido na seção anti-folclore porque o TweakMaxing já cria um ponto de restauração obrigatório antes de qualquer escrita, tornando este item redundante como tweak.",
       "evidencia": "Ponto de restauração é uma boa prática, não um ajuste de sistema. Listá-lo como tweak opcional dá a impressão errada de que é uma escolha; aqui ele é pré-requisito.",
+      "modo": "extras",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Cria manualmente um ponto de restauração do sistema.",
+      "beneficio": "Nenhum ganho de desempenho: é só um checkpoint para poder voltar atrás.",
+      "atencao": "O TweakMaxing já cria um ponto de restauração obrigatório antes de aplicar qualquer coisa, então este item fica redundante e por isso está em Extras, não em um modo.",
+      "i18n": {
+        "en": {
+          "nome": "Restore point - create",
+          "oQueFaz": "Manually creates a Windows system restore point.",
+          "beneficio": "No performance gain: it is just a checkpoint to roll back to.",
+          "atencao": "TweakMaxing already creates a mandatory restore point before applying anything, which makes this item redundant, so it stays in Extras instead of a mode."
+        }
+      },
       "folclore": {
         "oQueE": "Oferecer a criação do ponto de restauração como um item marcável na lista de tweaks, ao lado dos demais.",
         "porqueCircula": "Ferramentas de tweak tradicionalmente colocam o ponto de restauração como a primeira caixa da lista, e o usuário se acostumou a vê-lo ali.",
@@ -1392,6 +1709,21 @@
       },
       "porque": "Ativa TaskbarEndTask, a chave de configurações de desenvolvedor que expõe o item Finalizar tarefa no menu da barra de tarefas.",
       "evidencia": "É a mesma opção que existe em Configurações, Sistema, Para desenvolvedores. Efeito imediato, reversão trivial, sem custo.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Adiciona \"Finalizar tarefa\" ao menu do botão direito na barra de tarefas.",
+      "beneficio": "Fecha um programa travado sem precisar abrir o Gerenciador de Tarefas.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "End task from right-click",
+          "oQueFaz": "Adds \"End task\" to the taskbar right-click menu.",
+          "beneficio": "Closes a frozen program without opening Task Manager.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1434,6 +1766,21 @@
       },
       "porque": "Zera a chave 01 de StoragePolicy, que é o interruptor mestre do Sensor de Armazenamento.",
       "evidencia": "O efeito aparece na própria página de Armazenamento das Configurações. É preferência: quem quer controlar a limpeza na mão desliga, quem prefere automático deixa ligado. Não há ganho de desempenho.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Desliga o Sensor de Armazenamento, a limpeza automática periódica do Windows.",
+      "beneficio": "Nada rodando sozinho em segundo plano decidindo o que apagar.",
+      "atencao": "A limpeza automática de temporários e da Lixeira passa a depender de você rodar manualmente.",
+      "i18n": {
+        "en": {
+          "nome": "Storage Sense - disable",
+          "oQueFaz": "Turns off Storage Sense, Windows periodic automatic cleanup.",
+          "beneficio": "Nothing runs in the background on its own deciding what to delete.",
+          "atencao": "Automatic cleanup of temp files and the Recycle Bin now depends on you running it manually."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1476,6 +1823,22 @@
       },
       "porque": "Combina remoção dos pacotes Appx de IA, marcação de fim de vida do CoreAI para o usuário atual, desativação do serviço WSAIFabricSvc e desligamento do recurso opcional Recall.",
       "evidencia": "Cada parte é verificável isoladamente (Get-AppxPackage, Get-Service, Get-WindowsOptionalFeature). Como a volta depende da Store e da reativação do recurso, a reversibilidade é parcial. O Windows pode reinstalar componentes de IA em atualizações futuras.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "privacidade",
+        "geral"
+      ],
+      "oQueFaz": "Remove os componentes de IA do Windows (Copilot e afins), desliga o serviço que os sustenta e desativa o Recall.",
+      "beneficio": "Menos processos de IA rodando e mais privacidade, já que o Recall tira capturas de tela periódicas por padrão.",
+      "atencao": "Recursos que dependem de Copilot deixam de funcionar; para usá-los de novo é preciso reinstalar/reativar os componentes.",
+      "i18n": {
+        "en": {
+          "nome": "Windows AI - disable and remove",
+          "oQueFaz": "Removes Windows AI components (Copilot and related), disables the service behind them, and turns off Recall.",
+          "beneficio": "Fewer AI processes running and more privacy, since Recall takes periodic screenshots by default.",
+          "atencao": "Features that depend on Copilot stop working; using them again requires reinstalling/re-enabling the components."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1534,6 +1897,22 @@
       },
       "porque": "Define DisableWpbtExecution no Session Manager, que instrui o Windows a ignorar a tabela WPBT fornecida pelo firmware UEFI.",
       "evidencia": "A chave é documentada pela Microsoft justamente como mitigação de segurança do WPBT, que já foi usado como vetor de persistência. Entra no preset mínimo por ser baixo risco e ganho claro de controle sobre a própria máquina.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade",
+        "geral"
+      ],
+      "oQueFaz": "Impede que o Windows execute a tabela WPBT que o fabricante grava no firmware UEFI.",
+      "beneficio": "Fecha uma via usada por alguns fabricantes para instalar software próprio automaticamente no Windows.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "WPBT - disable",
+          "oQueFaz": "Stops Windows from executing the WPBT table some manufacturers embed in UEFI firmware.",
+          "beneficio": "Closes a path some manufacturers use to auto-install their own software into Windows.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1576,6 +1955,21 @@
       },
       "porque": "Ativa PreventDeviceMetadataFromNetwork, que corta a consulta ao serviço de metadados de dispositivos usado para sugerir e instalar apps companheiros.",
       "evidencia": "É política documentada. O efeito colateral honesto: ícones e nomes amigáveis de alguns dispositivos podem ficar genéricos, já que vêm desse mesmo serviço.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Bloqueia a consulta ao serviço de metadados que sugere e instala \"apps companheiros\" de dispositivos conectados.",
+      "beneficio": "Menos sugestões automáticas de apps ao plugar periféricos.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Device companion apps - block",
+          "oQueFaz": "Blocks the query to the metadata service that suggests and installs \"companion apps\" for connected devices.",
+          "beneficio": "Fewer automatic app suggestions when plugging in peripherals.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1618,6 +2012,21 @@
       },
       "porque": "Desliga a busca automática de drivers em SearchOrderConfig, bloqueia co-instaladores e nega permissão de escrita na pasta que o instalador da Razer usa.",
       "evidencia": "O bloqueio por ACL é verificável com icacls. O risco é medio porque DisableCoInstallers e SearchOrderConfig são globais: outros dispositivos também deixam de receber drivers e software auxiliar automaticamente pelo Windows Update. A reversibilidade é parcial, não total: antes de negar a escrita, a pasta do instalador é esvaziada, e esse conteúdo não é copiado para lugar nenhum. Desfazer remove a negação de ACL e devolve as chaves de registro, mas não traz de volta os arquivos apagados.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Impede que o Windows baixe e instale sozinho o software da Razer ao detectar um periférico da marca.",
+      "beneficio": "Você decide se e quando instalar o software do fabricante, em vez de ser forçado.",
+      "atencao": "Alguns recursos avançados de periféricos Razer (perfis, RGB) exigem o software oficial; instale manualmente se precisar deles.",
+      "i18n": {
+        "en": {
+          "nome": "Razer software auto-install - block",
+          "oQueFaz": "Stops Windows from silently downloading and installing Razer software when it detects a Razer peripheral.",
+          "beneficio": "You decide if and when to install the manufacturer software, instead of being forced into it.",
+          "atencao": "Some advanced Razer peripheral features (profiles, RGB) need the official software; install it manually if you need them."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1672,6 +2081,21 @@
       },
       "porque": "Esvazia a pasta LogiDownloadAssistant e nega permissão de escrita nela, então o instalador não consegue mais se recriar.",
       "evidencia": "A negação de ACL é conferível com icacls e o desfazer remove exatamente essa regra. Limitado a uma pasta, por isso risco baixo. A reversibilidade é parcial, não total: esvaziar a pasta antes de negar a escrita apaga o que estava lá, sem cópia de segurança. Desfazer libera a pasta de novo, mas quem restaura o conteúdo é o próprio Windows Update, na próxima vez que oferecer o pacote.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Esvazia e bloqueia a pasta usada pelo instalador automático do Logi Download Assistant, da Logitech.",
+      "beneficio": "Um instalador insistente a menos se recriando sozinho.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Logi Download Assistant - block",
+          "oQueFaz": "Empties and locks the folder used by Logitech Logi Download Assistant auto-installer.",
+          "beneficio": "One less pushy installer recreating itself on its own.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1712,6 +2136,22 @@
       },
       "porque": "Ativa DisableNotificationCenter e zera ToastEnabled, o que remove a central e impede a exibição de qualquer notificação toast.",
       "evidencia": "O efeito é total, e é aí que mora o risco: alertas de segurança, avisos de bateria e lembretes de calendário também somem. Não é um filtro, é um corte geral.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "aparencia",
+        "geral"
+      ],
+      "oQueFaz": "Desliga a Central de Notificações e o calendário da bandeja, e impede qualquer notificação toast de aparecer.",
+      "beneficio": "Zero interrupções de notificação na tela, útil para quem joga ou grava em tela cheia.",
+      "atencao": "Você deixa de ver qualquer aviso do sistema ou de apps, incluindo os importantes; fique de olho manualmente.",
+      "i18n": {
+        "en": {
+          "nome": "Notification Center and calendar - disable",
+          "oQueFaz": "Turns off the Notification Center and tray calendar, and blocks any toast notification from appearing.",
+          "beneficio": "Zero notification interruptions on screen, useful for gaming or full-screen recording.",
+          "atencao": "You stop seeing any system or app alert, including important ones; keep an eye out manually."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1761,6 +2201,21 @@
       },
       "porque": "Mantido na seção anti-folclore: a ação baixa uma lista de um repositório de terceiros e a despeja no arquivo hosts do sistema.",
       "evidencia": "O conteúdo despejado no hosts não é auditado por nós nem versionado: é o que estiver no repositório no momento da execução. Um arquivo hosts é um ponto de controle sensível de toda a resolução de nomes da máquina.",
+      "modo": "extras",
+      "categoriasV2": [
+        "rede"
+      ],
+      "oQueFaz": "Baixa uma lista de bloqueio de domínios da Adobe de um repositório de terceiros e a adiciona ao arquivo hosts.",
+      "beneficio": "Nenhum: bloqueio de hosts de terceiros não é algo que o TweakMaxing valida ou mantém.",
+      "atencao": "É um ajuste FOLCLORE: depende de uma lista externa fora do nosso controle, pode ficar desatualizada ou quebrar ativação/atualização de produtos Adobe; fica em Extras, uso consciente.",
+      "i18n": {
+        "en": {
+          "nome": "Adobe domain blocklist",
+          "oQueFaz": "Downloads an Adobe domain blocklist from a third-party repository and adds it to the hosts file.",
+          "beneficio": "None: third-party hosts blocking is not something TweakMaxing validates or maintains.",
+          "atencao": "This is a FOLKLORE item: it depends on an external list outside our control, which can go stale or break Adobe product activation/updates; stays in Extras for conscious use."
+        }
+      },
       "folclore": {
         "oQueE": "Baixar uma lista de domínios mantida por terceiros e anexá-la ao arquivo hosts para bloquear servidores de ativação e telemetria da Adobe.",
         "porqueCircula": "Circula em fóruns como solução contra pop-ups de licença dos aplicativos da Adobe, e funciona bem o suficiente para virar receita repetida.",
@@ -1806,6 +2261,21 @@
       },
       "porque": "Cria a subchave InprocServer32 vazia sob o CLSID do menu novo, o que faz o shell não encontrar o manipulador e cair de volta no menu clássico.",
       "evidencia": "É uma chave por usuário em HKCU, com efeito visível após reiniciar o Explorer e reversão pela simples remoção da chave. Nenhum arquivo de sistema é tocado.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Traz de volta o menu de contexto (botão direito) no formato clássico do Windows 10, sem o submenu \"Mostrar mais opções\".",
+      "beneficio": "Um clique a menos para chegar nas opções que você sempre usou.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Classic context menu",
+          "oQueFaz": "Brings back the classic Windows 10 style right-click menu, without the \"Show more options\" submenu.",
+          "beneficio": "One less click to reach the options you always used.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1846,6 +2316,21 @@
       },
       "porque": "Executa cleanmgr com o perfil VERYLOWDISK e depois DISM /StartComponentCleanup /ResetBase, que compacta o repositório de componentes descartando as versões antigas.",
       "evidencia": "O espaço liberado é real e mensurável no próprio disco. Também é definitivo: não há backup possível do que foi apagado, por isso a reversibilidade é nenhuma e exigimos confirmação por frase.",
+      "modo": "extras",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Roda a Limpeza de Disco no perfil mais agressivo e depois compacta o repositório de componentes do Windows (WinSxS), descartando versões antigas.",
+      "beneficio": "Pode liberar um volume grande de espaço em disco de uma vez.",
+      "atencao": "Não é reversível: depois de compactado, o repositório de componentes não guarda mais versões antigas para desinstalar atualizações específicas; por isso fica em Extras, mesmo sendo uma operação comum.",
+      "i18n": {
+        "en": {
+          "nome": "Disk cleanup - run",
+          "oQueFaz": "Runs Disk Cleanup on its most aggressive profile and then compacts the Windows component store (WinSxS), discarding old versions.",
+          "beneficio": "Can free up a large amount of disk space in one go.",
+          "atencao": "Not reversible: once compacted, the component store no longer keeps old versions to uninstall specific updates; stays in Extras even though it is a common operation."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1886,6 +2371,21 @@
       },
       "porque": "Remove o conteúdo de %TEMP% e de %SystemRoot%\\Temp, ignorando os arquivos que estiverem em uso.",
       "evidencia": "O espaço liberado é imediato e conferível. Como exclusão de arquivo não tem desfazer, a reversibilidade é nenhuma e a confirmação por frase é obrigatória.",
+      "modo": "extras",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Apaga o conteúdo das pastas de arquivos temporários do usuário e do sistema, pulando o que estiver em uso.",
+      "beneficio": "Libera espaço em disco rapidamente.",
+      "atencao": "Não é reversível: os arquivos apagados não voltam; por isso fica em Extras.",
+      "i18n": {
+        "en": {
+          "nome": "Temp files - delete",
+          "oQueFaz": "Deletes the contents of the user and system temp folders, skipping files currently in use.",
+          "beneficio": "Quickly frees up disk space.",
+          "atencao": "Not reversible: deleted files do not come back; that is why it stays in Extras."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1926,6 +2426,21 @@
       },
       "porque": "Define DisabledComponents com o bit de política de prefixo, que reordena a tabela de preferência para colocar IPv4 à frente do IPv6.",
       "evidencia": "A chave é documentada pela Microsoft. Faz diferença em redes onde o IPv6 está anunciado mas não roteia de verdade, porque evita a espera do timeout; em rede com IPv6 funcional, não há motivo para aplicar.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "rede"
+      ],
+      "oQueFaz": "Reordena a preferência de rede para o Windows usar IPv4 antes de IPv6 quando os dois estão disponíveis.",
+      "beneficio": "Evita a demora ocasional de tentar IPv6 primeiro em redes onde ele funciona mal.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Prefer IPv4 over IPv6",
+          "oQueFaz": "Reorders network preference so Windows tries IPv4 before IPv6 when both are available.",
+          "beneficio": "Avoids the occasional delay of trying IPv6 first on networks where it works poorly.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1968,6 +2483,21 @@
       },
       "porque": "Combina netsh interface teredo set state disabled com o bit correspondente em DisabledComponents, desativando a interface de túnel.",
       "evidencia": "O estado é conferível com netsh interface teredo show state. O aviso importa: alguns jogos e o Xbox Live usam Teredo para conexão ponto a ponto, e desligar pode piorar o matchmaking.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "rede"
+      ],
+      "oQueFaz": "Desliga o Teredo, o túnel que o Windows usa para simular IPv6 sobre uma rede só IPv4.",
+      "beneficio": "Uma interface de rede a menos rodando sem necessidade na maioria das redes domésticas.",
+      "atencao": "Alguns cenários específicos de jogos em rede P2P com IPv6 (raros hoje) podem depender do Teredo.",
+      "i18n": {
+        "en": {
+          "nome": "Teredo - disable",
+          "oQueFaz": "Disables Teredo, the tunnel Windows uses to simulate IPv6 over an IPv4-only network.",
+          "beneficio": "One less network interface running unnecessarily on most home networks.",
+          "atencao": "A few specific P2P IPv6 networking game scenarios (rare today) can depend on Teredo."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2015,6 +2545,21 @@
       },
       "porque": "Mantido na seção anti-folclore: desligar o IPv6 inteiro é uma receita antiga que hoje quebra mais do que resolve.",
       "evidencia": "Componentes modernos do Windows assumem IPv6 disponível, inclusive parte do DirectAccess, do compartilhamento local e de serviços de loopback. A própria Microsoft desaconselha desabilitar o IPv6 no adaptador.",
+      "modo": "extras",
+      "categoriasV2": [
+        "rede"
+      ],
+      "oQueFaz": "Desliga o IPv6 por completo em todos os adaptadores.",
+      "beneficio": "Nenhum ganho real hoje em dia: a maioria das redes modernas espera IPv6 disponível.",
+      "atencao": "É um ajuste FOLCLORE antigo: desligar IPv6 completamente pode quebrar recursos internos do próprio Windows (como certas conexões da Microsoft) e trazer mais problema do que solução; fica em Extras.",
+      "i18n": {
+        "en": {
+          "nome": "IPv6 - disable completely",
+          "oQueFaz": "Completely disables IPv6 on every adapter.",
+          "beneficio": "No real gain nowadays: most modern networks expect IPv6 to be available.",
+          "atencao": "This is an old FOLKLORE tweak: fully disabling IPv6 can break internal Windows features (such as some Microsoft connections) and causes more problems than it solves; stays in Extras."
+        }
+      },
       "folclore": {
         "oQueE": "Desmarcar o IPv6 em todos os adaptadores e zerar o stack via DisabledComponents, prometendo rede mais rápida e menos latência.",
         "porqueCircula": "Em redes domésticas antigas o IPv6 era anunciado sem rotear, causando esperas de timeout; desligar resolvia o sintoma e virou receita geral.",
@@ -2067,6 +2612,21 @@
       },
       "porque": "Ativa GlobalUserDisabled em BackgroundAccessApplications, o interruptor global que o Windows 11 deixou de expor na interface.",
       "evidencia": "O efeito em consumo de CPU e energia existe, mas depende de quantos apps de Store você realmente usa: em máquina sem apps de Store, não muda nada. Aplicativos param de receber notificações e de atualizar conteúdo em segundo plano.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga globalmente a permissão de apps rodarem em segundo plano, mesmo quando você não está usando eles.",
+      "beneficio": "Menos CPU, rede e bateria gastos por apps abertos que você não está olhando.",
+      "atencao": "Notificações e atualizações automáticas de apps em segundo plano param de funcionar.",
+      "i18n": {
+        "en": {
+          "nome": "Background apps - disable",
+          "oQueFaz": "Globally disables the permission for apps to run in the background, even when you are not using them.",
+          "beneficio": "Less CPU, network, and battery spent by open apps you are not actively looking at.",
+          "atencao": "Background notifications and automatic app updates stop working."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2112,6 +2672,21 @@
       },
       "porque": "Apaga o banco de visualizações do Explorer (Bags e BagMRU) e define FolderType como NotSpecified para todas as pastas, o que elimina a varredura de conteúdo feita a cada abertura.",
       "evidencia": "O travamento ao abrir pastas com muitos arquivos de mídia é um comportamento conhecido e reproduzível, e este ajuste o elimina. O custo é real: o Explorer perde o agrupamento e as colunas específicas por tipo de pasta. As chaves apagadas são exportadas para .reg antes da remoção.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Apaga o cache de layout de pastas do Explorer e faz com que ele pare de tentar adivinhar o tipo de cada pasta (Documentos, Imagens etc).",
+      "beneficio": "Pastas abrem mais rápido, sem a varredura de conteúdo que o Explorer faz para decidir o layout.",
+      "atencao": "O Explorer esquece personalizações de layout que você tinha feito por pasta.",
+      "i18n": {
+        "en": {
+          "nome": "Automatic folder type discovery - disable",
+          "oQueFaz": "Clears the File Explorer folder-layout cache and stops it from guessing each folder type (Documents, Pictures, etc).",
+          "beneficio": "Folders open faster, without the content scan Explorer does to pick a layout.",
+          "atencao": "File Explorer forgets any per-folder layout customization you had made."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2152,6 +2727,21 @@
       },
       "porque": "Ativa DisplayParameters e desliga o emoticon em CrashControl, fazendo o Windows imprimir os parâmetros do bugcheck na tela de erro.",
       "evidencia": "São chaves de diagnóstico documentadas. Utilidade real para quem vai investigar a causa do travamento; nenhum efeito em desempenho.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Faz a Tela Azul (BSOD) mostrar os parâmetros técnicos do erro em vez de só o rosto triste.",
+      "beneficio": "Se o PC travar, você já sai com a informação técnica para pesquisar a causa, sem precisar configurar nada depois.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Detailed BSOD",
+          "oQueFaz": "Makes the Blue Screen of Death show the technical error parameters instead of just the sad face.",
+          "beneficio": "If the PC crashes, you already have the technical info to look up the cause, no extra setup needed afterward.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2217,6 +2807,21 @@
       },
       "porque": "Ativa IsBatteryPercentageEnabled em Explorer\\Advanced, a chave que o shell lê para desenhar o texto junto ao ícone.",
       "evidencia": "Preferência de interface por usuário, com efeito imediato e reversão trivial. Faz sentido só em aparelho com bateria.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Mostra a porcentagem da bateria junto ao ícone, na bandeja do sistema.",
+      "beneficio": "Vê o nível da bateria de relance, sem passar o mouse por cima.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Battery percentage in tray",
+          "oQueFaz": "Shows the battery percentage next to the icon in the system tray.",
+          "beneficio": "See the battery level at a glance, without hovering over the icon.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2268,6 +2873,21 @@
       },
       "porque": "Zera AppsUseLightTheme e SystemUsesLightTheme em Themes\\Personalize e notifica o Explorer para redesenhar a interface.",
       "evidencia": "São as mesmas chaves que a página de Personalização altera. Em telas OLED há economia de energia real; em LCD, é só preferência visual.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Liga o tema escuro do Windows nos apps e na interface do sistema.",
+      "beneficio": "Menos claridade na tela, mais confortável em ambientes escuros.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Windows dark theme",
+          "oQueFaz": "Turns on the Windows dark theme for apps and the system interface.",
+          "beneficio": "Less screen glare, more comfortable in dim environments.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2338,6 +2958,21 @@
       },
       "porque": "Zera HideFileExt em Explorer\\Advanced e reinicia o Explorer para a mudança valer nas janelas abertas.",
       "evidencia": "Além da preferência, tem valor de segurança verificável: com as extensões ocultas, um arquivo chamado foto.png.exe aparece como foto.png.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Mostra as extensões de arquivo (.txt, .exe, .jpg) no Explorer.",
+      "beneficio": "Você vê o tipo real de cada arquivo antes de abrir, o que ajuda a identificar arquivos disfarçados.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Show file extensions",
+          "oQueFaz": "Shows file extensions (.txt, .exe, .jpg) in File Explorer.",
+          "beneficio": "You see the real type of each file before opening it, which helps spot disguised files.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2394,6 +3029,21 @@
       },
       "porque": "Ativa Hidden em Explorer\\Advanced e reinicia o Explorer para aplicar nas janelas já abertas.",
       "evidencia": "Mesma opção da faixa Exibir do Explorer. Útil para manutenção; em uso cotidiano, polui a listagem com arquivos de sistema.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Mostra arquivos e pastas ocultos no Explorer.",
+      "beneficio": "Acesso direto a pastas de configuração que ficam escondidas por padrão, sem digitar caminho manualmente.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Show hidden files",
+          "oQueFaz": "Shows hidden files and folders in File Explorer.",
+          "beneficio": "Direct access to configuration folders that are hidden by default, without typing the path manually.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2450,6 +3100,21 @@
       },
       "porque": "Ativa VerboseStatus nas políticas do sistema, que faz o Winlogon imprimir cada etapa em vez de Aguarde.",
       "evidencia": "Chave documentada e muito útil para descobrir qual serviço ou script de logon está segurando a inicialização. Não acelera nada por si só, apenas mostra.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Faz o Windows mostrar cada etapa do processo de logon em vez de só \"Aguarde\".",
+      "beneficio": "Ajuda a identificar em qual etapa o computador está demorando ao ligar.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Verbose logon messages",
+          "oQueFaz": "Makes Windows show each step of the logon process instead of just \"Please wait\".",
+          "beneficio": "Helps you spot exactly which step is slow when the computer starts up.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2501,6 +3166,21 @@
       },
       "porque": "Ajusta UseNewOutlook e as políticas de migração no perfil do Office 16.0, que são as chaves consultadas ao abrir o cliente.",
       "evidencia": "Chaves do próprio Office, com efeito ao reabrir o aplicativo. A versão nova não tem paridade de recursos com a clássica, então a escolha depende do que você usa.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Liga ou desliga o Novo Outlook, a versão baseada em web do cliente de e-mail.",
+      "beneficio": "Escolha entre a interface nova (mais leve, ainda em evolução) ou o Outlook clássico completo.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "New Outlook",
+          "oQueFaz": "Turns the New Outlook, the web-based email client, on or off.",
+          "beneficio": "Choose between the new interface (lighter, still evolving) or the full classic Outlook.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2594,6 +3274,21 @@
       },
       "porque": "Zera DynamicScrollbars em Control Panel\\Accessibility, a chave de acessibilidade que controla o encolhimento automático.",
       "evidencia": "Mesma opção disponível em Configurações, Acessibilidade, Efeitos visuais. Ganho de usabilidade, sem efeito em desempenho.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Mantém as barras de rolagem sempre visíveis, em vez de encolherem quando você não está mexendo o mouse.",
+      "beneficio": "Mais fácil ver o tamanho e a posição do conteúdo numa janela.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Always show scrollbars",
+          "oQueFaz": "Keeps scrollbars always visible, instead of shrinking away when you are not moving the mouse.",
+          "beneficio": "Easier to see the size and position of content in a window.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2706,6 +3401,22 @@
       },
       "porque": "OverlayTestMode igual a 5 desliga o caminho de overlay do DWM; DisableOverlays igual a 1 vai além e desliga o suporte no driver gráfico.",
       "evidencia": "É um contorno de compatibilidade amplamente relatado para piscadas de tela em placas Intel e NVIDIA, não um ajuste de desempenho. Desligar pode aumentar o consumo de energia, já que a composição volta para o caminho comum.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "gpu",
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga o Multiplane Overlay (MPO), o caminho de composição de imagem usado pelo Windows para vídeo e jogos.",
+      "beneficio": "Corrige stutter e flicker que alguns monitores e drivers apresentam com MPO ligado.",
+      "atencao": "Em combinações de hardware sem esse problema, desligar não traz benefício e pode aumentar levemente o uso de GPU para compor a tela.",
+      "i18n": {
+        "en": {
+          "nome": "Multiplane Overlay (MPO)",
+          "oQueFaz": "Disables Multiplane Overlay (MPO), the image composition path Windows uses for video and games.",
+          "beneficio": "Fixes stutter and flicker that some monitors and drivers show with MPO enabled.",
+          "atencao": "On hardware combinations without that problem, disabling it brings no benefit and can slightly raise GPU usage to compose the screen."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2740,6 +3451,21 @@
       },
       "porque": "Ajusta MouseSpeed e os dois limiares em Control Panel\\Mouse, que é a curva de precisão aprimorada do ponteiro.",
       "evidencia": "São exatamente as chaves por trás de Aprimorar a precisão do ponteiro no painel do mouse. Para mira consistente em jogos, desligar é a recomendação comum; para uso geral, é preferência pessoal.",
+      "modo": "extras",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Duplicado do ajuste de mira 1:1 do modo Jogos (JOG-029/JOG-030); desliga a aceleração do ponteiro do mouse aqui, na Interface.",
+      "beneficio": "Movimento do mouse consistente: a mesma distância física sempre move o cursor a mesma distância na tela.",
+      "atencao": "Fica em Extras porque o mesmo ajuste já está no modo Jogos (JOG-029), evitando aplicar a mesma mudança duas vezes por caminhos diferentes.",
+      "i18n": {
+        "en": {
+          "nome": "Mouse acceleration",
+          "oQueFaz": "Duplicate of the Games mode 1:1 aiming tweak (JOG-029/JOG-030); turns off mouse pointer acceleration here, under Interface.",
+          "beneficio": "Consistent mouse movement: the same physical distance always moves the cursor the same distance on screen.",
+          "atencao": "Stays in Extras because the same tweak already lives in Games mode (JOG-029), avoiding applying the same change twice through different paths."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2819,6 +3545,21 @@
       },
       "porque": "Grava InitialKeyboardIndicators no perfil do usuário e no perfil padrão, que é o valor lido pelo Winlogon ao montar a sessão.",
       "evidencia": "Chave clássica e bem documentada. Observação honesta: o firmware da placa-mãe também tem uma opção de Num Lock no boot, e ela pode sobrepor este ajuste.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Liga o Num Lock automaticamente assim que o Windows inicia.",
+      "beneficio": "O teclado numérico já funciona sem precisar apertar Num Lock manualmente.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Num Lock on startup",
+          "oQueFaz": "Turns on Num Lock automatically as soon as Windows starts.",
+          "beneficio": "The numeric keypad already works without pressing Num Lock manually.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2884,6 +3625,21 @@
       },
       "porque": "Ajusta WindowArrangementActive em Control Panel\\Desktop, o interruptor do Snap na área de trabalho.",
       "evidencia": "Mesma opção de Configurações, Sistema, Multitarefas. Preferência pura, sem impacto em desempenho.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Liga ou desliga o encaixe automático de janelas (Snap) ao arrastar para as bordas da tela.",
+      "beneficio": "Organiza janelas lado a lado mais rápido, ou evita o encaixe acidental para quem não usa.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Window snap",
+          "oQueFaz": "Turns automatic window snapping on or off when dragging windows to screen edges.",
+          "beneficio": "Arrange windows side by side faster, or avoid accidental snapping if you never use it.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2935,6 +3691,21 @@
       },
       "porque": "Define ACSettingIndex na política de energia de conectividade em standby, que decide se o rádio permanece associado durante o S0.",
       "evidencia": "É a política de energia documentada para conectividade em standby. O custo é direto: manter a rede ativa consome bateria durante a suspensão.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Controla se o Wi-Fi continua conectado durante a suspensão moderna (S0), para receber notificações mesmo com a tela desligada.",
+      "beneficio": "Ajusta o equilíbrio entre bateria e continuar recebendo mensagens/chamadas enquanto o PC \"dorme\".",
+      "atencao": "Manter a rede ativa durante a suspensão consome mais bateria em notebook.",
+      "i18n": {
+        "en": {
+          "nome": "Network during modern standby (S0)",
+          "oQueFaz": "Controls whether Wi-Fi stays connected during modern standby (S0), to keep receiving notifications with the screen off.",
+          "beneficio": "Adjusts the trade-off between battery life and still getting messages/calls while the PC \"sleeps\".",
+          "atencao": "Keeping the network active during standby uses more battery on a notebook."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -2974,11 +3745,11 @@
       "grupo": null,
       "reversivel": "total",
       "requerReboot": true,
-      "requerConsentimentoExtra": false,
+      "requerConsentimentoExtra": true,
       "consentimento": {
-        "titulo": null,
-        "tradeoff": null,
-        "frase": null
+        "titulo": "Suspensao S3 pode nao ser suportada corretamente pelo seu hardware",
+        "tradeoff": "Nem todo notebook/desktop sustenta S3 direito: Wi-Fi, USB ou o proprio despertar podem falhar. Reverter exige religar a suspensao moderna e reiniciar.",
+        "frase": "ACEITO FORCAR SUSPENSAO S3"
       },
       "condicoes": {
         "requer": [],
@@ -2988,6 +3759,21 @@
       },
       "porque": "Define PlatformAoAcOverride como 0, o que instrui o Windows a ignorar a suspensão moderna anunciada pelo firmware e usar o estado S3 do ACPI.",
       "evidencia": "Funciona apenas quando o firmware realmente oferece o S3; em plataformas modernas que só implementam S0, o resultado comum é a máquina não suspender ou não acordar. Por isso é TECNICO, alto risco e bloqueado em notebook.",
+      "modo": "ultimate",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Faz o Windows usar a suspensão clássica S3 (ACPI) em vez da suspensão moderna (S0), quando o hardware suporta as duas.",
+      "beneficio": "Em alguns notebooks, S3 consome muito menos bateria em standby do que a suspensão moderna.",
+      "atencao": "Alto risco: nem todo hardware sustenta S3 corretamente; drivers de Wi-Fi/USB podem não voltar direito ao acordar, e é uma mudança de baixo nível no firmware/ACPI.",
+      "i18n": {
+        "en": {
+          "nome": "S3 sleep instead of modern standby",
+          "oQueFaz": "Makes Windows use classic S3 (ACPI) sleep instead of modern standby (S0), when the hardware supports both.",
+          "beneficio": "On some notebooks, S3 uses far less battery in standby than modern standby.",
+          "atencao": "High risk: not all hardware handles S3 correctly; Wi-Fi/USB drivers may not resume properly, and this is a low-level firmware/ACPI change."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3039,6 +3825,21 @@
       },
       "porque": "Usa SettingsPageVisibility com show:home ou hide:home, o mecanismo oficial de visibilidade de páginas do aplicativo Configurações.",
       "evidencia": "É a mesma chave que administradores usam para esconder páginas inteiras das Configurações. Efeito imediato ao reabrir o aplicativo.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Escolhe se o app Configurações abre na página inicial ou direto na última seção usada.",
+      "beneficio": "Menos cliques para chegar onde você sempre vai nas Configurações.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Settings home page",
+          "oQueFaz": "Chooses whether the Settings app opens on the home page or straight into the last section used.",
+          "beneficio": "Fewer clicks to reach the section you always go to in Settings.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3090,6 +3891,21 @@
       },
       "porque": "Ajusta BingSearchEnabled na chave de Search do usuário, que decide se o termo digitado é enviado ao Bing além da busca local.",
       "evidencia": "Com a busca web desligada, o termo digitado deixa de sair da máquina, o que é verificável por captura de rede. A busca local por arquivos e aplicativos continua igual.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Impede que o que você digita no menu Iniciar seja enviado ao Bing para busca na web.",
+      "beneficio": "Busca fica local e mais rápida, sem depender de internet.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Bing web search in Start menu",
+          "oQueFaz": "Stops what you type in the Start menu from being sent to Bing for a web search.",
+          "beneficio": "Search stays local and faster, without depending on the internet.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3141,6 +3957,21 @@
       },
       "porque": "Ajusta DisableAcrylicBackgroundOnLogon nas políticas do sistema, que controla o efeito acrílico desenhado pelo Winlogon.",
       "evidencia": "É a política documentada para esse efeito. Em máquinas antigas, remover o desfoque deixa a tela de logon aparecer mais rápido; em hardware atual, é preferência visual.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Liga ou desliga o efeito de desfoque acrílico no fundo da tela de logon.",
+      "beneficio": "Visual mais moderno na tela de logon, ou mais leve se desligado.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Acrylic blur on logon screen",
+          "oQueFaz": "Turns the acrylic blur effect on the logon screen background on or off.",
+          "beneficio": "A more modern look on the logon screen, or lighter if turned off.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3192,6 +4023,21 @@
       },
       "porque": "Ativa NoLockScreen nas políticas de personalização, que faz o Windows pular a camada de tela de bloqueio.",
       "evidencia": "Política documentada, com efeito visível no próximo boot. Não remove a exigência de senha: apenas elimina o passo de dispensar a imagem.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Pula a camada de tela de bloqueio e vai direto para a tela de digitar a senha.",
+      "beneficio": "Um passo a menos para entrar no Windows.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Skip lock screen",
+          "oQueFaz": "Skips the lock screen layer and goes straight to the password entry screen.",
+          "beneficio": "One less step to get into Windows.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3243,6 +4089,21 @@
       },
       "porque": "Ajusta HideRecommendedSection no PolicyManager e nas políticas do Explorer, que é o caminho usado pelas edições Educação para esconder a seção.",
       "evidencia": "O efeito aparece após reiniciar o Explorer. O efeito colateral no Spotlight é conhecido e está declarado aqui de propósito: vem de a chave marcar a máquina como ambiente educacional.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Esconde a seção \"Recomendados\" (arquivos recentes e sugestões) do menu Iniciar.",
+      "beneficio": "Menu Iniciar mais curto e mais previsível.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Start menu Recommended section",
+          "oQueFaz": "Hides the \"Recommended\" section (recent files and suggestions) from the Start menu.",
+          "beneficio": "A shorter, more predictable Start menu.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3327,6 +4188,21 @@
       },
       "porque": "Ajusta a máscara de bits Flags em Accessibility\\StickyKeys, que controla ativação, atalho e som do recurso.",
       "evidencia": "É a mesma configuração da página de Acessibilidade, Teclado. Desligar evita o diálogo interrompendo jogos; quem depende do recurso não deve desativar.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Liga ou desliga as Teclas de Aderência (Sticky Keys), o recurso de acessibilidade que trava Shift/Ctrl/Alt.",
+      "beneficio": "Evita o pop-up de ativação por engano ao apertar Shift 5 vezes seguidas.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Sticky keys",
+          "oQueFaz": "Turns Sticky Keys, the accessibility feature that latches Shift/Ctrl/Alt, on or off.",
+          "beneficio": "Avoids the accidental activation pop-up when pressing Shift 5 times in a row.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3378,6 +4254,21 @@
       },
       "porque": "Ajusta TaskbarAl em Explorer\\Advanced e reinicia o Explorer para a barra ser redesenhada.",
       "evidencia": "Mesma opção de Configurações, Personalização, Barra de tarefas. Preferência pura.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Centraliza os ícones da barra de tarefas, no estilo do Windows 11.",
+      "beneficio": "Visual mais moderno; ou volta ao alinhamento à esquerda clássico.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Centered taskbar icons",
+          "oQueFaz": "Centers the taskbar icons, Windows 11 style.",
+          "beneficio": "A more modern look; or switches back to the classic left alignment.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3434,6 +4325,21 @@
       },
       "porque": "Ajusta SearchboxTaskbarMode na chave de Search, que define entre nenhum, ícone, caixa ou caixa com rótulo.",
       "evidencia": "Mesma opção de Configurações, Personalização, Barra de tarefas. Esconder libera espaço; o atalho de teclado continua funcionando.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Escolhe como o ícone de busca aparece na barra de tarefas: escondido, ícone, caixa ou caixa com texto.",
+      "beneficio": "Barra de tarefas mais enxuta se você já busca pelo atalho de teclado.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Taskbar search icon",
+          "oQueFaz": "Chooses how the search box appears on the taskbar: hidden, icon, box, or box with label.",
+          "beneficio": "A leaner taskbar if you already search using the keyboard shortcut.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3485,6 +4391,21 @@
       },
       "porque": "Ajusta ShowTaskViewButton em Explorer\\Advanced, o interruptor do botão na barra.",
       "evidencia": "Mesma opção de Configurações, Personalização, Barra de tarefas. Esconder o botão não desliga as áreas de trabalho virtuais.",
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia"
+      ],
+      "oQueFaz": "Mostra ou esconde o botão de Visão de Tarefas na barra de tarefas.",
+      "beneficio": "Um ícone a menos na barra, se você já usa o atalho Win+Tab.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Task View icon",
+          "oQueFaz": "Shows or hides the Task View button on the taskbar.",
+          "beneficio": "One less icon on the bar, if you already use the Win+Tab shortcut.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3536,6 +4457,22 @@
       },
       "porque": "Ajusta AllowAutoGameMode e AutoGameModeEnabled em Software\\Microsoft\\GameBar, as chaves do interruptor de Modo Jogo.",
       "evidencia": "Mesma opção de Configurações, Jogos. Os resultados relatados variam bastante por configuração: em algumas máquinas ajuda a estabilizar o frame time, em outras não muda nada perceptível. Por isso não prometemos número.",
+      "modo": "leve",
+      "categoriasV2": [
+        "desempenho",
+        "jogos"
+      ],
+      "oQueFaz": "Liga o Modo Jogo do Windows, que prioriza o jogo em primeiro plano e evita notificações durante a partida.",
+      "beneficio": "Menos interrupções e um pequeno empurrão de prioridade para o jogo enquanto você joga.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Game Mode",
+          "oQueFaz": "Turns on Windows Game Mode, which prioritizes the foreground game and avoids notifications during play.",
+          "beneficio": "Fewer interruptions and a small priority boost for the game while you play.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3601,6 +4538,21 @@
       },
       "porque": "Ativa LongPathsEnabled em Control\\FileSystem, que libera o limite MAX_PATH para aplicações com o manifesto adequado.",
       "evidencia": "Chave documentada pela Microsoft. Vale o alerta: programas antigos que não declaram suporte continuam limitados, então o problema pode persistir em parte das ferramentas.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Libera o limite antigo de 260 caracteres (MAX_PATH) para caminhos de arquivo em apps preparados para isso.",
+      "beneficio": "Evita erros de \"caminho muito longo\" ao copiar pastas com nomes profundos, comuns em projetos de código.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Long paths",
+          "oQueFaz": "Lifts the old 260-character (MAX_PATH) file path limit for apps that support it.",
+          "beneficio": "Avoids \"path too long\" errors when copying deeply nested folders, common in code projects.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3652,6 +4604,21 @@
       },
       "porque": "Abre apenas a URL oficial no navegador padrão. Por decisão de projeto, nunca baixamos nem executamos binários de terceiros em nome do usuário.",
       "evidencia": "O ShutUp10++ é uma ferramenta de privacidade conhecida e respeitada, mas é software de terceiro: baixar e rodar é uma decisão que cabe a você, com a verificação que julgar necessária.",
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade"
+      ],
+      "oQueFaz": "Abre a página oficial do O&O ShutUp10++, uma ferramenta de terceiros de privacidade, no navegador.",
+      "beneficio": "Acesso rápido à ferramenta sem sair do TweakMaxing.",
+      "atencao": "O TweakMaxing não baixa nem executa nada por você; a instalação e o uso da ferramenta são por sua conta.",
+      "i18n": {
+        "en": {
+          "nome": "O&O ShutUp10++ - open official site",
+          "oQueFaz": "Opens the official O&O ShutUp10++ page, a third-party privacy tool, in your browser.",
+          "beneficio": "Quick access to the tool without leaving TweakMaxing.",
+          "atencao": "TweakMaxing does not download or run anything for you; installing and using the tool is on you."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3810,6 +4777,21 @@
       },
       "porque": "Grava os endereços IPv4 e IPv6 do provedor escolhido nos adaptadores ativos com Set-DnsClientServerAddress, guardando os servidores anteriores de cada adaptador para a reversão.",
       "evidencia": "A latência de resolução depende da sua rota até o resolvedor, então o melhor provedor varia por região e operadora: não existe um vencedor universal. Provedores com filtro de malware ou conteúdo adulto bloqueiam domínios, o que é um recurso, não um defeito, mas pode gerar falso positivo.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "rede"
+      ],
+      "oQueFaz": "Troca o servidor DNS dos adaptadores de rede ativos pelo provedor escolhido (Cloudflare, Google etc).",
+      "beneficio": "Resolução de nomes de site geralmente mais rápida e, dependendo do provedor, com filtro de conteúdo malicioso.",
+      "atencao": "Alguns provedores de DNS aplicam filtros próprios (bloqueio de sites); confira se o escolhido atende ao que você precisa.",
+      "i18n": {
+        "en": {
+          "nome": "DNS server",
+          "oQueFaz": "Changes the DNS server on active network adapters to the chosen provider (Cloudflare, Google, etc).",
+          "beneficio": "Usually faster website name resolution and, depending on the provider, filtering of malicious content.",
+          "atencao": "Some DNS providers apply their own filters (site blocking); check that the one you pick fits what you need."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3848,6 +4830,21 @@
       },
       "porque": "Duplica o esquema Ultimate Performance embutido no Windows e o ativa, o que elimina o estacionamento de núcleos e as transições agressivas de estado de energia.",
       "evidencia": "O plano é oficial da Microsoft, criado para estações de trabalho. O efeito mais consistente é na variação de latência sob carga leve, não no desempenho de pico. Em notebook, o custo em autonomia e temperatura é imediato, por isso bloqueamos.",
+      "modo": "leve",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Cria e ativa o plano de energia Desempenho Máximo (Ultimate Performance), que evita estados de economia agressivos.",
+      "beneficio": "CPU responde mais rápido a picos de trabalho, útil para jogos e tarefas pesadas.",
+      "atencao": "Nenhuma em desktop; em notebook a condição do próprio ajuste impede a aplicação, porque aumenta consumo de bateria e temperatura.",
+      "i18n": {
+        "en": {
+          "nome": "Maximum performance power plan - enable",
+          "oQueFaz": "Creates and activates the Ultimate Performance power plan, which avoids aggressive power-saving states.",
+          "beneficio": "The CPU responds faster to bursts of work, useful for gaming and heavy tasks.",
+          "atencao": "None on desktop; on a notebook the tweak own condition blocks it from applying, since it increases battery use and heat."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -3888,6 +4885,21 @@
       },
       "porque": "Apaga com powercfg os esquemas duplicados de Desempenho Máximo depois de registrar os GUIDs, para que o desfazer possa recriá-los.",
       "evidencia": "A lista de esquemas é conferível com powercfg /list antes e depois. Recriar o plano é apenas duplicar o modelo embutido, então a reversão é completa.",
+      "modo": "leve",
+      "categoriasV2": [
+        "desempenho"
+      ],
+      "oQueFaz": "Remove os planos de energia Desempenho Máximo criados anteriormente pelo TweakMaxing.",
+      "beneficio": "Limpa a lista de planos de energia de volta ao padrão do Windows.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Maximum performance power plan - remove",
+          "oQueFaz": "Removes the Ultimate Performance power plans previously created by TweakMaxing.",
+          "beneficio": "Cleans the power plan list back to Windows default.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,

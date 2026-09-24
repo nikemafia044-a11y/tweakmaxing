@@ -154,6 +154,7 @@ try {
 
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
+    Close-TmxGuiWelcome
 
     $rp = Invoke-AB 'get' 'text' '#st-rp'
     Assert-Tmx -Nome 'a barra comeca sem ponto de restauracao' -Condicao ($rp -like '*Nenhum ponto*') -Detalhe "obtido: '$rp'"

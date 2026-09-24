@@ -149,8 +149,8 @@ Describe 'src/config catalogo combinado (Task 6 + Task 7)' -Tag 'Jogos' {
         @($ids | Group-Object | Where-Object { $_.Count -gt 1 } | ForEach-Object { $_.Name }) | Should -BeNullOrEmpty
     }
 
-    It 'tem os 47 tweaks JOG-*' {
-        @($script:CatalogoCombinado | Where-Object { "$($_.id)" -match '^JOG-\d{3}$' }).Count | Should -Be 47
+    It 'tem os 49 tweaks JOG-* (47 de tweaks.jogos.json + JOG-048/049 do v2)' {
+        @($script:CatalogoCombinado | Where-Object { "$($_.id)" -match '^JOG-\d{3}$' }).Count | Should -Be 49
     }
 
     It 'toda acao de tipo funcao referenciada por um tweak JOG-* tem o trio Set/Undo/Test carregado' {

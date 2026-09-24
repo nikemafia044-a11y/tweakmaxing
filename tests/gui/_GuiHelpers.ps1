@@ -210,6 +210,32 @@ function Wait-TmxGuiPage {
     throw "Nenhuma pagina '$UrlLike' apareceu na porta CDP $Port em $TimeoutSeconds s."
 }
 
+function Close-TmxGuiWelcome {
+    <#
+    .SYNOPSIS
+        Fecha a tela de boas-vindas (escolha de idioma) se ela estiver na tela.
+    .DESCRIPTION
+        Primeira abertura sem 'language' salvo (ou settings.get indisponivel,
+        ver src/web/i18n.js) mostra #welcome cobrindo a janela inteira -
+        qualquer clique em nav/sidebar por baixo dela "some" para o
+        agent-browser. Chamado logo apos 'connect' + 'wait', antes de
+        qualquer interacao de navegacao. Silencioso quando a tela nao existe
+        (idioma ja salvo de uma rodada anterior) ou quando o agent-browser
+        nao consegue checar - nesse caso o proprio teste de navegacao falha
+        com uma mensagem clara, em vez desta funcao mascarar o motivo.
+    #>
+    [CmdletBinding()]
+    param()
+    try {
+        $visivel = Invoke-AB 'is' 'visible' '#welcome'
+        if ("$visivel" -match 'true|visible|yes') {
+            Invoke-AB 'click' '#welcome-pt-br' | Out-Null
+        }
+    } catch {
+        Write-Verbose "Close-TmxGuiWelcome: $($_.Exception.Message)"
+    }
+}
+
 function Invoke-AB {
     <#
     .SYNOPSIS

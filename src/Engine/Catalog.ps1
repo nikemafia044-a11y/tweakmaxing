@@ -12,6 +12,14 @@ $script:TmxControles  = @('checkbox', 'toggle', 'combobox', 'button', 'info', 'r
 $script:TmxReversiveis = @('total', 'parcial', 'nenhuma')
 $script:TmxAcaoTipos  = @('registry', 'service', 'scheduledTask', 'appx', 'powercfg', 'netadapter', 'bcdedit', 'feature', 'funcao')
 
+# Task T2 (modos/catalogo v2): 'modo' e 'categoriasV2' sao opcionais no schema,
+# mas quando presentes precisam estar nesses conjuntos fechados. 'extras' e um
+# modo valido (item fora dos 4 presets cumulativos, so opt-in manual) mas NUNCA
+# vira um preset selecionavel em -Preset (ver Engine/Plan.ps1).
+$script:TmxModos         = @('leve', 'moderado', 'avancado', 'ultimate', 'extras')
+$script:TmxModosPreset   = @('leve', 'moderado', 'avancado', 'ultimate')
+$script:TmxCategoriasV2  = @('geral', 'aparencia', 'desempenho', 'privacidade', 'jogos', 'rede', 'gpu')
+
 function Get-TmxCatalog {
     <#
     .SYNOPSIS
@@ -207,6 +215,23 @@ function Test-TmxCatalog {
         }
         foreach ($campo in 'presets', 'reversivel', 'requerReboot', 'requerConsentimentoExtra', 'condicoes', 'controle', 'acoes') {
             if ($null -eq $t.PSObject.Properties[$campo]) { $erros.Add("$id`: campo '$campo' ausente") }
+        }
+
+        # Task T2: 'modo', 'categoriasV2' e 'i18n' sao opcionais - se ausentes ou
+        # null, nao ha erro. Se presentes, o formato/enum precisa ser valido.
+        if ($t.PSObject.Properties['modo'] -and $null -ne $t.modo) {
+            if ("$($t.modo)" -cnotin $script:TmxModos) { $erros.Add("$id`: modo invalido '$($t.modo)'") }
+        }
+        if ($t.PSObject.Properties['categoriasV2'] -and $null -ne $t.categoriasV2) {
+            foreach ($cv2 in @($t.categoriasV2)) {
+                if ("$cv2" -cnotin $script:TmxCategoriasV2) { $erros.Add("$id`: categoriasV2 invalido '$cv2'") }
+            }
+        }
+        if ($t.PSObject.Properties['i18n'] -and $null -ne $t.i18n -and $t.i18n.PSObject.Properties['en'] -and $null -ne $t.i18n.en) {
+            foreach ($campoEn in 'oQueFaz', 'beneficio', 'atencao') {
+                $propEn = $t.i18n.en.PSObject.Properties[$campoEn]
+                if ($null -ne $propEn -and -not "$($propEn.Value)") { $erros.Add("$id`: i18n.en.$campoEn vazio") }
+            }
         }
 
         # -cnotin (case-sensitive): os conjuntos fechados usam grafia exata (MEDIDO, nao

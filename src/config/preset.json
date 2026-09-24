@@ -1,5 +1,25 @@
 {
   "desktop":  { "nome": "Desktop",  "descricao": "PC de mesa: privacidade, desempenho e limpeza, incluindo plano de energia." },
   "notebook": { "nome": "Notebook", "descricao": "Igual ao Desktop, sem planos de energia e sem itens que prejudicam bateria ou temperatura." },
-  "minimo":   { "nome": "Mínimo",   "descricao": "Só o essencial de privacidade: telemetria, recursos de consumidor e WPBT." }
+  "minimo":   { "nome": "Mínimo",   "descricao": "Só o essencial de privacidade: telemetria, recursos de consumidor e WPBT." },
+  "leve": {
+    "nome": "Leve",
+    "descricao": "O primeiro passo: ajustes de conforto, privacidade e precisão com risco muito baixo, seguros para qualquer PC.",
+    "i18n": { "en": { "nome": "Light", "descricao": "The first step: comfort, privacy and precision tweaks with very low risk, safe for any PC." } }
+  },
+  "moderado": {
+    "nome": "Moderado",
+    "descricao": "Leve mais os ajustes de desempenho de baixo risco: rede, prioridade de CPU, HAGS, jogos em janela e apps em segundo plano.",
+    "i18n": { "en": { "nome": "Moderate", "descricao": "Light plus low-risk performance tweaks: network, CPU priority, HAGS, windowed games and background apps." } }
+  },
+  "avancado": {
+    "nome": "Avançado",
+    "descricao": "Moderado mais uma limpeza mais profunda de risco médio: serviços, bloatware, OneDrive, Copilot/Windows AI e inicialização rápida.",
+    "i18n": { "en": { "nome": "Advanced", "descricao": "Moderate plus a deeper medium-risk cleanup: services, bloatware, OneDrive, Copilot/Windows AI and fast startup." } }
+  },
+  "ultimate": {
+    "nome": "Ultimate",
+    "descricao": "Avançado mais trocas de segurança por desempenho de risco alto (como VBS/HVCI), sempre com confirmação separada.",
+    "i18n": { "en": { "nome": "Ultimate", "descricao": "Advanced plus high-risk security-for-speed trades (like VBS/HVCI), always with a separate confirmation." } }
+  }
 }

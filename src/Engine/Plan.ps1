@@ -16,10 +16,32 @@
 #   foraDoPreset - preset atual nao inclui o tweak (ou preset notebook excluindo
 #                  algo cujo bloqueiaSe e verdadeiro contra um perfil sintetico de
 #                  notebook, mesmo fora de um notebook real - ver Test-TmxNotebookBloqueiaSeIsLaptop)
-#   opcional     - elegivel mas presets = [] (opt-in explicito do usuario por ID)
+#   opcional     - elegivel mas presets = [] (opt-in explicito do usuario por ID), ou
+#                  (presets por modo, Task T2) tweak sem 'modo' automatico (ausente ou
+#                  'extras': entra so por ID, nunca num modo)
 #   planejado    - elegivel para o preset atual e selecionado
+#
+# Presets por modo (Task T2, catalogo v2): 'leve', 'moderado', 'avancado' e 'ultimate'
+# sao presets CUMULATIVOS (leve C moderado C avancado C ultimate), resolvidos pelo campo
+# 'modo' do tweak em vez do array 'presets[]' usado pelos presets antigos (desktop/
+# notebook/minimo, que continuam funcionando exatamente como antes). 'extras' NUNCA e
+# um preset selecionavel: um tweak com modo 'extras' (ou sem 'modo') fica 'opcional' em
+# qualquer preset de modo, disponivel so por selecao manual do ID.
 
 $script:TmxPresetNomes = @('desktop', 'notebook', 'minimo')
+$script:TmxModoOrdem   = @('leve', 'moderado', 'avancado', 'ultimate')
+
+function Get-TmxModoCumulativo {
+    <#
+    .SYNOPSIS
+        Devolve os modos incluidos num preset de modo cumulativo (ex.: 'avancado'
+        -> leve, moderado, avancado). Array vazio se $Modo nao for um modo valido.
+    #>
+    param([string] $Modo)
+    $idx = [array]::IndexOf($script:TmxModoOrdem, $Modo)
+    if ($idx -lt 0) { return @() }
+    , ($script:TmxModoOrdem[0..$idx])
+}
 
 function Get-TmxPresets {
     <#
@@ -74,10 +96,13 @@ function Resolve-TmxPlan {
     param(
         [Parameter(Mandatory)] $Catalog,
         [Parameter(Mandatory)] $Profile,
-        [ValidateSet('desktop', 'notebook', 'minimo')]
+        [ValidateSet('desktop', 'notebook', 'minimo', 'leve', 'moderado', 'avancado', 'ultimate')]
         [string] $Preset = 'desktop',
         [switch] $IncludeState
     )
+
+    $ehPresetDeModo = $Preset -in $script:TmxModoOrdem
+    $modosCumulativos = if ($ehPresetDeModo) { Get-TmxModoCumulativo -Modo $Preset } else { @() }
 
     $temTestAplicado = [bool]($IncludeState -and (Get-Command -Name 'Test-TmxTweakApplied' -ErrorAction SilentlyContinue))
 
@@ -190,22 +215,44 @@ function Resolve-TmxPlan {
         }
 
         # 5. Presets e tier.
-        $presetsDoTweak = @($t.presets)
-        if ($presetsDoTweak.Count -eq 0) {
-            $item.status = 'opcional'
-            $item.alternavel = $true
-            $motivos.Add('nao entra em preset automatico; ative por ID se quiser')
-            $item.motivos = $motivos.ToArray()
-            if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
-            $itens.Add($item); continue
-        }
-        if ($Preset -notin $presetsDoTweak) {
-            $item.status = 'foraDoPreset'
-            $item.alternavel = $true
-            $motivos.Add("fora do preset '$Preset' (disponivel em: $($presetsDoTweak -join ', '))")
-            $item.motivos = $motivos.ToArray()
-            # -IncludeState nao chama Test-TmxTweakApplied para foraDoPreset (ver item 4).
-            $itens.Add($item); continue
+        if ($ehPresetDeModo) {
+            # Presets por modo (Task T2): cumulativo via campo 'modo', nao 'presets[]'.
+            # Sem 'modo' (ausente/null) ou modo 'extras': nunca entra automaticamente
+            # num modo, so por selecao manual do ID (mesmo tratamento de presets=[]).
+            $modoDoTweak = "$($t.modo)"
+            if (-not $modoDoTweak -or $modoDoTweak -cnotin $script:TmxModoOrdem) {
+                $item.status = 'opcional'
+                $item.alternavel = $true
+                $motivos.Add("nao entra em modo automatico (modo '$modoDoTweak'); ative por ID se quiser")
+                $item.motivos = $motivos.ToArray()
+                if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
+                $itens.Add($item); continue
+            }
+            if ($modoDoTweak -cnotin $modosCumulativos) {
+                $item.status = 'foraDoPreset'
+                $item.alternavel = $true
+                $motivos.Add("fora do preset '$Preset' (modo do tweak: '$modoDoTweak')")
+                $item.motivos = $motivos.ToArray()
+                $itens.Add($item); continue
+            }
+        } else {
+            $presetsDoTweak = @($t.presets)
+            if ($presetsDoTweak.Count -eq 0) {
+                $item.status = 'opcional'
+                $item.alternavel = $true
+                $motivos.Add('nao entra em preset automatico; ative por ID se quiser')
+                $item.motivos = $motivos.ToArray()
+                if ($temTestAplicado) { $item.estadoAtual = (Test-TmxTweakApplied -Tweak $t -Profile $Profile).aplicado }
+                $itens.Add($item); continue
+            }
+            if ($Preset -notin $presetsDoTweak) {
+                $item.status = 'foraDoPreset'
+                $item.alternavel = $true
+                $motivos.Add("fora do preset '$Preset' (disponivel em: $($presetsDoTweak -join ', '))")
+                $item.motivos = $motivos.ToArray()
+                # -IncludeState nao chama Test-TmxTweakApplied para foraDoPreset (ver item 4).
+                $itens.Add($item); continue
+            }
         }
 
         $item.status = 'planejado'

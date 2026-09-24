@@ -391,7 +391,7 @@ Describe 'Compile.ps1' -Tag 'Compile' {
 
             $r.estourou | Should -BeFalse
             $r.texto | Should -Match 'UI=True' -Because "saida:`n$($r.texto)"
-            $r.texto | Should -Match 'CONFIGS=8' -Because "saida:`n$($r.texto)"
+            $r.texto | Should -Match 'CONFIGS=9' -Because "saida:`n$($r.texto)"
             $m = [regex]::Match($r.texto, 'FUNCOES=(\d+)')
             $m.Success | Should -BeTrue -Because "saida:`n$($r.texto)"
             ([int]$m.Groups[1].Value) | Should -BeGreaterThan 100 -Because "saida:`n$($r.texto)"

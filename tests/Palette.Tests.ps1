@@ -6,9 +6,8 @@
 #      cai na faixa de azul (matiz 190-260 com saturacao > 25%) - a marca
 #      antiga usava azul e a task pede a substituicao completa por tokens.
 #   2. app.css define --active, --active-hover, --active-fg e --elevated
-#      tanto no tema escuro (:root) quanto no tema claro
-#      (@media prefers-color-scheme: light).
-#   3. contraste WCAG >= 4.5:1 nos dois temas para os pares de texto/fundo
+#      no unico tema (escuro, :root); o tema claro nao existe mais (v2).
+#   3. contraste WCAG >= 4.5:1 para os pares de texto/fundo
 #      que a casca usa de verdade.
 #
 # So le CSS/JS/HTML como texto: nao depende do modulo TweakMaxing nem de
@@ -148,22 +147,27 @@ Describe 'Paleta visual' -Tag 'Palette' {
             foreach ($m in [regex]::Matches($BlockText, '--([a-zA-Z0-9-]+)\s*:\s*([^;]+);')) {
                 $vars[$m.Groups[1].Value] = $m.Groups[2].Value.Trim()
             }
+            # v2: tokens semanticos sao apelidos ('--fg: var(--text-primary)').
+            # Resolve a cadeia ate chegar numa cor literal.
+            foreach ($k in @($vars.Keys)) {
+                $v = $vars[$k]
+                $passos = 0
+                while ($v -match '^var\(--([a-zA-Z0-9-]+)\)$' -and $vars.ContainsKey($Matches[1]) -and $passos -lt 10) {
+                    $v = $vars[$Matches[1]]
+                    $passos++
+                }
+                $vars[$k] = $v
+            }
             $vars
         }
 
-        # ':root { ... }' aparece duas vezes no texto de app.css: a primeira,
-        # solta, e o tema escuro; a segunda, dentro do bloco
-        # '@media (prefers-color-scheme: light)', e o tema claro. Como as
-        # declaracoes de variavel nao tem chaves aninhadas, o regex simples
-        # '[^{}]*' basta para separar as duas sem precisar entender @media.
+        # v2 (spec secao 1): so existe o tema escuro, num unico ':root'.
         $script:TextoAppCss = Get-Content -LiteralPath $script:AppCss -Raw -Encoding UTF8
         $script:BlocosRoot  = @([regex]::Matches($script:TextoAppCss, ':root\s*\{([^{}]*)\}') |
             ForEach-Object { $_.Groups[1].Value })
 
         $script:Dark  = @{}
-        $script:Light = @{}
         if ($script:BlocosRoot.Count -ge 1) { $script:Dark  = script:Get-TmxCssVars -BlockText $script:BlocosRoot[0] }
-        if ($script:BlocosRoot.Count -ge 2) { $script:Light = script:Get-TmxCssVars -BlockText $script:BlocosRoot[1] }
 
         $script:Arquivos = @(Get-ChildItem -LiteralPath $script:WebDir -Recurse -File |
             Where-Object { $_.Extension -in '.css', '.js', '.html' })
@@ -200,10 +204,9 @@ Describe 'Paleta visual' -Tag 'Palette' {
             }
         }
 
-        It 'define --active, --active-hover, --active-fg e --elevated no tema claro' {
-            foreach ($nome in 'active', 'active-hover', 'active-fg', 'elevated') {
-                $script:Light.ContainsKey($nome) | Should -BeTrue -Because "falta --$nome no tema claro"
-            }
+        It 'nao existe tema claro (spec v2 secao 1: so tema escuro)' {
+            $script:TextoAppCss | Should -Not -Match 'prefers-color-scheme\s*:\s*light'
+            $script:BlocosRoot.Count | Should -Be 1
         }
     }
 
@@ -224,13 +227,6 @@ Describe 'Paleta visual' -Tag 'Palette' {
             $script:Dark.ContainsKey($Fg) | Should -BeTrue -Because "--$Fg nao existe no tema escuro"
             $script:Dark.ContainsKey($Bg) | Should -BeTrue -Because "--$Bg nao existe no tema escuro"
             $c = script:Get-TmxContraste -HexA $script:Dark[$Fg] -HexB $script:Dark[$Bg]
-            $c | Should -BeGreaterOrEqual 4.5 -Because "obtido: $([Math]::Round($c, 2)):1"
-        }
-
-        It 'tema claro: <Fg> sobre <Bg>' -ForEach $paresContraste {
-            $script:Light.ContainsKey($Fg) | Should -BeTrue -Because "--$Fg nao existe no tema claro"
-            $script:Light.ContainsKey($Bg) | Should -BeTrue -Because "--$Bg nao existe no tema claro"
-            $c = script:Get-TmxContraste -HexA $script:Light[$Fg] -HexB $script:Light[$Bg]
             $c | Should -BeGreaterOrEqual 4.5 -Because "obtido: $([Math]::Round($c, 2)):1"
         }
     }

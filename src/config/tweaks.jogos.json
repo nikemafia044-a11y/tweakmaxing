@@ -36,6 +36,22 @@
       },
       "porque": "Remove os estados de economia que atrasam a subida de clock e a resposta a interrupcoes.",
       "evidencia": "Efeito reprodutivel em frametime 1% low e em latencia de DPC sob carga variavel. Ganho nao quantificado em FPS medio.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Duplicado do plano de energia Desempenho Máximo do catálogo geral (ENE-004); ativa o mesmo plano Ultimate Performance aqui, dentro de Jogos.",
+      "beneficio": "CPU responde mais rápido a picos de trabalho durante a partida.",
+      "atencao": "Fica em Extras porque o mesmo ajuste já está no modo Leve como ENE-004, evitando aplicar a mesma mudança duas vezes por caminhos diferentes; em notebook não é aplicado.",
+      "i18n": {
+        "en": {
+          "nome": "Enable maximum performance power plan (Ultimate Performance)",
+          "oQueFaz": "Duplicate of the general catalog maximum performance power plan (ENE-004); activates the same Ultimate Performance plan here, under Games.",
+          "beneficio": "The CPU responds faster to bursts of work during a match.",
+          "atencao": "Stays in Extras because the same tweak already lives in the Light mode as ENE-004, avoiding applying the same change twice through different paths; not applied on a notebook."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -81,6 +97,22 @@
       },
       "porque": "Evita que o CPU desca para P-states baixos entre frames e precise subir de novo a cada rajada de trabalho.",
       "evidencia": "Reduz variancia de frametime em medicao; efeito em FPS medio pequeno. Ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Impede que o processador desça para estados de economia (P-states baixos) entre um quadro e outro.",
+      "beneficio": "Menos micro-engasgos causados pela CPU precisando \"acordar\" a cada pico de trabalho do jogo.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Minimum processor state at 100%",
+          "oQueFaz": "Stops the processor from dropping into low power states (P-states) between frames.",
+          "beneficio": "Fewer micro-stutters caused by the CPU having to \"wake up\" for every burst of game work.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -126,6 +158,22 @@
       },
       "porque": "ASPM coloca links PCIe (GPU, NVMe, placa de rede) em estados de baixa energia; sair deles custa microssegundos a cada vez.",
       "evidencia": "Latencia de saida de L1 e mensuravel e documentada pela especificacao PCIe. Impacto em jogo depende do hardware; ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Impede que os links PCI Express (GPU, SSD NVMe, placa de rede) entrem em estados de baixa energia (ASPM).",
+      "beneficio": "Evita os microssegundos de atraso gastos para sair desses estados de economia toda vez que o componente é usado.",
+      "atencao": "Consumo de energia um pouco maior, mais perceptível em notebook.",
+      "i18n": {
+        "en": {
+          "nome": "PCI Express Link State Power Management off",
+          "oQueFaz": "Stops PCI Express links (GPU, NVMe SSD, network card) from entering low-power states (ASPM).",
+          "beneficio": "Avoids the microsecond delays spent leaving those power-saving states every time the component is used.",
+          "atencao": "Slightly higher power consumption, more noticeable on a notebook."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -171,6 +219,22 @@
       },
       "porque": "A suspensao seletiva pode introduzir latencia ao religar a porta do mouse apos periodos de inatividade.",
       "evidencia": "Efeito observavel em medicao de polling rate apos idle. Ganho nao quantificado em FPS.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga a suspensão seletiva de USB, que pode colocar portas USB em baixa energia quando ociosas.",
+      "beneficio": "Mouse e teclado respondem sem o pequeno atraso de \"acordar\" a porta USB.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "USB selective suspend - disable",
+          "oQueFaz": "Disables USB selective suspend, which can put idle USB ports into low power.",
+          "beneficio": "Mouse and keyboard respond without the small delay of \"waking up\" the USB port.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -217,6 +281,22 @@
       },
       "porque": "Impede o agendador de estacionar nucleos, evitando a latencia de despertar quando o jogo espalha threads.",
       "evidencia": "Mecanismo documentado; em CPUs modernos o Windows ja estaciona pouco. Ganho pequeno e dependente do hardware, nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Impede que o Windows estacione núcleos de CPU ociosos, mantendo todos prontos para uso.",
+      "beneficio": "Evita a latência de \"despertar\" um núcleo parado quando o jogo espalha trabalho entre várias threads.",
+      "atencao": "Consumo de energia um pouco maior em momentos de baixa carga.",
+      "i18n": {
+        "en": {
+          "nome": "Core parking - disable (minimum cores at 100%)",
+          "oQueFaz": "Stops Windows from parking idle CPU cores, keeping all of them ready for use.",
+          "beneficio": "Avoids the latency of \"waking up\" a parked core when the game spreads work across several threads.",
+          "atencao": "Slightly higher power consumption during low-load moments."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -261,6 +341,22 @@
       },
       "porque": "Nao e latencia: com hiberboot o kernel e os drivers nao reiniciam de verdade, e estados obsoletos sobrevivem ao 'desligar'.",
       "evidencia": "Comportamento documentado do hiberboot. Nenhum efeito em FPS; o beneficio e diagnostico e consistencia.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga a Inicialização Rápida (hiberboot), que faz o Windows \"hibernar\" o kernel em vez de reiniciar de verdade ao desligar.",
+      "beneficio": "O sistema começa cada sessão realmente limpo, sem estados obsoletos de drivers sobrevivendo entre desligamentos.",
+      "atencao": "O computador demora alguns segundos a mais para ligar, já que faz uma inicialização completa de verdade.",
+      "i18n": {
+        "en": {
+          "nome": "Fast Startup (hiberboot) - disable",
+          "oQueFaz": "Disables Fast Startup (hiberboot), which makes Windows \"hibernate\" the kernel instead of truly restarting on shutdown.",
+          "beneficio": "Every session starts genuinely clean, without stale driver state surviving between shutdowns.",
+          "atencao": "The computer takes a few extra seconds to boot, since it does a real full startup."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -308,6 +404,22 @@
       },
       "porque": "Com o gerenciamento de energia ativo a placa pode entrar em estado de baixa energia e perder pacotes ao acordar.",
       "evidencia": "Perda/atraso de pacotes apos idle e reprodutivel em captura. Ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Impede que o Windows desligue o adaptador de rede para economizar energia.",
+      "beneficio": "Evita perda de pacotes e picos de latência ao \"acordar\" a placa de rede.",
+      "atencao": "Consumo de energia um pouco maior, mais perceptível em notebook.",
+      "i18n": {
+        "en": {
+          "nome": "Network adapter - do not allow Windows to turn off the device",
+          "oQueFaz": "Stops Windows from powering down the network adapter to save energy.",
+          "beneficio": "Avoids packet loss and latency spikes from waking the network card back up.",
+          "atencao": "Slightly higher power consumption, more noticeable on a notebook."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -350,6 +462,22 @@
       },
       "porque": "Quantum curto com boost fixo para o processo em primeiro plano reduz o tempo que o jogo espera por CPU.",
       "evidencia": "Mecanismo documentado do agendador. Diferenca medida e pequena em CPUs com folga; nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Ajusta o Win32PrioritySeparation para um quantum curto de CPU com prioridade 3:1 para o programa em primeiro plano.",
+      "beneficio": "O jogo em foco recebe mais fatias de tempo de CPU, reduzindo a espera por processamento.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Win32PrioritySeparation = 0x26 (short quantum, 3:1 foreground)",
+          "oQueFaz": "Sets Win32PrioritySeparation to a short CPU quantum with 3:1 priority for the foreground program.",
+          "beneficio": "The focused game gets more CPU time slices, reducing how long it waits for processing.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -398,6 +526,22 @@
       },
       "porque": "Com VBS o Windows roda sobre o Hyper-V; cada transicao de privilegio e cada acesso a memoria custam mais. HVCI adiciona verificacao de codigo em kernel.",
       "evidencia": "Diferenca reprodutivel em benchmarks e em 1% low, maior em CPUs mais antigos. Custo real de seguranca: protecao contra drivers maliciosos e roubo de credenciais e reduzida.",
+      "modo": "ultimate",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga a Segurança Baseada em Virtualização (VBS) e a Integridade de Memória (HVCI).",
+      "beneficio": "Remove a camada extra de virtualização que o Windows usa para isolar processos, o que pode reduzir overhead de CPU em jogos sensíveis a isso.",
+      "atencao": "Alto risco: é uma troca de segurança por desempenho. VBS/HVCI protegem contra certas classes de malware que atacam o kernel; desligar reduz essa proteção. Exige confirmação separada.",
+      "i18n": {
+        "en": {
+          "nome": "Disable VBS / HVCI (Memory Integrity)",
+          "oQueFaz": "Disables Virtualization Based Security (VBS) and Memory Integrity (HVCI).",
+          "beneficio": "Removes the extra virtualization layer Windows uses to isolate processes, which can reduce CPU overhead in games sensitive to it.",
+          "atencao": "High risk: this trades security for performance. VBS/HVCI protect against certain classes of kernel-level malware; disabling them reduces that protection. Requires separate confirmation."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -453,6 +597,22 @@
       },
       "porque": "Erro comum: marcar 'Numero de processadores' no msconfig limita o CPU permanentemente. O correto e nao ter a opcao.",
       "evidencia": "Com numproc menor que o total de threads, a perda e direta e reprodutivel.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Remove o limite de \"Número de processadores\" que pode ter ficado marcado por engano na configuração de inicialização do sistema (msconfig).",
+      "beneficio": "Corrige um erro comum que trava o PC usando só parte dos núcleos da CPU permanentemente.",
+      "atencao": "Nenhuma; é uma correção, não uma redução de recursos.",
+      "i18n": {
+        "en": {
+          "nome": "Fix msconfig core limit (remove numproc)",
+          "oQueFaz": "Removes the \"Number of processors\" limit that can have been accidentally checked in the system boot configuration (msconfig).",
+          "beneficio": "Fixes a common mistake that permanently locks the PC to using only part of the CPU cores.",
+          "atencao": "None; this is a correction, not a resource cutback."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -499,6 +659,22 @@
       },
       "porque": "Forcar HPET e folclore prejudicial: o HPET e mais lento de ler que o TSC invariante que o Windows ja escolhe sozinho.",
       "evidencia": "Custo de leitura do HPET vs TSC e mensuravel (centenas de ns vs dezenas). Remover a opcao devolve o padrao.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Remove a imposição manual do HPET como relógio de plataforma, deixando o Windows escolher o TSC invariante sozinho.",
+      "beneficio": "O Windows volta a usar o relógio mais rápido de ler que ele já escolhe por padrão em hardware moderno.",
+      "atencao": "Nenhuma; é uma correção de uma configuração forçada antiga, não uma redução.",
+      "i18n": {
+        "en": {
+          "nome": "Remove forced useplatformclock (let Windows pick the TSC)",
+          "oQueFaz": "Removes the manual override forcing HPET as the platform clock, letting Windows pick the invariant TSC on its own.",
+          "beneficio": "Windows goes back to using the clock that is faster to read, which it already picks by default on modern hardware.",
+          "atencao": "None; this undoes an old forced setting, it does not take anything away."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -545,6 +721,22 @@
       },
       "porque": "Mantem o tick do timer constante em vez de deixa-lo parar em idle; timers ficam mais previsiveis.",
       "evidencia": "Mecanismo documentado. Medir antes/depois com o bench de jitter; ganho nao quantificado e possivelmente nulo.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Mantém o tick do timer do sistema constante, em vez de deixá-lo parar durante períodos ociosos.",
+      "beneficio": "Timers ficam mais previsíveis, o que ajuda jogos sensíveis a precisão de tempo.",
+      "atencao": "Consumo de energia levemente maior, já que o timer nunca \"descansa\".",
+      "i18n": {
+        "en": {
+          "nome": "disabledynamictick yes",
+          "oQueFaz": "Keeps the system timer tick constant instead of letting it pause during idle periods.",
+          "beneficio": "Timers become more predictable, which helps games sensitive to timing precision.",
+          "atencao": "Slightly higher power consumption, since the timer never \"rests\"."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -591,6 +783,23 @@
       },
       "porque": "Interrupcoes por mensagem (MSI) evitam o compartilhamento de linhas IRQ; prioridade alta reduz a espera da interrupcao da GPU.",
       "evidencia": "GPUs modernas ja usam MSI por padrao; o ganho e a prioridade, e e pequeno. So aplicado se o driver declara suporte (chave MessageSignaledInterruptProperties); backup .reg obrigatorio da chave do dispositivo.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "jogos",
+        "gpu",
+        "desempenho"
+      ],
+      "oQueFaz": "Liga o modo de interrupção por mensagem (MSI) e a prioridade alta de dispositivo para a GPU.",
+      "beneficio": "A GPU evita disputar a mesma linha de interrupção com outros dispositivos e é atendida mais rápido.",
+      "atencao": "É um ajuste de baixo nível de driver; em hardware/driver incompatível pode causar instabilidade, por isso fica no Avançado.",
+      "i18n": {
+        "en": {
+          "nome": "MSI mode + high device priority for the GPU",
+          "oQueFaz": "Turns on Message Signaled Interrupts (MSI) mode and high device priority for the GPU.",
+          "beneficio": "The GPU avoids sharing an interrupt line with other devices and gets serviced faster.",
+          "atencao": "This is a low-level driver setting; on incompatible hardware/drivers it can cause instability, which is why it stays in Advanced."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -634,6 +843,22 @@
       },
       "porque": "A gravacao em segundo plano mantem um encoder ativo e um hook de captura no jogo.",
       "evidencia": "Diferenca reprodutivel em 1% low quando a gravacao esta ativa. Ganho nao quantificado com ela ja desligada.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Desliga o Game DVR e a gravação em segundo plano do Xbox Game Bar.",
+      "beneficio": "Libera a GPU e a CPU que ficavam ocupadas com o encoder de gravação sempre ativo.",
+      "atencao": "A gravação automática de \"últimos minutos\" deixa de funcionar.",
+      "i18n": {
+        "en": {
+          "nome": "Disable Game DVR and background recording",
+          "oQueFaz": "Turns off Game DVR and Xbox Game Bar background recording.",
+          "beneficio": "Frees up the GPU and CPU that were kept busy by an always-on recording encoder.",
+          "atencao": "The automatic \"capture the last few minutes\" recording stops working."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -697,6 +922,22 @@
       },
       "porque": "Reflex funciona melhor com o agendamento de GPU acelerado por hardware; desligar HAGS aqui e o folclore do passado.",
       "evidencia": "Latencia de sistema medida com Reflex e menor com HAGS ligado em drivers recentes. Ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Liga o Agendamento de GPU Acelerado por Hardware (HAGS), recomendado para placas NVIDIA com driver recente e Reflex.",
+      "beneficio": "Reduz a fila de comandos entre CPU e GPU, ajudando tecnologias como o NVIDIA Reflex a funcionar melhor.",
+      "atencao": "Nenhuma em hardware/driver recente; se notar instabilidade, use o item HAGS desligado (JOG-016) em vez deste.",
+      "i18n": {
+        "en": {
+          "nome": "HAGS on (NVIDIA with Reflex and recent driver)",
+          "oQueFaz": "Turns on Hardware-Accelerated GPU Scheduling (HAGS), recommended for NVIDIA cards with a recent driver and Reflex.",
+          "beneficio": "Shortens the command queue between CPU and GPU, helping technologies like NVIDIA Reflex work better.",
+          "atencao": "None on recent hardware/drivers; if you notice instability, use the HAGS off item (JOG-016) instead of this one."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -745,6 +986,22 @@
       },
       "porque": "Drivers antigos tiveram regressoes de stutter com HAGS ligado; a solucao certa e atualizar o driver, esta e a paliativa.",
       "evidencia": "Regressoes documentadas em drivers 2020-2021. Atualizar o driver e a recomendacao principal do guia.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Desliga o Agendamento de GPU Acelerado por Hardware (HAGS), paliativo para drivers antigos com stutter.",
+      "beneficio": "Evita regressões de stutter conhecidas em combinações de driver mais antigas.",
+      "atencao": "É uma correção paliativa para hardware específico, contrária à recomendação padrão (JOG-015 liga HAGS); por isso fica em Extras, use só se identificar o problema.",
+      "i18n": {
+        "en": {
+          "nome": "HAGS off (older driver)",
+          "oQueFaz": "Turns off Hardware-Accelerated GPU Scheduling (HAGS), a workaround for older drivers with stutter.",
+          "beneficio": "Avoids known stutter regressions on older driver combinations.",
+          "atencao": "This is a workaround for specific hardware, opposite to the default recommendation (JOG-015 turns HAGS on); stays in Extras, use only if you have identified the problem."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -788,6 +1045,22 @@
       },
       "porque": "Multi-Plane Overlay causou stutter e flicker em algumas combinacoes NVIDIA + monitor; desligar e um paliativo, nao uma otimizacao.",
       "evidencia": "Relatos consistentes e reconhecimento da NVIDIA. So faz sentido se voce ve stutter/flicker; por isso nao entra em preset.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Desliga o Multi-Plane Overlay (MPO) via OverlayTestMode, paliativo para stutter/flicker em certas combinações NVIDIA + monitor.",
+      "beneficio": "Corrige flicker e stutter em telas afetadas pelo problema conhecido de MPO.",
+      "atencao": "É um paliativo para um problema específico de hardware, não uma otimização geral; por isso fica em Extras.",
+      "i18n": {
+        "en": {
+          "nome": "Disable MPO (OverlayTestMode=5)",
+          "oQueFaz": "Disables Multi-Plane Overlay (MPO) via OverlayTestMode, a workaround for stutter/flicker on certain NVIDIA + monitor combinations.",
+          "beneficio": "Fixes flicker and stutter on displays affected by the known MPO issue.",
+          "atencao": "This is a workaround for a specific hardware problem, not a general optimization, which is why it stays in Extras."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -835,6 +1108,22 @@
       },
       "porque": "No Windows 11 moderno, FSO habilita o flip model e e o que permite Reflex e VRR funcionarem em tela cheia. Desativar 'por garantia' e contraproducente.",
       "evidencia": "Documentacao do DXGI flip model; medicoes com PresentMon mostram modo de apresentacao pior com FSO desligado em Win11.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Guia informativo sobre Otimizações de Tela Cheia (FSO) para o CS2: explica por que, no Windows 11 moderno, é melhor deixar ligado.",
+      "beneficio": "Entender antes de mexer evita desligar algo que hoje ajuda o Reflex e o VRR funcionarem em tela cheia.",
+      "atencao": "É só um guia (controle informativo), não altera nada sozinho; fica em Extras porque não é um item que se \"aplica\".",
+      "i18n": {
+        "en": {
+          "nome": "Fullscreen Optimizations (FSO) for cs2.exe: understand before touching",
+          "oQueFaz": "An informational guide about Fullscreen Optimizations (FSO) for CS2: explains why, on modern Windows 11, it is best left on.",
+          "beneficio": "Understanding it first avoids turning off something that today helps Reflex and VRR work in fullscreen.",
+          "atencao": "This is just a guide (informational control), it changes nothing on its own; stays in Extras since it is not an item you \"apply\"."
+        }
+      },
       "folclore": null,
       "instrucoes": "Nao desative 'Otimizacoes de tela cheia' nas propriedades do cs2.exe. Se ja desativou (aba Compatibilidade), reative. Verifique com PresentMon que o modo de apresentacao e 'Hardware: Independent Flip'.",
       "posAplicar": null,
@@ -873,6 +1162,22 @@
       },
       "porque": "A moderacao agrupa interrupcoes para poupar CPU; cada pacote espera pelo grupo. Desligar troca CPU por latencia.",
       "evidencia": "Diferenca em latencia de recepcao e mensuravel com captura; custo de CPU tambem. Ganho nao quantificado em jogo.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Desliga a Moderação de Interrupções no adaptador Ethernet, que agrupa interrupções de rede para economizar CPU.",
+      "beneficio": "Cada pacote é processado assim que chega, em vez de esperar o grupo se formar, reduzindo latência.",
+      "atencao": "Uso de CPU um pouco maior sob tráfego intenso.",
+      "i18n": {
+        "en": {
+          "nome": "Interrupt Moderation off on the Ethernet adapter",
+          "oQueFaz": "Disables Interrupt Moderation on the Ethernet adapter, which groups network interrupts to save CPU.",
+          "beneficio": "Each packet is processed as soon as it arrives, instead of waiting for the group to form, reducing latency.",
+          "atencao": "Slightly higher CPU usage under heavy traffic."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -922,6 +1227,22 @@
       },
       "porque": "EEE coloca o link em baixa energia entre rajadas; a saida desse estado causa micro-stutter de rede.",
       "evidencia": "Micro-pausas reprodutiveis em ping continuo com EEE ativo em varios controladores Realtek/Intel.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Desliga o Energy Efficient Ethernet (Green Ethernet), que coloca o link de rede em baixa energia entre rajadas de tráfego.",
+      "beneficio": "Evita o micro-stutter de rede causado pela placa saindo desse estado de economia.",
+      "atencao": "Consumo de energia um pouco maior no adaptador de rede.",
+      "i18n": {
+        "en": {
+          "nome": "Energy Efficient / Green Ethernet off",
+          "oQueFaz": "Disables Energy Efficient Ethernet (Green Ethernet), which puts the network link into low power between traffic bursts.",
+          "beneficio": "Avoids the network micro-stutter caused by the card leaving that power-saving state.",
+          "atencao": "Slightly higher power consumption on the network adapter."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -976,6 +1297,22 @@
       },
       "porque": "Quadros PAUSE segurar o link inteiro por causa de um buffer cheio; para trafego UDP de jogo, descartar e melhor que pausar.",
       "evidencia": "Comportamento do 802.3x documentado; efeito depende do switch/roteador. Ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Desliga o Controle de Fluxo (Flow Control) do adaptador de rede, que pode pausar o link inteiro quando um buffer enche.",
+      "beneficio": "Para tráfego de jogo (UDP), é melhor descartar um pacote isolado do que pausar toda a conexão.",
+      "atencao": "Em redes com muitos dispositivos e tráfego pesado, desligar pode aumentar descartes de pacote.",
+      "i18n": {
+        "en": {
+          "nome": "Flow Control off",
+          "oQueFaz": "Disables Flow Control on the network adapter, which can pause the entire link when a buffer fills up.",
+          "beneficio": "For game traffic (UDP), dropping one isolated packet is better than pausing the whole connection.",
+          "atencao": "On networks with many devices and heavy traffic, disabling it can increase packet drops."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1025,6 +1362,22 @@
       },
       "porque": "Distribui o processamento de recepcao entre nucleos em vez de concentrar em um, que pode ser o mesmo do jogo.",
       "evidencia": "Padrao ja ligado na maioria; garante que nao foi desligado por outro 'otimizador'.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Liga o Receive Side Scaling (RSS), que distribui o processamento de pacotes recebidos entre vários núcleos de CPU.",
+      "beneficio": "Evita que um único núcleo (às vezes o mesmo usado pelo jogo) fique sobrecarregado processando a rede.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Receive Side Scaling on",
+          "oQueFaz": "Turns on Receive Side Scaling (RSS), which spreads incoming packet processing across several CPU cores.",
+          "beneficio": "Prevents a single core (sometimes the same one the game uses) from getting overloaded processing the network.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1071,6 +1424,22 @@
       },
       "porque": "O MMCSS limita pacotes por milissegundo quando ha audio/video em reproducao; desligar remove o teto.",
       "evidencia": "Mecanismo documentado pela Microsoft; o teto padrao (10 pacotes/ms) raramente e atingido por um jogo. Ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Remove o limite do MMCSS de pacotes de rede por milissegundo que existe quando há áudio/vídeo em reprodução.",
+      "beneficio": "Sem esse teto, o tráfego do jogo não fica represado por causa do MMCSS.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "NetworkThrottlingIndex = 0xFFFFFFFF (disable multimedia throttling)",
+          "oQueFaz": "Removes the MMCSS cap on network packets per millisecond that kicks in whenever audio/video is playing.",
+          "beneficio": "Without that ceiling, game traffic is not held back by MMCSS.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1115,6 +1484,22 @@
       },
       "porque": "Reserva menos CPU para tarefas de baixa prioridade quando ha multimidia. Nao usar 0: pode fazer o audio engasgar.",
       "evidencia": "Mecanismo documentado. O valor 0, comum em guias, causa starvation de audio em medicao; 10 e o compromisso.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Ajusta o SystemResponsiveness do MMCSS para 10, reservando menos CPU para tarefas de baixa prioridade quando há multimídia tocando.",
+      "beneficio": "Mais CPU disponível para o jogo em vez de reservada para tarefas em segundo plano.",
+      "atencao": "Não use 0: reservar CPU demais pode fazer o áudio engasgar; o valor 10 é o equilíbrio recomendado.",
+      "i18n": {
+        "en": {
+          "nome": "SystemResponsiveness = 10 (MMCSS)",
+          "oQueFaz": "Sets MMCSS SystemResponsiveness to 10, reserving less CPU for low-priority tasks whenever multimedia is playing.",
+          "beneficio": "More CPU available for the game instead of reserved for background tasks.",
+          "atencao": "Do not use 0: reserving too little CPU can make audio stutter; 10 is the recommended balance."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1162,6 +1547,22 @@
       },
       "porque": "Wi-Fi tem jitter de ordem de grandeza maior que Ethernet por natureza (meio compartilhado, retransmissoes). Nenhum tweak de software compensa isso.",
       "evidencia": "Jitter e perda medidos em ping continuo sao consistentemente piores em Wi-Fi. E o maior ganho real de rede disponivel.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Guia informativo: se a conexão ativa é Wi-Fi, explica por que trocar para cabo Ethernet ajuda mais do que qualquer tweak de software.",
+      "beneficio": "Entender a causa raiz (o meio compartilhado do Wi-Fi) evita perder tempo com ajustes que não resolvem o jitter.",
+      "atencao": "É só um guia (controle informativo); não altera nada no sistema.",
+      "i18n": {
+        "en": {
+          "nome": "You are on Wi-Fi: use a cable",
+          "oQueFaz": "Informational guide: if the active connection is Wi-Fi, explains why switching to an Ethernet cable helps more than any software tweak.",
+          "beneficio": "Understanding the root cause (Wi-Fi shared medium) saves time on tweaks that will not fix the jitter.",
+          "atencao": "This is just a guide (informational control); it changes nothing on the system."
+        }
+      },
       "folclore": null,
       "instrucoes": "Conecte um cabo Ethernet do roteador ao PC. Se a distancia for problema, um par de adaptadores powerline ou um cabo longo ainda batem qualquer Wi-Fi para jogo.",
       "posAplicar": null,
@@ -1195,6 +1596,22 @@
       },
       "porque": "Nagle agrupa pequenos segmentos TCP. CS2 usa UDP para o jogo.",
       "evidencia": "Nao ha caminho pelo qual uma opcao TCP altere pacotes UDP. Efeito em jogo: nenhum.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Guia informativo sobre TcpAckFrequency/TCPNoDelay (desativar o algoritmo de Nagle do TCP).",
+      "beneficio": "Nenhum: o CS2 usa UDP para o jogo, então esse ajuste de TCP não afeta a partida.",
+      "atencao": "É um ajuste FOLCLORE: mexe em TCP, um protocolo que o próprio jogo não usa para o tráfego de partida; fica em Extras como referência.",
+      "i18n": {
+        "en": {
+          "nome": "TcpAckFrequency / TCPNoDelay (disable Nagle)",
+          "oQueFaz": "Informational guide about TcpAckFrequency/TCPNoDelay (disabling the TCP Nagle algorithm).",
+          "beneficio": "None: CS2 uses UDP for the match, so this TCP setting does not affect gameplay.",
+          "atencao": "This is a FOLKLORE item: it touches TCP, a protocol the game itself does not use for match traffic; stays in Extras as reference."
+        }
+      },
       "folclore": {
         "oQueE": "Chaves por interface que desligam o algoritmo de Nagle e o ACK atrasado no TCP.",
         "porqueCircula": "Ajudou em jogos antigos que usavam TCP (e em alguns MMOs). O conselho sobreviveu ao protocolo.",
@@ -1232,6 +1649,22 @@
       },
       "porque": "Trava a janela de recepcao TCP em 64 KB.",
       "evidencia": "Reduz throughput de downloads e streaming de forma mensuravel; nao muda latencia UDP.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Guia informativo sobre desativar o TCP autotuning (netsh autotuninglevel=disabled), que trava a janela de recepção TCP em 64 KB.",
+      "beneficio": "Nenhum para jogos: a janela de recepção TCP não é o que limita o tráfego UDP da partida.",
+      "atencao": "É um ajuste FOLCLORE e pode reduzir a velocidade de downloads e outras conexões TCP normais; fica em Extras.",
+      "i18n": {
+        "en": {
+          "nome": "Disable TCP autotuning (netsh autotuninglevel=disabled)",
+          "oQueFaz": "Informational guide about disabling TCP autotuning (netsh autotuninglevel=disabled), which locks the TCP receive window at 64 KB.",
+          "beneficio": "None for gaming: the TCP receive window is not what limits the match UDP traffic.",
+          "atencao": "This is a FOLKLORE item and can slow down downloads and other regular TCP connections; stays in Extras."
+        }
+      },
       "folclore": {
         "oQueE": "Desabilitar o ajuste automatico da janela de recepcao TCP.",
         "porqueCircula": "Era workaround para roteadores antigos que quebravam com window scaling.",
@@ -1269,6 +1702,22 @@
       },
       "porque": "Marca os pacotes do jogo com prioridade DSCP.",
       "evidencia": "A marcacao so tem efeito se cada salto a honrar; roteadores domesticos e ISPs normalmente zeram ou ignoram.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Guia informativo sobre criar uma política de QoS/DSCP para marcar os pacotes do CS2 com prioridade.",
+      "beneficio": "Nenhum garantido: a marcação DSCP só ajuda se os roteadores no caminho até o servidor a respeitarem, o que raramente acontece na internet pública.",
+      "atencao": "É um ajuste FOLCLORE: fora de uma rede corporativa configurada para isso, a marca DSCP é ignorada; fica em Extras.",
+      "i18n": {
+        "en": {
+          "nome": "QoS / DSCP policy for cs2.exe",
+          "oQueFaz": "Informational guide about creating a QoS/DSCP policy to mark CS2 packets with priority.",
+          "beneficio": "No guaranteed benefit: DSCP marking only helps if routers along the path to the server honor it, which rarely happens on the public internet.",
+          "atencao": "This is a FOLKLORE item: outside a corporate network configured for it, the DSCP mark is ignored; stays in Extras."
+        }
+      },
       "folclore": {
         "oQueE": "Politica de QoS do Windows que marca DSCP 46 (EF) nos pacotes do executavel.",
         "porqueCircula": "Funciona em redes corporativas com QoS configurado ponta a ponta, e os guias copiam de la.",
@@ -1310,6 +1759,21 @@
       },
       "porque": "Com aceleracao, a mesma distancia fisica vira distancias diferentes na tela conforme a velocidade. Mira consistente exige mapeamento 1:1.",
       "evidencia": "Efeito direto e determinista no mapeamento de entrada. (O CS2 usa raw input e ignora isso em jogo, mas menus e outros jogos nao.)",
+      "modo": "leve",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Desliga a aceleração do ponteiro do mouse (\"Aprimorar precisão do ponteiro\"), fazendo a mesma distância física sempre mover o cursor a mesma distância.",
+      "beneficio": "Mira consistente: o movimento da mão sempre corresponde ao mesmo movimento na tela, sem variar com a velocidade.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Mouse acceleration off (Enhance pointer precision)",
+          "oQueFaz": "Turns off mouse pointer acceleration (\"Enhance pointer precision\"), so the same physical distance always moves the cursor the same amount.",
+          "beneficio": "Consistent aim: hand movement always maps to the same on-screen movement, regardless of speed.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": "SystemParametersInfo",
@@ -1369,6 +1833,21 @@
       },
       "porque": "6/11 e o unico ponto sem multiplicador: cada contagem do sensor vira exatamente um pixel.",
       "evidencia": "Tabela de multiplicadores do Windows e publica; qualquer outro valor descarta ou duplica contagens.",
+      "modo": "leve",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Ajusta a velocidade do ponteiro para 6/11, o único ponto da escala do Windows sem multiplicador de aceleração.",
+      "beneficio": "Cada contagem do sensor do mouse vira exatamente um pixel, complementando a mira 1:1.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Pointer speed at 6/11 (1:1)",
+          "oQueFaz": "Sets pointer speed to 6/11, the only point on the Windows scale without an acceleration multiplier.",
+          "beneficio": "Every mouse sensor count becomes exactly one pixel, completing the 1:1 aiming setup.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": "SystemParametersInfo",
@@ -1414,6 +1893,21 @@
       },
       "porque": "Filtragem de teclas adiciona atraso deliberado a cada tecla; o atalho de 5x Shift ativa aderencia no meio da partida.",
       "evidencia": "Atraso da filtragem e configuravel e direto. Desativar o atalho evita ativacao acidental.",
+      "modo": "leve",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Desliga Filtragem de Teclas, Teclas de Aderência e Teclas de Alternância, incluindo os atalhos que os ativam sem querer.",
+      "beneficio": "Evita atraso deliberado em teclas e ativação acidental desses recursos de acessibilidade no meio de uma partida.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Filter Keys, Sticky Keys and Toggle Keys off (with shortcuts)",
+          "oQueFaz": "Turns off Filter Keys, Sticky Keys, and Toggle Keys, including the shortcuts that trigger them by accident.",
+          "beneficio": "Avoids deliberate key delay and accidental activation of these accessibility features mid-match.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1475,6 +1969,21 @@
       },
       "porque": "Um hub compartilhado com teclado, webcam ou headset divide a banda de polling e pode perder relatorios em 4-8 kHz.",
       "evidencia": "Queda de polling efetivo em hub compartilhado e reprodutivel com mouses de alta taxa.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo: recomenda ligar o mouse num root hub USB dedicado, em vez de um hub compartilhado com teclado, webcam ou headset.",
+      "beneficio": "Evita perder relatórios do sensor em mouses de alta taxa de polling (4-8 kHz) por divisão de banda do hub.",
+      "atencao": "É só um guia (controle informativo) sobre como conectar o hardware; não altera nada no sistema.",
+      "i18n": {
+        "en": {
+          "nome": "Mouse USB port: use a dedicated root hub",
+          "oQueFaz": "Informational guide: recommends plugging the mouse into a dedicated USB root hub, instead of one shared with a keyboard, webcam, or headset.",
+          "beneficio": "Avoids losing sensor reports on high polling rate mice (4-8 kHz) due to hub bandwidth sharing.",
+          "atencao": "This is just a guide (informational control) about hardware wiring; it changes nothing on the system."
+        }
+      },
       "folclore": null,
       "instrucoes": "Conecte o mouse direto na placa-mae (traseira), de preferencia numa porta que nao compartilhe hub com teclado/headset. Use a medicao de polling do CS2Tuner antes e depois para confirmar.",
       "posAplicar": null,
@@ -1508,6 +2017,21 @@
       },
       "porque": "Tamanho da fila de dados dos drivers de classe de mouse/teclado.",
       "evidencia": "O padrao (100) nunca enche em uso normal; a fila e drenada a cada interrupcao. Nao ha medicao que mostre efeito.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo sobre MouseDataQueueSize/KeyboardDataQueueSize, o tamanho da fila de dados dos drivers de mouse e teclado.",
+      "beneficio": "Nenhum comprovado: aumentar a fila raramente resolve algo em hardware moderno.",
+      "atencao": "É um ajuste FOLCLORE sem ganho demonstrado em hardware atual; fica em Extras como referência.",
+      "i18n": {
+        "en": {
+          "nome": "MouseDataQueueSize / KeyboardDataQueueSize",
+          "oQueFaz": "Informational guide about MouseDataQueueSize/KeyboardDataQueueSize, the data queue size of the mouse and keyboard class drivers.",
+          "beneficio": "No proven benefit: increasing the queue rarely fixes anything on modern hardware.",
+          "atencao": "This is a FOLKLORE item with no demonstrated gain on current hardware; stays in Extras as reference."
+        }
+      },
       "folclore": {
         "oQueE": "Reduzir o tamanho da fila do mouclass/kbdclass (ex.: para 20) 'para reduzir latencia'.",
         "porqueCircula": "Soa plausivel: fila menor, menos espera. Mas a fila so importa se encher, e nao enche.",
@@ -1552,6 +2076,22 @@
       },
       "porque": "Em SSD/NVMe o pre-carregamento do SysMain e inutil e gera I/O e CPU em segundo plano.",
       "evidencia": "Picos de disco/CPU atribuiveis ao SysMain sao observaveis no Monitor de Recursos em SSD. Em HDD o efeito e o oposto.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Desliga o SysMain (Superfetch), o serviço que pré-carrega apps na memória com base no uso.",
+      "beneficio": "Em SSD/NVMe, esse pré-carregamento é desnecessário e só gera I/O e uso de CPU em segundo plano.",
+      "atencao": "Em HDD tradicional o SysMain ainda ajuda; esse ajuste é pensado para quem já tem SSD/NVMe.",
+      "i18n": {
+        "en": {
+          "nome": "SysMain (Superfetch) - disable",
+          "oQueFaz": "Disables SysMain (Superfetch), the service that preloads apps into memory based on usage patterns.",
+          "beneficio": "On SSD/NVMe, this preloading is unnecessary and only creates background I/O and CPU usage.",
+          "atencao": "On a traditional HDD, SysMain still helps; this tweak is meant for those who already have an SSD/NVMe."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1596,6 +2136,22 @@
       },
       "porque": "O Windows serve atualizacoes a outros PCs pela sua conexao, incluindo durante a partida.",
       "evidencia": "Upload em segundo plano e visivel no monitor de rede; saturar o upload e a causa classica de ping alto.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "rede"
+      ],
+      "oQueFaz": "Desliga o upload peer-to-peer da Otimização de Entrega, para o Windows não usar sua conexão para distribuir atualizações a outros PCs.",
+      "beneficio": "Sua banda de upload fica livre durante a partida, em vez de ser usada para servir atualizações a outros.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Delivery Optimization: no P2P upload",
+          "oQueFaz": "Disables Delivery Optimization P2P upload, so Windows does not use your connection to distribute updates to other PCs.",
+          "beneficio": "Your upload bandwidth stays free during a match, instead of being used to serve updates to others.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1640,6 +2196,22 @@
       },
       "porque": "A manutencao automatica (indexacao, otimizacao de disco, limpeza) pode disparar no meio do jogo se o PC estiver ocioso o suficiente.",
       "evidencia": "Tarefas de manutencao aparecem como picos de I/O em telemetria; move-las para 04:00 tira-as do horario de jogo.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Reagenda a manutenção automática (indexação, otimização de disco, limpeza) para fora do horário em que você costuma jogar.",
+      "beneficio": "Evita que essas tarefas disparem sozinhas no meio de uma partida quando o PC fica ocioso um instante.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Automatic maintenance and defrag outside usage hours",
+          "oQueFaz": "Reschedules automatic maintenance (indexing, disk optimization, cleanup) outside the hours you usually play.",
+          "beneficio": "Prevents these tasks from firing on their own mid-match whenever the PC sits idle for a moment.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1687,6 +2259,21 @@
       },
       "porque": "Cada item de inicializacao e um processo residente. A lista e sua para decidir; o CS2Tuner nao desativa nada sozinho.",
       "evidencia": "Processos residentes competem por CPU e geram interrupcoes. O efeito de cada um varia; a auditoria e o que permite medir.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo: audita os programas de inicialização, mostrando a lista para você decidir o que desligar.",
+      "beneficio": "Cada item de inicialização é um processo residente a menos, se você optar por desligá-lo.",
+      "atencao": "É só um guia (controle informativo): o TweakMaxing não desativa nada sozinho aqui, a decisão é sua.",
+      "i18n": {
+        "en": {
+          "nome": "Startup programs audit",
+          "oQueFaz": "Informational guide: audits startup programs, showing the list for you to decide what to disable.",
+          "beneficio": "Every startup item you choose to disable is one less resident process.",
+          "atencao": "This is just a guide (informational control): TweakMaxing does not disable anything here on its own, the choice is yours."
+        }
+      },
       "folclore": null,
       "instrucoes": "Revise a lista de inicializacao no relatorio. Desative em Gerenciador de Tarefas > Inicializacao o que voce nao usa. Itens marcados como 'software problematico' tem prioridade.",
       "posAplicar": null,
@@ -1725,6 +2312,21 @@
       },
       "porque": "Evita que a protecao em tempo real escaneie os arquivos do jogo a cada leitura (carregamento de mapa, shaders).",
       "evidencia": "Tempo de carregamento e I/O reduzem de forma mensuravel com a exclusao; efeito em FPS durante a partida e pequeno.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Adiciona a pasta de instalação do CS2 à lista de exclusões do Microsoft Defender.",
+      "beneficio": "A proteção em tempo real para de escanear os arquivos do jogo a cada carregamento de mapa/shader, reduzindo engasgos de carregamento.",
+      "atencao": "A pasta excluída fica sem a verificação em tempo real do Defender; só exclua pastas de jogos em que você confia na origem (Steam oficial).",
+      "i18n": {
+        "en": {
+          "nome": "Defender exclusion for the CS2 folder",
+          "oQueFaz": "Adds the CS2 installation folder to Microsoft Defender exclusions.",
+          "beneficio": "Real-time protection stops scanning the game files on every map/shader load, reducing loading stutters.",
+          "atencao": "The excluded folder no longer gets Defender real-time scanning; only exclude game folders whose source you trust (official Steam)."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1764,6 +2366,21 @@
       },
       "porque": "Listas de 'servicos inuteis' copiadas entre guias.",
       "evidencia": "Servicos ociosos nao consomem CPU; desativar dezenas deles nao muda FPS de forma mensuravel e quebra Windows Update, Bluetooth, impressao e seguranca.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo sobre desativar em lote mais de 40 serviços do Windows, uma lista clássica que circula entre tutoriais.",
+      "beneficio": "Nenhum: é o mesmo tipo de lista genérica de \"serviços inúteis\" sem sustentação técnica.",
+      "atencao": "É um ajuste FOLCLORE e de alto risco: listas assim costumam incluir serviços que o próprio Windows precisa; fica em Extras, nunca em lote automático.",
+      "i18n": {
+        "en": {
+          "nome": "Disable 40+ Windows services in bulk",
+          "oQueFaz": "Informational guide about bulk-disabling 40+ Windows services, a classic list passed around tutorials.",
+          "beneficio": "None: it is the same kind of generic \"useless services\" list with no technical backing.",
+          "atencao": "This is a FOLKLORE, high-risk item: lists like this usually include services Windows itself needs; stays in Extras, never applied automatically in bulk."
+        }
+      },
       "folclore": {
         "oQueE": "Scripts que desativam dezenas de servicos (Windows Update, Diagnostico, Bluetooth, Impressao, SmartScreen...).",
         "porqueCircula": "Da a sensacao de 'sistema limpo' e o Gerenciador de Tarefas fica mais curto.",
@@ -1809,6 +2426,22 @@
       },
       "porque": "Sem TRIM o SSD nao sabe quais blocos estao livres; a escrita degrada com o tempo e os stutters de I/O aparecem.",
       "evidencia": "Degradacao de escrita sem TRIM e amplamente medida. Ferramentas de 'tweak' antigas desligavam isso por engano.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Garante que o comando TRIM esteja ativo no SSD/NVMe do sistema.",
+      "beneficio": "O SSD sabe quais blocos estão livres, evitando que a escrita degrade com o tempo.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Ensure TRIM is active on SSD/NVMe",
+          "oQueFaz": "Ensures the TRIM command is active on the system SSD/NVMe.",
+          "beneficio": "The SSD knows which blocks are free, preventing write performance from degrading over time.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1854,6 +2487,21 @@
       },
       "porque": "Se o tipo de midia esta como 'Unspecified', a otimizacao agendada pode tratar o SSD como HDD e desfragmentar.",
       "evidencia": "Comportamento documentado do Otimizar Unidades: a acao depende do MediaType detectado.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo: avisa quando o Windows não reconhece o disco como SSD, o que pode fazer a otimização agendada desfragmentá-lo por engano.",
+      "beneficio": "Evita o desgaste desnecessário de desfragmentar um SSD que foi identificado errado como HDD.",
+      "atencao": "É só um guia (controle informativo); a correção depende do driver/firmware do disco, fora do escopo de um tweak automático.",
+      "i18n": {
+        "en": {
+          "nome": "Windows does not recognize the disk as SSD (defrag risk)",
+          "oQueFaz": "Informational guide: warns when Windows does not recognize the disk as an SSD, which can make scheduled optimization defragment it by mistake.",
+          "beneficio": "Avoids the unnecessary wear of defragmenting an SSD that was misidentified as an HDD.",
+          "atencao": "This is just a guide (informational control); the fix depends on the disk driver/firmware, outside the scope of an automatic tweak."
+        }
+      },
       "folclore": null,
       "instrucoes": "Execute 'winsat formal' num prompt elevado para o Windows reclassificar o disco, depois confira em Otimizar Unidades que aparece 'Unidade de estado solido'.",
       "posAplicar": null,
@@ -1893,6 +2541,21 @@
       },
       "porque": "SSD cheio tem menos blocos para wear-leveling e escrita fica lenta; o arquivo de paginacao e os shaders do CS2 precisam de espaco.",
       "evidencia": "Queda de desempenho de escrita em SSD acima de ~85-90% de uso e documentada pelos fabricantes.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo: avisa quando o espaço livre no disco do sistema está abaixo de 15%.",
+      "beneficio": "Disco com espaço de sobra tem mais blocos para wear-leveling e deixa espaço para o arquivo de paginação e os shaders do CS2.",
+      "atencao": "É só um guia (controle informativo); liberar espaço é feito pela Limpeza (aba própria), não por este item.",
+      "i18n": {
+        "en": {
+          "nome": "Free space below 15% on the system disk",
+          "oQueFaz": "Informational guide: warns when free space on the system disk drops below 15%.",
+          "beneficio": "A disk with room to spare has more blocks for wear-leveling and leaves space for the page file and CS2 shaders.",
+          "atencao": "This is just a guide (informational control); freeing space is done from the Cleanup tab, not this item."
+        }
+      },
       "folclore": null,
       "instrucoes": "Libere espaco ate ter pelo menos 15% livre: Limpeza de Disco (arquivos de sistema), pasta Downloads, jogos que nao joga mais.",
       "posAplicar": null,
@@ -1931,6 +2594,22 @@
       },
       "porque": "Tamanho fixo evita que o Windows redimensione o pagefile durante o jogo (pausa de I/O). Nunca desativar: o CS2 e drivers alocam memoria virtual alem da RAM.",
       "evidencia": "Redimensionamento do pagefile e visivel como pausa de I/O em telemetria; frequencia baixa. Ganho nao quantificado.",
+      "modo": "avancado",
+      "categoriasV2": [
+        "jogos",
+        "desempenho"
+      ],
+      "oQueFaz": "Fixa o tamanho do arquivo de paginação no disco mais rápido do sistema, em vez de deixar o Windows redimensioná-lo sozinho.",
+      "beneficio": "Evita a pausa de I/O que acontece quando o Windows precisa expandir o pagefile no meio de uma sessão de jogo.",
+      "atencao": "Nunca desative o arquivo de paginação: o CS2 e os drivers de vídeo alocam memória virtual além da RAM instalada.",
+      "i18n": {
+        "en": {
+          "nome": "Fixed-size page file on the fastest disk",
+          "oQueFaz": "Pins the page file size on the system fastest disk, instead of letting Windows resize it on its own.",
+          "beneficio": "Avoids the I/O pause that happens when Windows needs to grow the page file mid gaming session.",
+          "atencao": "Never disable the page file entirely: CS2 and graphics drivers allocate virtual memory beyond installed RAM."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -1972,6 +2651,21 @@
       },
       "porque": "Opcao 'Desativar liberacao do buffer de cache de gravacao do Windows' nas propriedades do disco.",
       "evidencia": "Ganho de escrita em benchmark sintetico; nenhum efeito em jogo. Risco real e documentado de corrupcao em queda de energia.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo sobre a opção \"Desativar liberação do buffer de cache de gravação do Windows\" nas propriedades do disco.",
+      "beneficio": "Nenhum recomendado: o ganho de I/O é pequeno frente ao risco.",
+      "atencao": "É um ajuste FOLCLORE de alto risco: sem a liberação do cache de gravação, uma queda de energia pode corromper dados ainda não gravados no disco; fica em Extras.",
+      "i18n": {
+        "en": {
+          "nome": "Disable write-cache buffer flushing",
+          "oQueFaz": "Informational guide about the \"Turn off Windows write-cache buffer flushing\" option in disk properties.",
+          "beneficio": "None recommended: the I/O gain is small compared to the risk.",
+          "atencao": "This is a high-risk FOLKLORE item: without write-cache flushing, a power loss can corrupt data not yet written to disk; stays in Extras."
+        }
+      },
       "folclore": {
         "oQueE": "Fazer o Windows nao pedir ao disco que persista o cache de escrita (FUA/flush).",
         "porqueCircula": "Melhora numeros de CrystalDiskMark, e as pessoas confundem com desempenho real.",
@@ -2012,6 +2706,22 @@
       },
       "porque": "Animacoes e sombras do shell rodam no DWM e competem com o jogo pela GPU ao alternar janelas (alt-tab, overlays).",
       "evidencia": "Uso de GPU do DWM e mensuravel; em jogo em tela cheia exclusiva o efeito e pequeno. Ganho nao quantificado.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "aparencia"
+      ],
+      "oQueFaz": "Ajusta os efeitos visuais para o perfil de melhor desempenho, mantendo apenas a suavização de fontes ligada.",
+      "beneficio": "Menos trabalho de composição visual para o DWM competir com o jogo pela GPU.",
+      "atencao": "A interface fica visualmente mais simples fora do jogo.",
+      "i18n": {
+        "en": {
+          "nome": "Visual effects: best performance (keep font smoothing)",
+          "oQueFaz": "Sets visual effects to the best-performance profile, keeping only font smoothing on.",
+          "beneficio": "Less visual compositing work for the DWM to compete with the game over the GPU.",
+          "atencao": "The interface looks visually simpler outside the game."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": "SettingChange",
@@ -2129,6 +2839,22 @@
       },
       "porque": "Efeitos de acrilico/blur sao renderizados continuamente pelo DWM.",
       "evidencia": "Uso de GPU do DWM cai de forma mensuravel com transparencia desligada. Efeito em jogo tela cheia: pequeno.",
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "aparencia"
+      ],
+      "oQueFaz": "Desliga os efeitos de transparência (acrílico/blur) da interface do Windows.",
+      "beneficio": "Menos trabalho contínuo de renderização para o DWM, com mais GPU disponível para o jogo.",
+      "atencao": "A interface perde o efeito de vidro fosco no menu Iniciar e na barra de tarefas.",
+      "i18n": {
+        "en": {
+          "nome": "Transparency off",
+          "oQueFaz": "Disables Windows interface transparency effects (acrylic/blur).",
+          "beneficio": "Less continuous rendering work for the DWM, leaving more GPU available for the game.",
+          "atencao": "The interface loses the frosted-glass look on the Start menu and taskbar."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": "SettingChange",
@@ -2174,6 +2900,21 @@
       },
       "porque": "Notificacoes em tela cheia forcam o DWM a compor por cima do jogo e podem tirar o foco.",
       "evidencia": "Perda de foco por notificacao e reprodutivel. A configuracao vive em blobs binarios do CloudStore, por isso e manual.",
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos"
+      ],
+      "oQueFaz": "Guia informativo sobre o Assistente de Foco durante jogos em tela cheia, que evita notificações forçarem o DWM a compor por cima do jogo.",
+      "beneficio": "Sem notificações estourando a tela cheia, sem tirar o foco da janela do jogo.",
+      "atencao": "É só um guia (controle informativo) apontando a configuração nativa do Windows; o TweakMaxing não altera nada aqui.",
+      "i18n": {
+        "en": {
+          "nome": "Focus Assist during fullscreen games",
+          "oQueFaz": "Informational guide about Focus Assist during fullscreen games, which avoids notifications forcing the DWM to compose over the game.",
+          "beneficio": "No notifications breaking fullscreen, and no loss of focus on the game window.",
+          "atencao": "This is just a guide (informational control) pointing to the native Windows setting; TweakMaxing changes nothing here."
+        }
+      },
       "folclore": null,
       "instrucoes": "Configuracoes > Sistema > Foco (Win11) ou Assistente de Foco (Win10): ative 'Ao jogar um jogo' em modo Somente alarmes.",
       "posAplicar": null,

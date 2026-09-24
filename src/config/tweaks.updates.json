@@ -31,6 +31,21 @@
       },
       "porque": "Remove as políticas de adiamento de recursos, adiamento de correções e pausa que o TweakMaxing (ou outra ferramenta) possa ter deixado em HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate, devolvendo os serviços BITS e wuauserv a Manual e o UsoSvc a Automático — o mesmo estado de um Windows recém-instalado.",
       "evidencia": "O efeito é lido de volta nas próprias chaves: quando nenhuma política de adiamento/pausa existe mais em HKLM\\SOFTWARE\\Policies\\Microsoft\\Windows\\WindowsUpdate e em HKLM\\SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings, a política 'Padrão' está aplicada. Não há promessa de velocidade nem de menos incômodo — é a configuração de fábrica da Microsoft.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Remove qualquer adiamento ou pausa de atualização configurada antes, voltando ao comportamento padrão do Windows Update.",
+      "beneficio": "Você recebe atualizações de recursos e de segurança no ritmo que a Microsoft recomenda.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Default (Microsoft recommended)",
+          "oQueFaz": "Removes any update deferral or pause configured before, going back to Windows Update default behavior.",
+          "beneficio": "You get feature and security updates at the pace Microsoft recommends.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -71,6 +86,21 @@
       },
       "porque": "Grava as políticas de grupo documentadas pela Microsoft que adiam atualização de recursos (DeferFeatureUpdates=1, 365 dias) mantendo as de correção com um adiamento curto (DeferQualityUpdates=1, 4 dias), exclui drivers das atualizações de qualidade, desliga a busca automática de drivers do Windows Update e impede reinício automático com usuário logado. Os serviços BITS e wuauserv ficam em Manual e o UsoSvc em Automático: nenhum serviço de atualização é desativado.",
       "evidencia": "São as mesmas políticas que o Windows expõe em Configurações > Windows Update > Opções avançadas > Pausar atualizações/Adiar atualizações; o efeito é conferido lendo essas chaves de volta do registro e o estado dos três serviços com Get-Service.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Adia atualizações de recursos por até 365 dias, mas mantém as correções de segurança chegando com um adiamento curto de 4 dias.",
+      "beneficio": "Menos telas de \"reiniciar para atualizar\" com mudanças grandes de recursos, sem abrir mão da segurança.",
+      "atencao": "Nenhuma.",
+      "i18n": {
+        "en": {
+          "nome": "Security only (defer features, keep fixes)",
+          "oQueFaz": "Defers feature updates for up to 365 days, while keeping security fixes arriving with a short 4-day delay.",
+          "beneficio": "Fewer \"restart to update\" prompts from big feature changes, without giving up security.",
+          "atencao": "None."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -205,6 +235,21 @@
       },
       "porque": "Grava as datas de pausa (PauseUpdatesExpiryTime e as correlatas de recursos/qualidade) em HKLM\\SOFTWARE\\Microsoft\\WindowsUpdate\\UX\\Settings com validade de 35 dias a partir de agora — o mesmo mecanismo que o botão 'Pausar atualizações' de Configurações usa. Nenhum serviço do Windows Update é tocado: adaptação do WPFUpdatesdisable do WinUtil que evita desativar serviço, só pausa por prazo.",
       "evidencia": "PauseUpdatesExpiryTime é a mesma chave que Configurações > Windows Update mostra como 'Atualizações pausadas até'; a data aparece na própria tela do Windows depois de aplicado, e o Windows volta a atualizar sozinho quando ela vence.",
+      "modo": "leve",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Pausa todas as atualizações por 35 dias, usando o mesmo mecanismo do botão \"Pausar atualizações\" das Configurações.",
+      "beneficio": "Uma pausa temporária e sem tocar em nenhum serviço do Windows Update, ideal antes de uma competição ou evento importante.",
+      "atencao": "Depois de 35 dias as atualizações voltam a ser instaladas normalmente; nenhuma correção de segurança chega nesse meio-tempo.",
+      "i18n": {
+        "en": {
+          "nome": "Pause for 35 days (temporary)",
+          "oQueFaz": "Pauses every update for 35 days, using the same mechanism as the \"Pause updates\" button in Settings.",
+          "beneficio": "A temporary pause without touching any Windows Update service, ideal before a competition or important event.",
+          "atencao": "After 35 days updates resume installing normally; no security fixes arrive during that window."
+        }
+      },
       "folclore": null,
       "instrucoes": null,
       "posAplicar": null,
@@ -212,7 +257,9 @@
         {
           "tipo": "funcao",
           "nome": "Set-TmxUpdatePause",
-          "parametros": { "dias": 35 }
+          "parametros": {
+            "dias": 35
+          }
         }
       ]
     }

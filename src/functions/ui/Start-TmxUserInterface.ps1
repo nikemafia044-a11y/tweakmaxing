@@ -160,18 +160,30 @@ function Start-TmxUserInterface {
     Register-TmxFeatureActions
     Register-TmxUpdateActions
     Register-TmxMicroWinActions
+    Register-TmxSystemActions
 
     $titulo = "TweakMaxing $versao"
     if ($sync.testMode) { $titulo = "$titulo [modo de teste]" }
 
+    # WindowStyle=None: a barra de titulo do Windows some, e quem desenha
+    # minimizar/maximizar/fechar e o HTML (#titlebar, ver app.css/app.js e as
+    # acoes window.* de Actions.Shell.ps1). WindowChrome com CaptionHeight=0
+    # devolve so a borda redimensionavel (ResizeBorderThickness) - sem ele,
+    # WindowStyle=None tambem tira o redimensionar pelas bordas.
     [xml]$xaml = @"
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:shell="clr-namespace:System.Windows.Shell;assembly=PresentationFramework"
         Title="$([System.Security.SecurityElement]::Escape($titulo))"
         Width="1200" Height="760"
         MinWidth="900" MinHeight="600"
-        Background="#12131A"
+        Background="#0C0D0F"
+        WindowStyle="None"
+        ResizeMode="CanResize"
         WindowStartupLocation="CenterScreen">
+    <shell:WindowChrome.WindowChrome>
+        <shell:WindowChrome CaptionHeight="0" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="0" />
+    </shell:WindowChrome.WindowChrome>
     <Grid x:Name="Root" />
 </Window>
 "@
@@ -212,6 +224,16 @@ function Start-TmxUserInterface {
         $core.Settings.AreDevToolsEnabled            = [bool]$sync.debugPort
         $core.Settings.IsStatusBarEnabled            = $false
         $core.Settings.IsZoomControlEnabled          = $false
+
+        # Deixa o CSS 'app-region: drag' de #titlebar arrastar a janela sem
+        # passar pela ponte. Propriedade nova (pode faltar no SDK 1.0.3240.44
+        # dependendo do runtime do Edge instalado na maquina) - quando falha,
+        # window.drag (mousedown -> DragMove na thread da UI) cobre o arrasto.
+        try {
+            $core.Settings.IsNonClientRegionSupportEnabled = $true
+        } catch {
+            Write-TmxLog -Level WARN -Message 'IsNonClientRegionSupportEnabled indisponivel: usando so o fallback window.drag' -Data @{ erro = $_.Exception.Message }
+        }
 
         # Host virtual em vez de file://: o file:// fica com origem opaca e
         # quebra fetch/modulos; e o mapeamento e somente-leitura da pasta.

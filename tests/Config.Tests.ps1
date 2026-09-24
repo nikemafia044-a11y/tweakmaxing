@@ -182,10 +182,10 @@ Describe 'src/config/applications.json' -Tag 'Config' {
 
 Describe 'src/config/preset.json' -Tag 'Config' {
 
-    It 'tem exatamente as chaves desktop, notebook e minimo' {
+    It 'tem exatamente os presets antigos e os modos v2' {
         $doc = Get-Content -LiteralPath (Join-Path $script:ConfigDir 'preset.json') -Raw -Encoding UTF8 | ConvertFrom-Json
         $chaves = @($doc.PSObject.Properties.Name | Sort-Object)
-        $chaves -join ',' | Should -Be 'desktop,minimo,notebook'
+        $chaves -join ',' | Should -Be 'avancado,desktop,leve,minimo,moderado,notebook,ultimate'
     }
 
     It 'todo preset usado no catalogo existe em preset.json' {

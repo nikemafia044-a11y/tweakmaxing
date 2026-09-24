@@ -1,0 +1,551 @@
+{
+  "tweaks": [
+    {
+      "id": "INT-024",
+      "origem": null,
+      "nome": "Remover atraso dos menus",
+      "descricao": "Zera o tempo de espera que o Windows usa antes de abrir um submenu quando voce passa o mouse por cima.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava MenuShowDelay=\"0\" em HKCU\\Control Panel\\Desktop, o valor em milissegundos que o Windows espera antes de abrir um submenu ou o menu Iniciar ao passar o mouse por cima. O padrao de fabrica e \"400\".",
+      "evidencia": "MenuShowDelay e uma configuracao documentada do shell do Windows; o efeito aparece na hora ao navegar pelos menus, sem depender de reinicio.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SettingChange",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Control Panel\\Desktop",
+          "name": "MenuShowDelay",
+          "value": "0",
+          "valueType": "String"
+        }
+      ],
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia",
+        "desempenho"
+      ],
+      "oQueFaz": "Zera o tempo de espera que o Windows usa antes de abrir um submenu quando voce passa o mouse por cima.",
+      "beneficio": "Os menus (Iniciar, clique direito, submenus do Explorer) abrem na hora, sem a pequena pausa perceptivel do padrao de fabrica.",
+      "atencao": "Nenhuma. E so uma preferencia de interface; volta ao padrao a qualquer momento pelo Desfazer.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Remove menu delay",
+          "oQueFaz": "Zeroes the delay Windows waits before opening a submenu when you hover over it.",
+          "beneficio": "Menus (Start, right-click, Explorer submenus) open instantly, without the small pause of the factory default.",
+          "atencao": "None. It is just an interface preference; revert anytime with Undo."
+        }
+      }
+    },
+    {
+      "id": "INT-025",
+      "origem": null,
+      "nome": "Desativar dicas da tela de bloqueio",
+      "descricao": "Desliga as dicas, curiosidades e sugestoes que aparecem sobre a imagem da tela de bloqueio.",
+      "categoria": "Interface",
+      "tier": "MEDIDO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava RotatingLockScreenOverlayEnabled=0 e SubscribedContent-338387Enabled=0 em HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager, as duas chaves que controlam as dicas, curiosidades e sugestoes que o Windows sobrepoe a imagem da tela de bloqueio.",
+      "evidencia": "Sao chaves documentadas do Content Delivery Manager, o mesmo mecanismo usado pelas sugestoes do menu Iniciar; o efeito aparece na proxima vez que a tela de bloqueio e exibida.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": "SettingChange",
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "RotatingLockScreenOverlayEnabled",
+          "value": 0,
+          "valueType": "DWord"
+        },
+        {
+          "tipo": "registry",
+          "path": "HKCU:\\Software\\Microsoft\\Windows\\CurrentVersion\\ContentDeliveryManager",
+          "name": "SubscribedContent-338387Enabled",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ],
+      "modo": "leve",
+      "categoriasV2": [
+        "aparencia",
+        "privacidade"
+      ],
+      "oQueFaz": "Desliga as dicas, curiosidades e sugestoes que aparecem sobre a imagem da tela de bloqueio.",
+      "beneficio": "A tela de bloqueio mostra so a imagem e o relogio, sem texto sobreposto puxando atencao.",
+      "atencao": "Nenhuma. Pode levar um bloqueio/desbloqueio da tela para o efeito aparecer.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Disable lock screen tips",
+          "oQueFaz": "Turns off the tips, facts and suggestions that Windows overlays on the lock screen picture.",
+          "beneficio": "The lock screen shows just the picture and the clock, without overlaid text competing for attention.",
+          "atencao": "None. May need one lock/unlock cycle for the effect to show."
+        }
+      }
+    },
+    {
+      "id": "PRI-009",
+      "origem": null,
+      "nome": "Desativar Wi-Fi Sense",
+      "descricao": "Desliga, por politica, o antigo recurso Wi-Fi Sense de conexao automatica a redes compartilhadas.",
+      "categoria": "Privacidade",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Grava AutoConnectAllowedOEM=0 em HKLM\\SOFTWARE\\Microsoft\\WcmSvc\\wifinetworkmanager\\config, a politica que controlava o antigo recurso Wi-Fi Sense (conexao automatica a redes compartilhadas por contatos).",
+      "evidencia": "E uma chave documentada pela Microsoft, mas o Wi-Fi Sense foi removido do Windows a partir da versao 1803 (2018); em builds atuais do Windows 10/11 a chave e gravada sem existir mais nenhum recurso para ela controlar. Marcado TECNICO porque a escrita e real e reversivel, mas o efeito pratico em builds atuais e nulo - nao e um ganho medido.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "registry",
+          "path": "HKLM:\\SOFTWARE\\Microsoft\\WcmSvc\\wifinetworkmanager\\config",
+          "name": "AutoConnectAllowedOEM",
+          "value": 0,
+          "valueType": "DWord"
+        }
+      ],
+      "modo": "leve",
+      "categoriasV2": [
+        "privacidade",
+        "rede"
+      ],
+      "oQueFaz": "Desliga, por politica, o antigo recurso Wi-Fi Sense de conexao automatica a redes compartilhadas.",
+      "beneficio": "Nenhum ganho perceptivel em builds atuais do Windows 10/11: o recurso ja nao existe mais. Mantido no catalogo por completude e para quem ainda roda builds bem antigas.",
+      "atencao": "Sem efeito pratico em builds atuais (a Microsoft removeu o Wi-Fi Sense em 2018). So muda algo em instalacoes desatualizadas.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Disable Wi-Fi Sense",
+          "oQueFaz": "Turns off, via policy, the old Wi-Fi Sense feature for auto-connecting to contact-shared networks.",
+          "beneficio": "No noticeable gain on current Windows 10/11 builds: the feature no longer exists. Kept in the catalog for completeness and for very old builds.",
+          "atencao": "No practical effect on current builds (Microsoft removed Wi-Fi Sense in 2018). Only matters on outdated installs."
+        }
+      }
+    },
+    {
+      "id": "JOG-048",
+      "origem": null,
+      "nome": "Otimizacao para jogos em janela",
+      "descricao": "Ativa o modelo de apresentacao mais moderno (flip) para jogos rodando em modo janela ou janela sem bordas, preservando qualquer outra configuracao que ja exista nessa mesma chave.",
+      "categoria": "Jogos / Visual",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "checkbox",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Mescla (sem apagar outras chaves ja presentes) o par SwapEffectUpgradeEnable=1 na string DirectXUserGlobalSettings, em HKCU\\Software\\Microsoft\\DirectX\\UserGpuPreferences. E a mesma chave que paineis de GPU e outros utilitarios usam para forcar o modelo de apresentacao 'flip' em jogos Direct3D 9/9Ex/11 rodando em modo janela ou janela sem bordas.",
+      "evidencia": "E comportamento documentado do runtime DirectX (flip model em modo janela); o ganho depende do jogo - titulos mais antigos em D3D9 que ainda usam o modelo 'blit' sao os que mais se beneficiam. Nao medimos FPS aqui: o efeito e reducao de tearing e de latencia de apresentacao em janela, nao taxa de quadros mais alta.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxDirectXWindowedGames",
+          "parametros": {}
+        }
+      ],
+      "modo": "moderado",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Ativa o modelo de apresentacao mais moderno (flip) para jogos rodando em modo janela ou janela sem bordas, preservando qualquer outra configuracao que ja exista nessa mesma chave.",
+      "beneficio": "Em jogos mais antigos (DirectX 9) que rodam em modo janela, reduz tearing e a latencia entre o jogo desenhar o quadro e ele aparecer na tela. Jogos em tela cheia exclusiva nao sao afetados.",
+      "atencao": "O efeito so aparece em jogos que ainda usam o modelo de apresentacao antigo em modo janela; a maioria dos jogos modernos (DirectX 12) nao e afetada.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Windowed games optimization",
+          "oQueFaz": "Enables the modern presentation model (flip) for games running in windowed or borderless windowed mode, preserving any other setting already present in that same value.",
+          "beneficio": "In older (DirectX 9) games running windowed, reduces tearing and the latency between the game drawing a frame and it showing on screen. Exclusive fullscreen games are not affected.",
+          "atencao": "Only affects games that still use the old presentation model in windowed mode; most modern (DirectX 12) games are unaffected."
+        }
+      }
+    },
+    {
+      "id": "JOG-049",
+      "origem": null,
+      "nome": "Otimizar painel da GPU",
+      "descricao": "Identifica sua placa de video e mostra o caminho exato, dentro do painel do fabricante, ate as tres opcoes que mais importam para jogos: energia maxima, sincronia vertical e baixa latencia.",
+      "categoria": "Jogos / GPU",
+      "tier": "TECNICO",
+      "risco": "baixo",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": false,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": null
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Detecta o fabricante da GPU (via Win32_VideoController) e mostra o caminho, passo a passo, ate as opcoes de modo de energia maxima, sincronia vertical e baixa latencia no painel de controle do fabricante. Nao muda nada sozinho: cada fabricante expoe essas opcoes na propria interface dele, fora do alcance de um script.",
+      "evidencia": "Os caminhos de menu citados no guia sao os documentados publicamente pela NVIDIA (NVIDIA App / Painel de Controle NVIDIA), AMD (Adrenalin) e Intel (Intel Graphics Software / Arc Control) para as versoes atuais desses aplicativos.",
+      "folclore": null,
+      "instrucoes": "Guia manual: identificamos o fabricante da sua GPU (NVIDIA, AMD ou Intel) e mostramos o caminho de menus ate as tres opcoes que mais importam para jogos no painel de controle dele. Nenhuma mudanca e feita por este item.",
+      "posAplicar": null,
+      "acoes": [],
+      "modo": "extras",
+      "categoriasV2": [
+        "jogos",
+        "gpu"
+      ],
+      "oQueFaz": "Identifica sua placa de video e mostra o caminho exato, dentro do painel do fabricante, ate as tres opcoes que mais importam para jogos: energia maxima, sincronia vertical e baixa latencia.",
+      "beneficio": "Economiza a busca manual nos menus do painel da NVIDIA, AMD ou Intel; voce aplica as opcoes voce mesmo, no lugar certo.",
+      "atencao": "E so um guia. Nada e alterado automaticamente: as opcoes continuam precisando ser aplicadas manualmente no painel do fabricante.",
+      "guia": {
+        "NVIDIA": {
+          "pt": [
+            "Abra o NVIDIA App (ou o Painel de Controle NVIDIA, em instalacoes mais antigas).",
+            "Va em Configuracoes de jogos > escolha o jogo (ou o perfil Global).",
+            "Modo de energia: mude para 'Prefira desempenho maximo'.",
+            "Sincronia vertical: 'Desligado' se seu monitor tem G-Sync/FreeSync; senao 'Rapida'.",
+            "Baixa latencia: ative o modo 'Ultra' (ou 'Reflex' no jogo, quando disponivel)."
+          ],
+          "en": [
+            "Open the NVIDIA App (or NVIDIA Control Panel on older installs).",
+            "Go to Game Settings > pick the game (or the Global profile).",
+            "Power mode: switch to 'Prefer maximum performance'.",
+            "Vertical sync: 'Off' if your monitor has G-Sync/FreeSync; otherwise 'Fast'.",
+            "Low latency mode: enable 'Ultra' (or in-game 'Reflex' when available)."
+          ]
+        },
+        "AMD": {
+          "pt": [
+            "Abra o AMD Software: Adrenalin Edition.",
+            "Va em Jogos > escolha o jogo (ou Global Graphics).",
+            "Modo de energia da GPU: 'Alto desempenho'.",
+            "Sincronia vertical: 'Desligado' (ou deixe o FreeSync cuidar disso).",
+            "Anti-Lag: ative o Radeon Anti-Lag (ou Anti-Lag+, se o jogo suportar)."
+          ],
+          "en": [
+            "Open AMD Software: Adrenalin Edition.",
+            "Go to Gaming > pick the game (or Global Graphics).",
+            "GPU power mode: 'High performance'.",
+            "Vertical sync: 'Off' (or let FreeSync handle it).",
+            "Anti-Lag: enable Radeon Anti-Lag (or Anti-Lag+ if the game supports it)."
+          ]
+        },
+        "Intel": {
+          "pt": [
+            "Abra o Intel Graphics Software (ou o Intel Arc Control, em GPUs Arc).",
+            "Va em 3D > escolha o jogo (ou o perfil padrao).",
+            "Plano de energia: 'Desempenho maximo'.",
+            "Sincronia vertical: 'Desligado' (ative apenas se notar tearing forte).",
+            "Baixa latencia: ative se o painel oferecer a opcao para o jogo."
+          ],
+          "en": [
+            "Open Intel Graphics Software (or Intel Arc Control on Arc GPUs).",
+            "Go to 3D > pick the game (or the default profile).",
+            "Power plan: 'Maximum performance'.",
+            "Vertical sync: 'Off' (enable only if you notice heavy tearing).",
+            "Low latency: enable it if the panel offers the option for the game."
+          ]
+        }
+      },
+      "i18n": {
+        "en": {
+          "nome": "Optimize GPU panel",
+          "oQueFaz": "Identifies your graphics card and shows the exact path, inside the vendor's panel, to the three options that matter most for games: maximum power, vertical sync and low latency.",
+          "beneficio": "Saves the manual hunt through the NVIDIA, AMD or Intel panel menus; you apply the options yourself, in the right place.",
+          "atencao": "It is only a guide. Nothing is changed automatically: the options still need to be applied manually in the vendor's panel."
+        }
+      }
+    },
+    {
+      "id": "SIS-014",
+      "origem": null,
+      "nome": "PowerShell 7 como padrao",
+      "descricao": "Instala o PowerShell 7 se ele ainda nao estiver no computador e define-o como o perfil padrao do Windows Terminal.",
+      "categoria": "Sistema",
+      "tier": "TECNICO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "button",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": "Entendo que isso pode instalar o PowerShell 7 pelo winget e muda o perfil padrao do Windows Terminal."
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Instala o PowerShell 7 (Microsoft.PowerShell) pelo winget quando ele ainda nao esta presente, e troca o defaultProfile do Windows Terminal (settings.json) para o perfil do PowerShell 7, guardando o conteudo original do arquivo antes de escrever.",
+      "evidencia": "O PowerShell 7 e multiplataforma, mais rapido em varios cenarios e recebe atualizacoes ativas; o Windows PowerShell 5.1 (o padrao de fabrica) esta em modo de manutencao desde 2020, sem novos recursos.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxPowerShell7Default",
+          "parametros": {}
+        }
+      ],
+      "modo": "extras",
+      "categoriasV2": [
+        "geral",
+        "desempenho"
+      ],
+      "oQueFaz": "Instala o PowerShell 7 se ele ainda nao estiver no computador e define-o como o perfil padrao do Windows Terminal.",
+      "beneficio": "O Windows Terminal passa a abrir no PowerShell 7 (mais rapido e atualizado) em vez do Windows PowerShell 5.1, que esta em modo de manutencao.",
+      "atencao": "O Desfazer restaura o settings.json anterior, mas NAO desinstala o PowerShell 7 instalado - isso fica para voce decidir depois.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "PowerShell 7 as default",
+          "oQueFaz": "Installs PowerShell 7 if it is not already on the computer and sets it as the Windows Terminal default profile.",
+          "beneficio": "Windows Terminal starts opening in PowerShell 7 (faster and actively updated) instead of Windows PowerShell 5.1, which is in maintenance mode.",
+          "atencao": "Undo restores the previous settings.json, but does NOT uninstall the PowerShell 7 that was installed - that is left for you to decide later."
+        }
+      }
+    },
+    {
+      "id": "APM-006",
+      "origem": null,
+      "nome": "Remover bloatware (escolher o que manter)",
+      "descricao": "Mostra os aplicativos pre-instalados presentes nesta maquina e remove todos os que voce nao marcar para manter.",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "button",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": "Entendo que os aplicativos que eu nao marcar para manter serao removidos (com opcao de reinstalar pela Microsoft Store depois)."
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Lista os aplicativos de src/config/appx.json que estao instalados nesta maquina e remove todos, exceto os que o usuario marcar para manter (parametro 'manter'). A remocao usa o mesmo mecanismo ja empregado pelos outros tweaks de appx do catalogo, com reinstalacao pela Microsoft Store guardada por storeId quando conhecido.",
+      "evidencia": "Cada pacote removido e verificavel por Get-AppxPackage antes/depois; a lista de candidatos vem do mesmo catalogo de aplicativos ja usado pela aba Aplicativos e pelo MicroWin.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxBloatwareChooser",
+          "parametros": {
+            "manter": []
+          }
+        }
+      ],
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral"
+      ],
+      "oQueFaz": "Mostra os aplicativos pre-instalados presentes nesta maquina e remove todos os que voce nao marcar para manter.",
+      "beneficio": "Menos aplicativos pre-instalados ocupando espaco e processos em segundo plano, com controle total sobre o que fica.",
+      "atencao": "A reinstalacao (Desfazer) depende da Microsoft Store estar disponivel; alguns pacotes nao tem um id de loja conhecido e precisam ser reinstalados manualmente.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Remove bloatware (choose what to keep)",
+          "oQueFaz": "Shows the pre-installed apps present on this machine and removes every one you do not mark to keep.",
+          "beneficio": "Fewer pre-installed apps taking up space and running background processes, with full control over what stays.",
+          "atencao": "Undo (reinstall) depends on the Microsoft Store being available; some packages have no known store id and need to be reinstalled manually."
+        }
+      }
+    },
+    {
+      "id": "APM-007",
+      "origem": null,
+      "nome": "Remover apps de jogos da Microsoft",
+      "descricao": "Remove os aplicativos de jogos que a Microsoft ja traz instalados (Xbox App, Game Bar, Paciencia e afins). Pergunta antes se voce usa o Game Pass - se usar, mantem o essencial para ele continuar funcionando.",
+      "categoria": "Aplicativos Microsoft",
+      "tier": "MEDIDO",
+      "risco": "medio",
+      "presets": [],
+      "controle": "button",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "parcial",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": "Entendo que os aplicativos de jogos da Microsoft serao removidos (mantendo o essencial para o Game Pass se eu marcar que uso)."
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Remove os pacotes de jogos pre-instalados da Microsoft (Xbox App legado, GamingApp, Game Bar, Xbox Identity Provider, Xbox Speech To Text Overlay, Xbox TCUI e Paciencia) usando o mesmo mecanismo de appx do catalogo. Quando o parametro 'usaGamePass' e verdadeiro, mantem o GamingApp, o Game Bar, o Xbox Identity Provider e o Xbox TCUI - os pacotes que o Game Pass para PC precisa para funcionar.",
+      "evidencia": "A lista de pacotes e a dependencia do Game Pass nesses quatro pacotes sao documentadas pela propria Microsoft no suporte do Xbox App para Windows.",
+      "folclore": null,
+      "instrucoes": null,
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxGamingApps",
+          "parametros": {
+            "usaGamePass": false
+          }
+        }
+      ],
+      "modo": "avancado",
+      "categoriasV2": [
+        "geral",
+        "jogos"
+      ],
+      "oQueFaz": "Remove os aplicativos de jogos que a Microsoft ja traz instalados (Xbox App, Game Bar, Paciencia e afins). Pergunta antes se voce usa o Game Pass - se usar, mantem o essencial para ele continuar funcionando.",
+      "beneficio": "Menos processos de jogos da Microsoft rodando em segundo plano para quem nao usa o ecossistema Xbox/Game Pass.",
+      "atencao": "Se voce usa o Game Pass e responder 'nao' por engano, o Game Pass para de funcionar ate reinstalar os pacotes pela Store.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Remove Microsoft gaming apps",
+          "oQueFaz": "Removes the gaming apps Microsoft pre-installs (Xbox App, Game Bar, Solitaire and similar). Asks first whether you use Game Pass - if so, keeps what it needs to keep working.",
+          "beneficio": "Fewer Microsoft gaming processes running in the background for people who do not use the Xbox/Game Pass ecosystem.",
+          "atencao": "If you use Game Pass and answer 'no' by mistake, Game Pass stops working until the packages are reinstalled from the Store."
+        }
+      }
+    },
+    {
+      "id": "SEC-001",
+      "origem": null,
+      "nome": "Protecao em tempo real do Defender",
+      "descricao": "Mostra se a Protecao em Tempo Real e a Protecao contra Adulteracao do Defender estao ligadas. Oferece excluir as pastas do jogo (mais seguro) e um atalho para a tela de configuracoes do Defender, caso voce prefira desligar manualmente.",
+      "categoria": "Seguranca",
+      "tier": "TECNICO",
+      "risco": "alto",
+      "presets": [],
+      "controle": "info",
+      "opcoes": [],
+      "grupo": null,
+      "reversivel": "total",
+      "requerReboot": false,
+      "requerConsentimentoExtra": true,
+      "consentimento": {
+        "titulo": null,
+        "tradeoff": null,
+        "frase": "Entendo que este item NAO desliga a Protecao em Tempo Real por script; ele so le o estado atual, oferece exclusoes de pasta como alternativa e pode abrir a tela de configuracoes do Defender para eu decidir manualmente."
+      },
+      "condicoes": {
+        "requer": [],
+        "bloqueiaSe": []
+      },
+      "porque": "Le o estado atual da Protecao em Tempo Real e da Protecao contra Adulteracao (via Get-MpComputerStatus). Quando a Protecao contra Adulteracao esta ligada, o Windows bloqueia qualquer tentativa de desligar a Protecao em Tempo Real por fora da propria interface do Defender - inclusive por script, com ou sem privilegio de administrador. Por isso este item nunca tenta desligar nada: oferece a alternativa segura (excluir as pastas do jogo, reaproveitando o mesmo mecanismo de exclusao do catalogo) e, se a pessoa insistir, abre a tela de configuracoes do Defender para o passo manual.",
+      "evidencia": "O bloqueio da Protecao contra Adulteracao a alteracoes externas da Protecao em Tempo Real e documentado pela Microsoft; Get-MpComputerStatus expoe os dois estados para leitura.",
+      "folclore": null,
+      "instrucoes": "1) Veja o estado atual da Protecao em Tempo Real e da Protecao contra Adulteracao. 2) Prefira excluir as pastas do jogo (reversivel, feito por este item). 3) Se ainda assim quiser desligar a Protecao em Tempo Real, use o atalho para abrir Configuracoes do Windows Defender e faca isso manualmente - a Protecao contra Adulteracao impede que qualquer script faca isso no seu lugar.",
+      "posAplicar": null,
+      "acoes": [
+        {
+          "tipo": "funcao",
+          "nome": "Set-TmxDefenderExclusionAlternative",
+          "parametros": {
+            "pastas": []
+          }
+        }
+      ],
+      "modo": "ultimate",
+      "categoriasV2": [
+        "jogos",
+        "geral"
+      ],
+      "oQueFaz": "Mostra se a Protecao em Tempo Real e a Protecao contra Adulteracao do Defender estao ligadas. Oferece excluir as pastas do jogo (mais seguro) e um atalho para a tela de configuracoes do Defender, caso voce prefira desligar manualmente.",
+      "beneficio": "Reduz o impacto do Defender em jogos sem abrir mao da protecao: a exclusao de pasta ja resolve a maior parte da verificacao em tempo real durante o jogo, sem desligar nada.",
+      "atencao": "Este item nunca desliga a Protecao em Tempo Real sozinho - a Protecao contra Adulteracao impede isso por fora da interface do Defender, e e assim que preferimos que continue. Desligar de fato exige ir ate a tela do Defender e fazer manualmente.",
+      "guia": null,
+      "i18n": {
+        "en": {
+          "nome": "Defender real-time protection",
+          "oQueFaz": "Shows whether Defender's Real-Time Protection and Tamper Protection are on. Offers to exclude the game folders (safer) and a shortcut to Defender's settings screen if you prefer to turn it off manually.",
+          "beneficio": "Reduces Defender's impact on games without giving up protection: the folder exclusion already handles most of the real-time scanning during play, without turning anything off.",
+          "atencao": "This item never turns off Real-Time Protection by itself - Tamper Protection blocks that from outside Defender's own UI, and that is how we want it to stay. Actually turning it off requires going to Defender's screen and doing it manually."
+        }
+      }
+    }
+  ]
+}

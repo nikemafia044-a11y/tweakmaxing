@@ -52,6 +52,7 @@ try {
 
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
+    Close-TmxGuiWelcome
 
     Invoke-AB 'click' 'nav [data-tab=instalar]' | Out-Null
     Invoke-AB 'wait' '#app-categorias details.categoria' | Out-Null

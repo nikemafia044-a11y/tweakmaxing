@@ -133,7 +133,7 @@
   /* ---------------- esqueleto ---------------- */
 
   function montarEsqueleto() {
-    var raiz = document.getElementById('tab-ajustes');
+    var raiz = document.getElementById('tab-otimizacoes');
     var botoesPreset = PRESETS.map(function (p) {
       return '<button type="button" class="tw-preset" id="tw-preset-' + p.id + '" data-preset="' + p.id +
              '" aria-pressed="false">' + esc(p.rotulo) + '</button>';
@@ -371,7 +371,7 @@
 
   function ocupar(valor) {
     estado.ocupado = !!valor;
-    var secao = document.getElementById('tab-ajustes');
+    var secao = document.getElementById('tab-otimizacoes');
     if (secao) { secao.setAttribute('aria-busy', valor ? 'true' : 'false'); }
     ['tw-limpar', 'tw-undo-sessao', 'tw-historico'].forEach(function (id) {
       var b = document.getElementById(id);
@@ -902,7 +902,7 @@
 
   /* ---------------- registro da aba ---------------- */
 
-  window.tmxTabs.ajustes = {
+  window.tmxTabs.otimizacoes = {
     init: function () {
       montarEsqueleto();
       ligarOuvinteModal();

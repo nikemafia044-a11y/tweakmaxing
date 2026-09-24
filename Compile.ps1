@@ -322,7 +322,7 @@ if ($start -match '#\{(version|repo)\}') { throw 'scripts\start.ps1 tem marcador
 
 $ordemCore   = 'Logger', 'Backup', 'Registry', 'Rollback', 'RestorePoint', 'Guard'
 $ordemEngine = 'Condition', 'Profile', 'Catalog', 'Plan', 'Actions', 'Apply', 'Preview'
-$pastasFunc  = 'tweaks', 'install', 'features', 'microwin', 'session', 'bridge', 'ui'
+$pastasFunc  = 'tweaks', 'install', 'features', 'microwin', 'session', 'system', 'bridge', 'ui'
 
 $fontes = New-Object 'System.Collections.Generic.List[string]'
 

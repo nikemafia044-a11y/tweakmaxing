@@ -142,6 +142,7 @@ try {
 
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
+    Close-TmxGuiWelcome
 
     Invoke-AB 'click' 'nav [data-tab=atualizacoes]' | Out-Null
     Invoke-AB 'wait' '#upd-cartoes' | Out-Null

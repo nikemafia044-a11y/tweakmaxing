@@ -34,6 +34,7 @@ $script:TmxConstantesRunspace = @(
     # Engine
     'TmxTiers', 'TmxRiscos', 'TmxPresets', 'TmxControles', 'TmxReversiveis', 'TmxAcaoTipos'
     'TmxConditionRegex', 'TmxPresetNomes'
+    'TmxModos', 'TmxModosPreset', 'TmxCategoriasV2', 'TmxModoOrdem'
     # Ponte
     'TmxTweakTestJson'
     # Recursos / correcoes
@@ -54,6 +55,9 @@ $script:TmxConstantesRunspace = @(
     'TmxWidgetPacotes', 'TmxWidgetStoreId'
     'TmxAiPacotes', 'TmxAiServico', 'TmxAiRecurso'
     'TmxEnumRootPadrao'
+    # Tweaks v2
+    'TmxDirectXRealPath', 'TmxDirectXTestPath', 'TmxDirectXValueName'
+    'TmxGamingAppxPacotes', 'TmxGamingAppxGamePassKeep', 'TmxGamingAppxStoreIds'
     # Windows Update
     'TmxUpdateTestRoot'
     'TmxUpdatePolicySubPath', 'TmxUpdateAuSubPath', 'TmxUpdateDriverSubPath'

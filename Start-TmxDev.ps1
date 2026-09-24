@@ -48,7 +48,7 @@ $env:TMX_DEV_ENTRY = $PSCommandPath
 # --- 1. Funcoes -------------------------------------------------------------
 $ordemCore   = 'Logger', 'Backup', 'Registry', 'Rollback', 'RestorePoint', 'Guard'
 $ordemEngine = 'Condition', 'Profile', 'Catalog', 'Plan', 'Actions', 'Apply', 'Preview'
-$pastasFunc  = 'tweaks', 'install', 'features', 'microwin', 'session', 'bridge', 'ui'
+$pastasFunc  = 'tweaks', 'install', 'features', 'microwin', 'session', 'system', 'bridge', 'ui'
 
 foreach ($nome in $ordemCore) {
     $caminho = Join-Path $tmxRaiz "src\Core\$nome.ps1"

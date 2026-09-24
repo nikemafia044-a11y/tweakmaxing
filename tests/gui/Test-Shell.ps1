@@ -71,6 +71,7 @@ try {
 
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
+    Close-TmxGuiWelcome
 
     $logo = Invoke-AB 'get' 'text' '#sidebar .logo'
     Assert-Tmx -Nome 'barra lateral mostra TweakMaxing' -Condicao ($logo -like '*TweakMaxing*') -Detalhe "obtido: '$logo'"

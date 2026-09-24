@@ -471,6 +471,26 @@ function ConvertTo-TmxTweaks {
             if ($seQuiser) { $folclore['seVoceQuiserMesmo'] = "$seQuiser" }
         }
 
+        # --- modo/categoriasV2/textos didaticos/i18n (Task T2, opcionais) -----
+        # Copiados do overlay quando presentes; sem eles o campo fica null/[]
+        # (Test-TmxCatalog valida o formato quando presente, mas nao exige).
+        $categoriasV2 = Get-TmxConvArray -Obj $o -Nome 'categoriasV2'
+        $i18nSrc = Get-TmxConvProp -Obj $o -Nome 'i18n' -Padrao $null
+        $i18n = $null
+        if ($i18nSrc) {
+            $enSrc = Get-TmxConvProp -Obj $i18nSrc -Nome 'en' -Padrao $null
+            if ($enSrc) {
+                $i18n = [ordered]@{
+                    en = [ordered]@{
+                        nome      = Get-TmxConvProp -Obj $enSrc -Nome 'nome'      -Padrao $null
+                        oQueFaz   = Get-TmxConvProp -Obj $enSrc -Nome 'oQueFaz'   -Padrao $null
+                        beneficio = Get-TmxConvProp -Obj $enSrc -Nome 'beneficio' -Padrao $null
+                        atencao   = Get-TmxConvProp -Obj $enSrc -Nome 'atencao'   -Padrao $null
+                    }
+                }
+            }
+        }
+
         # --- monta o tweak ----------------------------------------------------
         $tweak = [ordered]@{
             id     = $id
@@ -494,6 +514,12 @@ function ConvertTo-TmxTweaks {
             condicoes                = $condicoes
             porque                   = "$($o.porque)"
             evidencia                = "$($o.evidencia)"
+            modo                     = Get-TmxConvProp -Obj $o -Nome 'modo' -Padrao $null
+            categoriasV2             = $categoriasV2
+            oQueFaz                  = Get-TmxConvProp -Obj $o -Nome 'oQueFaz'   -Padrao $null
+            beneficio                = Get-TmxConvProp -Obj $o -Nome 'beneficio' -Padrao $null
+            atencao                  = Get-TmxConvProp -Obj $o -Nome 'atencao'   -Padrao $null
+            i18n                     = $i18n
             folclore                 = $folclore
             instrucoes               = Get-TmxConvProp -Obj $o -Nome 'instrucoes' -Padrao $null
             posAplicar               = Get-TmxConvProp -Obj $o -Nome 'posAplicar' -Padrao $null
@@ -532,6 +558,23 @@ $script:TmxCategoriaApp = @{
     'Selfhosted Tools' = 'Auto-hospedado'
 }
 
+# categoria (pt-BR, ja mapeada acima) -> categoriaV2 (filtro fechado da Task T2:
+# navegadores, comunicacao, jogos, desenvolvimento, multimidia, utilitarios).
+# 'Ferramentas Pro', 'Ferramentas Microsoft', 'Documentos' e 'Auto-hospedado'
+# nao tem filtro proprio no pedido do usuario, entao caem em 'utilitarios'.
+$script:TmxCategoriaV2App = @{
+    'Navegadores'           = 'navegadores'
+    'Comunicacao'           = 'comunicacao'
+    'Jogos'                 = 'jogos'
+    'Desenvolvimento'       = 'desenvolvimento'
+    'Multimidia'            = 'multimidia'
+    'Utilitarios'           = 'utilitarios'
+    'Ferramentas Pro'       = 'utilitarios'
+    'Ferramentas Microsoft' = 'utilitarios'
+    'Documentos'            = 'utilitarios'
+    'Auto-hospedado'        = 'utilitarios'
+}
+
 function ConvertTo-TmxApplications {
     param([Parameter(Mandatory)] $Winutil, $Overlay)
 
@@ -551,6 +594,9 @@ function ConvertTo-TmxApplications {
         $categoria = $catOriginal
         if ($script:TmxCategoriaApp.ContainsKey($catOriginal)) { $categoria = $script:TmxCategoriaApp[$catOriginal] }
 
+        $categoriaV2 = 'utilitarios'
+        if ($script:TmxCategoriaV2App.ContainsKey($categoria)) { $categoriaV2 = $script:TmxCategoriaV2App[$categoria] }
+
         $nome = "$(Get-TmxConvProp -Obj $v -Nome 'content' -Padrao $chave)"
         $nomeOv = Get-TmxConvProp -Obj $ov -Nome 'nome' -Padrao $null
         if ($nomeOv) { $nome = "$nomeOv" }
@@ -559,6 +605,18 @@ function ConvertTo-TmxApplications {
         $descOv = Get-TmxConvProp -Obj $ov -Nome 'descricao' -Padrao $null
         if ($descOv) { $descricao = "$descOv" }
 
+        # i18n.en.descricao (Task T2): por padrao usa a description original do
+        # WinUtil (ja em ingles natural, mesma fonte publica de todo o catalogo);
+        # o overlay pode sobrescrever com 'i18n.en.descricao' quando quiser um
+        # texto proprio (ex.: os 13 apps que nao existem no WinUtil de referencia).
+        $descEn = "$(Get-TmxConvProp -Obj $v -Nome 'description' -Padrao '')"
+        $i18nOv = Get-TmxConvProp -Obj $ov -Nome 'i18n' -Padrao $null
+        if ($i18nOv) {
+            $enOv = Get-TmxConvProp -Obj $i18nOv -Nome 'en' -Padrao $null
+            $descEnOv = Get-TmxConvProp -Obj $enOv -Nome 'descricao' -Padrao $null
+            if ($descEnOv) { $descEn = "$descEnOv" }
+        }
+
         # icon: nao existe no catalogo do WinUtil - padrao null, so o overlay
         # pode preencher (mesma ideia de 'descricao' acima).
         $icon = $null
@@ -566,15 +624,17 @@ function ConvertTo-TmxApplications {
         if ($iconOv) { $icon = "$iconOv" }
 
         $saida.Add([ordered]@{
-            id        = $id
-            nome      = $nome
-            descricao = $descricao
-            categoria = $categoria
-            winget    = Get-TmxConvProp -Obj $v -Nome 'winget' -Padrao $null
-            choco     = Get-TmxConvProp -Obj $v -Nome 'choco'  -Padrao $null
-            link      = Get-TmxConvProp -Obj $v -Nome 'link'   -Padrao $null
-            icon      = $icon
-            foss      = [bool](Get-TmxConvProp -Obj $v -Nome 'foss' -Padrao $false)
+            id          = $id
+            nome        = $nome
+            descricao   = $descricao
+            categoria   = $categoria
+            categoriaV2 = $categoriaV2
+            winget      = Get-TmxConvProp -Obj $v -Nome 'winget' -Padrao $null
+            choco       = Get-TmxConvProp -Obj $v -Nome 'choco'  -Padrao $null
+            link        = Get-TmxConvProp -Obj $v -Nome 'link'   -Padrao $null
+            icon        = $icon
+            foss        = [bool](Get-TmxConvProp -Obj $v -Nome 'foss' -Padrao $false)
+            i18n        = [ordered]@{ en = [ordered]@{ descricao = $descEn } }
         })
     }
     , ($saida.ToArray())

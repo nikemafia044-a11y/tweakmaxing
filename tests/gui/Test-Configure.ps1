@@ -109,6 +109,7 @@ try {
 
     Invoke-AB 'connect' "$Port" | Out-Null
     Invoke-AB 'wait' '#st-rp' | Out-Null
+    Close-TmxGuiWelcome
 
     Invoke-AB 'click' 'nav [data-tab=configurar]' | Out-Null
     Invoke-AB 'wait' '#cfg-colunas' | Out-Null
