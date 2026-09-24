@@ -109,11 +109,11 @@ function Get-TmxRegistryChildNamesSafe {
     #>
     [CmdletBinding()]
     param([Parameter(Mandatory)] [string] $Path)
-    try {
-        @(Get-ChildItem -LiteralPath $Path -ErrorAction Stop | ForEach-Object { Split-Path $_.PSPath -Leaf })
-    } catch {
-        @()
-    }
+    # SilentlyContinue e nao Stop: em Control\Class\{...} a subchave
+    # 'Properties' nega acesso a usuario comum, e com Stop essa unica negacao
+    # derrubava a enumeracao inteira (VRAM caia no AdapterRAM de 32 bits = 4 GB).
+    if (-not (Test-Path -LiteralPath $Path)) { return @() }
+    @(Get-ChildItem -LiteralPath $Path -ErrorAction SilentlyContinue | ForEach-Object { $_.PSChildName })
 }
 
 # ---------------------------------------------------------------------------

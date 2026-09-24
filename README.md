@@ -4,6 +4,18 @@ Utilitário de otimização e manutenção do Windows 10/11, em português, com 
 
 **Obra derivada do [WinUtil](https://github.com/ChrisTitusTech/winutil)** (Chris Titus Tech, licença MIT) — não afiliado. Catálogos, arquitetura de compilação e várias funções vêm de lá; veja `LICENSE` e `THIRD-PARTY-NOTICES.md`. Nome, marca e visual são próprios.
 
+## Novidades da 2.0
+
+- **Interface nova:** barra de título própria, menu lateral com Painel, Otimizações, Limpeza, Restauração, Aplicativos, MicroWin, Sistema e Configurações, e tema escuro com verde-azulado.
+- **Português e inglês:** você escolhe na primeira abertura e pode trocar a qualquer hora pela barra de título. A interface e os textos do catálogo têm as duas versões.
+- **Painel:** mostra o hardware (CPU, GPU com VRAM, RAM, disco e sistema), o status das otimizações e até três recomendações para este PC.
+- **Modos de otimização:** Leve, Moderado, Avançado e Ultimate, cumulativos. Os cards explicam o que cada ajuste faz, o benefício e o ponto de atenção. O Ultimate pede uma confirmação separada.
+- **9 ajustes novos**, entre eles DirectX otimizado para jogos em janela, escolha do bloatware que fica e PowerShell 7 como padrão do Terminal.
+- **Limpeza** de temporários, cache do Windows Update, miniaturas, Lixeira e prefetch, com medição antes de apagar.
+- **Restauração:** lista, cria, exclui e restaura pontos de restauração.
+- **Aplicativos** com exportar e importar a seleção e o selo "Instalado". **MicroWin** com layout novo, opções novas e botão de cancelar.
+- **Configurações** que ficam salvas, verificação de atualização do próprio app e limpeza de cache e de backups antigos.
+
 ## O que muda em relação ao WinUtil
 
 1. **Ponto de restauração obrigatório e bloqueante** antes da primeira alteração da sessão. Se não puder ser criado e verificado, nada é alterado (pular exige digitar uma frase).
@@ -34,13 +46,13 @@ Com parâmetros (ex.: modo headless):
 Baixa uma versão fixa, confere o SHA256 publicado em `SHA256SUMS.txt` e só então executa:
 
 ```powershell
-Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.2.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
-Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v0.2.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v2.0.0/TweakMaxing.ps1 -OutFile TweakMaxing.ps1
+Invoke-WebRequest -Uri https://github.com/nikemafia044-a11y/tweakmaxing/releases/download/v2.0.0/SHA256SUMS.txt -OutFile SHA256SUMS.txt
 (Get-FileHash .\TweakMaxing.ps1).Hash -eq (Get-Content .\SHA256SUMS.txt).Split(' ')[0]   # tem que imprimir True
 powershell -ExecutionPolicy Bypass -File .\TweakMaxing.ps1
 ```
 
-**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v0.2.0`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
+**Rápido × Verificado:** o comando rápido sempre segue o release mais recente (`latest`); o caminho verificado usa uma tag fixa (`v2.0.0`), então o mesmo link baixa sempre o mesmo artefato, com o mesmo SHA256 — reproduzível e auditável. Apenas HTTPS é usado. O código-fonte é público neste repositório: o artefato é a concatenação verbatim dele, compilada por `Compile.ps1`. A GUI é a tela de consentimento real: nada é aplicado sem prévia (chave/valor antes → depois), confirmação explícita e ponto de restauração criado e verificado antes da primeira alteração da sessão.
 
 ### Desfazer
 
@@ -54,10 +66,12 @@ As execuções ficam registradas em `%LOCALAPPDATA%\TweakMaxing\runs`.
 ### Modo headless
 
 ```powershell
-.\TweakMaxing.ps1 -Headless -Preset desktop -DryRun -NoElevate   # simula, não altera nada, não eleva
-.\TweakMaxing.ps1 -Headless -Preset notebook                      # aplica o preset "notebook" (eleva sozinho)
-.\TweakMaxing.ps1 -Headless -Preset minimo
+.\TweakMaxing.ps1 -Headless -Preset moderado -DryRun -NoElevate  # simula o modo Moderado: não altera nada e não eleva
+.\TweakMaxing.ps1 -Headless -Preset leve                         # aplica o modo Leve (eleva sozinho)
+.\TweakMaxing.ps1 -Headless -Preset desktop                      # os presets antigos continuam valendo
 ```
+
+`-Preset` aceita os modos `leve`, `moderado`, `avancado` e `ultimate` (cumulativos) e os presets antigos `desktop`, `notebook` e `minimo`.
 
 ### Antivírus e `iex`
 
@@ -69,13 +83,17 @@ O instalador do Chocolatey só é baixado depois de um consentimento explícito 
 
 ### Capturas de tela
 
-| Ajustes | Prévia | Instalar |
+| Painel | Otimizações | Aplicativos |
 |---|---|---|
-| ![Aba Ajustes, com o catálogo de tweaks e os selos de evidência](docs/img/ajustes.png) | ![Modal de prévia mostrando chave/valor antes → depois antes de aplicar](docs/img/previa.png) | ![Aba Instalar, com a lista de aplicativos via winget/Chocolatey](docs/img/instalar.png) |
+| ![Painel com hardware, status das otimizações e recomendações](docs/img/painel.png) | ![Otimizações com os modos Leve, Moderado, Avançado e Ultimate](docs/img/otimizacoes.png) | ![Aplicativos com instalação em lote, exportar e importar](docs/img/aplicativos.png) |
 
-| Configurar | Atualizações | MicroWin |
+| Limpeza | Restauração | MicroWin |
 |---|---|---|
-| ![Aba Configurar, com recursos do Windows e correções](docs/img/configurar.png) | ![Aba Atualizações, com pacotes appx e provedores DNS](docs/img/atualizacoes.png) | ![Aba MicroWin, geração de ISO customizada do Windows](docs/img/microwin.png) |
+| ![Limpeza com medição por item antes de apagar](docs/img/limpeza.png) | ![Pontos de restauração: listar, criar, excluir e restaurar](docs/img/restauracao.png) | ![MicroWin, geração de ISO customizada do Windows](docs/img/microwin.png) |
+
+| Sistema | Configurações | Prévia |
+|---|---|---|
+| ![Sistema, com recursos do Windows e correções](docs/img/configurar.png) | ![Configurações: idioma, nome, atualização e dados do app](docs/img/configuracoes.png) | ![Prévia mostrando chave/valor antes → depois antes de aplicar](docs/img/previa.png) |
 
 ## Rodar a partir do código-fonte
 
@@ -88,7 +106,7 @@ git clone https://github.com/ChrisTitusTech/winutil reference/winutil   # refer�
 ## Compilar
 
 ```powershell
-.\Compile.ps1                                  # gera TweakMaxing.ps1 (arquivo único, ~2,3 MB)
+.\Compile.ps1                                  # gera TweakMaxing.ps1 (arquivo único, ~3,2 MB)
 .\Compile.ps1 -Run                             # gera e executa
 .\Compile.ps1 -SkipSdk                         # não baixa o SDK do WebView2 se packages\webview2 faltar
 .\Compile.ps1 -Out C:\temp\TweakMaxing.ps1 -Repo usuario/repo

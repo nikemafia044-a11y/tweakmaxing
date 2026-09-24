@@ -25,7 +25,7 @@
 #>
 param(
     [switch] $Headless,
-    [ValidateSet('desktop', 'notebook', 'minimo', '')]
+    [ValidateSet('desktop', 'notebook', 'minimo', 'leve', 'moderado', 'avancado', 'ultimate', '')]
     [string] $Preset,
     [switch] $DryRun,
     [string] $Undo,
@@ -78,7 +78,7 @@ if ($Headless -or $Undo) {
 
     # --- Preset -------------------------------------------------------------
     if (-not $Preset) {
-        Write-Host 'Modo headless exige -Preset (desktop, notebook, minimo) ou -Undo.' -ForegroundColor Yellow
+        Write-Host 'Modo headless exige -Preset (leve, moderado, avancado, ultimate, desktop, notebook, minimo) ou -Undo.' -ForegroundColor Yellow
         exit (Complete-TmxRun 1)
     }
 

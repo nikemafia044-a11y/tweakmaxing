@@ -29,7 +29,7 @@
 #>
 param(
     [switch] $Headless,
-    [ValidateSet('desktop', 'notebook', 'minimo', '')]
+    [ValidateSet('desktop', 'notebook', 'minimo', 'leve', 'moderado', 'avancado', 'ultimate', '')]
     [string] $Preset,
     [switch] $DryRun,
     [string] $Undo,

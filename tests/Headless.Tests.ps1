@@ -54,4 +54,25 @@ Describe 'Execucao headless' -Tag 'Headless' {
             $script:Texto | Should -Match 'nada foi alterado'
         }
     }
+
+    Context 'Start-TmxDev.ps1 -Headless -Preset moderado -DryRun (modo v2 como preset)' {
+
+        BeforeAll {
+            $saida = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $script:DevRunner `
+                -Headless -Preset moderado -DryRun -NoElevate 2>&1
+            $script:CodigoModo = $LASTEXITCODE
+            $script:TextoModo  = ($saida | Out-String)
+        }
+
+        It 'aceita o modo e sai com 0' {
+            $script:CodigoModo | Should -Be 0 -Because "saida:`n$script:TextoModo"
+        }
+
+        It 'simula itens do modo sem alterar nada' {
+            $m = [regex]::Match($script:TextoModo, 'Simulacao concluida:\s*(\d+) itens')
+            $m.Success | Should -BeTrue -Because "saida:`n$script:TextoModo"
+            ([int]$m.Groups[1].Value) | Should -BeGreaterOrEqual 9 -Because "saida:`n$script:TextoModo"
+            $script:TextoModo | Should -Match 'nada foi alterado'
+        }
+    }
 }
