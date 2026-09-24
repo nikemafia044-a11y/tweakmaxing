@@ -495,6 +495,12 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             @{ Url = 'https://[::ffff:127.0.0.1]/x' }
             @{ Url = 'https://[::ffff:10.0.0.5]/x' }
             @{ Url = 'https://[::ffff:192.168.1.1]/x' }
+            @{ Url = 'https://[::127.0.0.1]/x' }
+            @{ Url = 'https://[::10.0.0.1]/x' }
+            @{ Url = 'https://[64:ff9b::7f00:1]/x' }
+            @{ Url = 'https://[fec0::1]/x' }
+            @{ Url = 'https://100.64.0.1/x' }
+            @{ Url = 'https://100.127.255.255/x' }
         ) {
             Test-TmxIconUrlPrivateHost -Url $Url | Should -BeTrue
         }
@@ -506,6 +512,8 @@ Describe 'Wrappers de icone (Test-TmxIconUrlHttps / Get-TmxHttpDownloadBytes)' -
             @{ Url = 'https://172.32.0.1/x' }
             @{ Url = 'https://[2001:4860:4860::8888]/x' }
             @{ Url = 'https://[::ffff:8.8.8.8]/x' }
+            @{ Url = 'https://[::8.8.8.8]/x' }
+            @{ Url = 'https://100.128.0.1/x' }
         ) {
             Test-TmxIconUrlPrivateHost -Url $Url | Should -BeFalse
         }

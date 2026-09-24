@@ -120,6 +120,7 @@ function Test-TmxIconIPv4RangeReserved {
     $b = $Bytes
     if ($b[0] -eq 0) { return $true }    # 0.0.0.0/8 ("esta rede", usado como curinga por alguns servicos)
     if ($b[0] -eq 10) { return $true }   # 10/8
+    if ($b[0] -eq 127) { return $true }  # 127/8 (loopback; IsLoopback nao cobre o formato ::a.b.c.d)
     if ($b[0] -eq 100 -and $b[1] -ge 64 -and $b[1] -le 127) { return $true }  # 100.64.0.0/10 (CGN/shared address space)
     if ($b[0] -eq 172 -and $b[1] -ge 16 -and $b[1] -le 31) { return $true }   # 172.16.0.0/12
     if ($b[0] -eq 192 -and $b[1] -eq 168) { return $true }                   # 192.168.0.0/16
@@ -381,6 +382,7 @@ function Invoke-TmxHttpRequestOnce {
         $restanteAntes = Get-TmxIconRemainingMs -PrazoAbsolutoUtc $prazo
         if ($restanteAntes -le 0) { return $null }
 
+        $inicioPedido = [DateTime]::UtcNow
         $pedido = [System.Net.HttpWebRequest]::Create($Url)
         # O menor entre TimeoutMs (teto por chamada) e o que sobra do prazo
         # absoluto - nunca o TimeoutMs cheio de novo a cada salto/tentativa.
@@ -411,8 +413,13 @@ function Invoke-TmxHttpRequestOnce {
         $motivoFalha = $null
 
         if ($statusCode -ge 200 -and $statusCode -lt 300) {
+            # Corpo limitado pelo MENOR entre o prazo do lote e o teto desta
+            # requisicao (inicio + TimeoutMs): um corpo gotejando nao pode
+            # consumir o orcamento inteiro do lote sozinho.
+            $prazoPedido = $inicioPedido.AddMilliseconds($tempoEfetivo)
+            if ($prazoPedido -gt $prazo) { $prazoPedido = $prazo }
             $leitura = Read-TmxLimitedStream -Stream $resposta.GetResponseStream() -MaxBytes $MaxBytes `
-                -ContentLength $resposta.ContentLength -PrazoAbsolutoUtc $prazo
+                -ContentLength $resposta.ContentLength -PrazoAbsolutoUtc $prazoPedido
             $bytes       = $leitura.Bytes
             $motivoFalha = $leitura.Motivo
         }
@@ -523,7 +530,7 @@ function Invoke-TmxIconDownload {
         # 429 (rate limit) e 5xx sao transitorios por natureza - o servidor
         # esta de pe, mas recusando/falhando agora; nao prova que o app nao
         # tem icone, so que agora nao deu.
-        if ($r.statusCode -eq 429 -or $r.statusCode -ge 500) {
+        if ($r.statusCode -eq 408 -or $r.statusCode -eq 429 -or $r.statusCode -ge 500) {
             if ($ErroRede) { $ErroRede.Value = $true }
         }
 

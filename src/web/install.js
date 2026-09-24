@@ -440,7 +440,10 @@
     tmx.bridge.on('job.done', function () {
       if (iconesEstado.processando || !iconesEstado.fila.length) { return; }
       if (iconesEstado.timer) { window.clearTimeout(iconesEstado.timer); iconesEstado.timer = null; }
-      processarLoteIcones();
+      // Nao dispara na hora: uma acao do usuario encadeada (job A termina e a
+      // chamada B sai num microtask depois) ainda nao incrementou
+      // esperandoUsuario; o espacamento minimo deixa B pegar o slot primeiro.
+      agendarLoteIcones(ICONES_ESPACAMENTO_MIN_MS);
     });
   }
 
